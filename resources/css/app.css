@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom RUTIP styles */
+.btn-primary {
+  @apply bg-rutip-purple text-white px-6 py-2 rounded-lg hover:bg-rutip-dark transition;
+}
+.btn-secondary {
+  @apply border-2 border-rutip-purple text-rutip-purple px-6 py-2 rounded-lg hover:bg-rutip-light transition;
+}
