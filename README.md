@@ -1,61 +1,94 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# RUTIP Landing Page — Konversi Figma (React/TSX) ke Laravel Blade
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Konversi `LandingPage.tsx` (beserta 9 komponen section di
+`src/app/components/`) menjadi struktur Blade yang siap dipakai di proyek
+Laravel kamu (Laravel + Tailwind v4 + Vite + `mallardduck/blade-lucide-icons`).
 
-## About Laravel
+## Struktur file
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+```
+resources/
+├── css/
+│   └── app.css                 # entry Tailwind + token desain (--font-display, --font-body, @keyframes blink, .reveal)
+├── js/
+│   └── app.js                  # navbar scroll, mobile menu, typewriter hero, reveal-on-scroll, accordion FAQ, carousel testimoni
+└── views/
+    ├── layouts/
+    │   └── app.blade.php       # <html> shell, load font Google + @vite
+    └── landing/
+        ├── index.blade.php     # @extends('layouts.app'), merangkai semua partial
+        └── partials/
+            ├── navbar.blade.php
+            ├── hero.blade.php
+            ├── problem.blade.php
+            ├── solution.blade.php
+            ├── how-it-works.blade.php
+            ├── trust.blade.php
+            ├── testimoni.blade.php
+            ├── faq.blade.php
+            ├── tentang-kami.blade.php
+            └── footer.blade.php
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+routes/web.php                  # contoh route GET / -> landing.index
+vite.config.js                  # plugin laravel + @tailwindcss/postcss
+```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Salin folder `resources/views/landing`, `resources/css/app.css`, dan
+`resources/js/app.js` ke proyek Laravel kamu. Sesuaikan `layouts/app.blade.php`
+jika kamu sudah punya layout master sendiri (cukup pastikan `@vite(...)` dan
+font Google ikut dimuat).
 
-## Learning Laravel
+## Dependency yang dibutuhkan
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+```bash
+composer require mallardduck/blade-lucide-icons
+npm install -D @tailwindcss/postcss tailwindcss
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+`tailwindcss` v4 dipakai via `@import "tailwindcss";` di `app.css` (lihat
+`postcss.config.mjs` / `vite.config.js`).
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Pemetaan komponen React → Blade
 
-## Laravel Sponsors
+| Komponen Figma (.tsx)     | Partial Blade                          | Catatan |
+|---------------------------|------------------------------------------|---------|
+| `Navbar.tsx`               | `partials/navbar.blade.php`              | Scroll-blur & mobile toggle dipindah ke `app.js` (`#navbar`, `#navbar-mobile-toggle`) |
+| `HeroSection.tsx`          | `partials/hero.blade.php`                | Efek typewriter (`useState`/`useEffect`) → vanilla JS di `app.js` (`#hero-line-1`, `#hero-line-2`) |
+| `ProblemSection.tsx`       | `partials/problem.blade.php`             | 3 kartu pain-point + stat callout "93,5%" |
+| `SolutionSection.tsx`      | `partials/solution.blade.php`            | 6 kartu layanan |
+| `HowItWorksSection.tsx`    | `partials/how-it-works.blade.php`        | 3 langkah dengan connecting line |
+| `TrustSection.tsx`         | `partials/trust.blade.php`               | 4 kartu trust + badge "100% Terjamin" |
+| `TestimoniSection.tsx`     | `partials/testimoni.blade.php`           | Carousel 6 testimoni / 3 per halaman → `app.js` (`#testimoni-carousel`) |
+| `FAQSection.tsx`           | `partials/faq.blade.php`                 | Accordion → `app.js` (`.faq-item`, `.faq-trigger`, `.faq-panel`) |
+| `TentangKamiSection.tsx`   | `partials/tentang-kami.blade.php`        | Visi/Misi + timeline 3 milestone |
+| `Footer.tsx`                | `partials/footer.blade.php`              | — |
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+`CTABanner.tsx` ada di source export tapi **tidak** dipakai di
+`LandingPage.tsx`, sehingga tidak diikutkan. Tinggal beri tahu jika ingin
+ditambahkan sebagai partial terpisah.
 
-### Premium Partners
+## Penggantian library
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+| React (Figma export)              | Blade / Vanilla |
+|------------------------------------|------------------|
+| `motion/react` (`motion.div`, `whileInView`, `AnimatePresence`) | Class `.reveal` + `IntersectionObserver` di `app.js` (fade + slide-up sekali saat masuk viewport) |
+| `lucide-react` (`<Package />`, dst.) | `<x-lucide-package />` dari `mallardduck/blade-lucide-icons`. Nama ikon di-kebab-case-kan (`ShoppingBag` → `shopping-bag`, `AlertTriangle` → `triangle-alert`, `RefreshCw` → `refresh-cw`, `ImageIcon` → `image`, `Music2` → `music-2`). |
+| `react-router` `<Link to="/login">` | `<a href="{{ route('login') }}">` — pastikan route bernama `login` & `register` tersedia |
 
-## Contributing
+## Yang perlu disesuaikan di proyek kamu
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+1. **Route `login` & `register`** — partial `navbar`, `hero`, `solution`, dan
+   `how-it-works` memanggil `route('login')` / `route('register')`. Pastikan
+   kedua named route ini ada (mis. dari Laravel Breeze/Fortify), atau ganti
+   sementara dengan URL statis (`/login`, `/register`).
+2. **Font** — `layouts/app.blade.php` memuat Plus Jakarta Sans & Inter dari
+   Google Fonts CDN (sama seperti `fonts.css` di export Figma). Jika proyek
+   sudah punya pemuatan font sendiri, hapus baris `<link>` yang duplikat.
+3. **Ikon dinamis** — beberapa partial (`problem`, `solution`,
+   `how-it-works`, `trust`) memakai `<x-dynamic-component :component="'lucide-' . $icon">`
+   agar nama ikon bisa di-loop dari array PHP. Pastikan paket
+   `blade-lucide-icons` ter-install supaya komponen `x-lucide-*` ter-resolve.
+4. **CTA "Titip Sekarang"** — beberapa CTA (`hero`, `solution`,
+   `how-it-works`) diarahkan ke `route('register')` (anggapan: alur "titip
+   barang" mengharuskan user login/daftar dulu). Sesuaikan target href bila
+   alur bisnis berbeda (misalnya langsung ke form penitipan).
