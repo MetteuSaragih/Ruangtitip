@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Courier;
 use App\Models\ItemSize;
-use App\Models\Storage;
+use App\Models\StorageRoom;
 use App\Models\TitipanOrder;
 use App\Models\UserAddress;
 use Illuminate\Http\Request;
@@ -60,7 +60,8 @@ class RuangTitipController extends Controller
             $months = max(1, (int) ceil($days / 30));
         }
 
-        $sizes = ItemSize::whereIn('code', array_keys($items))->get()->keyBy('code');
+        $storage = StorageRoom::find($s['storage_id'] ?? null);
+        $sizes = $this->itemSizesFromStorage($storage)->keyBy('code');
         $itemSubtotal = 0;
         $totalItems = 0;
         foreach ($items as $code => $qty) {
@@ -106,15 +107,14 @@ class RuangTitipController extends Controller
     /* ═══ SCREEN 1 — Daftar gudang ═══ */
     public function index()
     {
-        $storages = Storage::where('is_active', true)->get();
+        $storages = StorageRoom::active()->latest()->get();
         return view('dashboard.ruang-titip.index', compact('storages'));
     }
 
     /* ═══ SCREEN 2 — Detail gudang ═══ */
-    public function show(Request $r, Storage $storage)
+    public function show(Request $r, StorageRoom $storage)
     {
         $this->setState($r, ['storage_id' => $storage->id]);
-        $storage->load('reviews');
         return view('dashboard.ruang-titip.detail', compact('storage'));
     }
 
@@ -124,9 +124,11 @@ class RuangTitipController extends Controller
         if (empty($this->state($r)['storage_id'])) {
             return redirect()->route('ruang-titip.index');
         }
-        $kardus  = ItemSize::where('type', 'kardus')->get();
-        $koper   = ItemSize::where('type', 'koper')->get();
-        $dimensi = ItemSize::where('type', 'dimensi')->get();
+        $storage = StorageRoom::find($this->state($r)['storage_id']);
+        $sizes = $this->itemSizesFromStorage($storage);
+        $kardus = $sizes->where('type', 'kardus')->values();
+        $koper = $sizes->where('type', 'koper')->values();
+        $dimensi = $sizes->where('type', 'dimensi')->values();
         $s = $this->state($r);
         $selectedItems = $s['items'] ?? [];
         return view('dashboard.ruang-titip.detail-item', compact('kardus', 'koper', 'dimensi', 's', 'selectedItems'));
@@ -150,7 +152,8 @@ class RuangTitipController extends Controller
             return back()->withErrors(['items' => 'Pilih minimal satu barang.'])->withInput();
         }
 
-        $sizes = ItemSize::whereIn('code', array_keys($items))->get()->keyBy('code');
+        $storage = StorageRoom::find($this->state($r)['storage_id'] ?? null);
+        $sizes = $this->itemSizesFromStorage($storage)->keyBy('code');
         $items = array_filter(
             $items,
             fn ($qty, $code) => isset($sizes[$code]),
@@ -277,7 +280,7 @@ class RuangTitipController extends Controller
         if (empty($s['logistic'])) return redirect()->route('ruang-titip.logistik');
 
         $calc    = $this->calc($s);
-        $storage = Storage::find($s['storage_id'] ?? null);
+        $storage = StorageRoom::find($s['storage_id'] ?? null);
         $courier = !empty($s['courier_code']) ? Courier::where('code', $s['courier_code'])->first() : null;
 
         return view('dashboard.ruang-titip.checkout', compact('s', 'calc', 'storage', 'courier'));
@@ -326,5 +329,40 @@ class RuangTitipController extends Controller
     {
         abort_unless($order->user_id === Auth::id(), 403);
         return view('dashboard.ruang-titip.success', compact('order'));
+    }
+
+    private function itemSizesFromStorage(?StorageRoom $storage)
+    {
+        if (! $storage) {
+            return collect();
+        }
+
+        $pricing = $storage->pricing ?? [];
+        $rows = [];
+
+        foreach (['kardus', 'koper'] as $type) {
+            foreach (($pricing[$type] ?? []) as $id => $row) {
+                $code = is_array($row) ? ($row['id'] ?? $id) : $id;
+                $rows[] = (object) [
+                    'type' => $type,
+                    'code' => $code,
+                    'label' => is_array($row) ? ($row['label'] ?? strtoupper((string) $code)) : strtoupper((string) $code),
+                    'dims' => is_array($row) ? ($row['dims'] ?? '-') : '-',
+                    'price' => is_array($row) ? (int) ($row['price'] ?? 0) : (int) $row,
+                ];
+            }
+        }
+
+        if (isset($pricing['dimensiLain'])) {
+            $rows[] = (object) [
+                'type' => 'dimensi',
+                'code' => 'dimensi_lain',
+                'label' => 'Dimensi Lain',
+                'dims' => '30x30x30 - 100x100x100 cm',
+                'price' => (int) $pricing['dimensiLain'],
+            ];
+        }
+
+        return collect($rows)->filter(fn ($row) => $row->price > 0)->values();
     }
 }

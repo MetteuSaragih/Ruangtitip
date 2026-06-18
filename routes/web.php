@@ -1,110 +1,132 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\OtpController;
+use App\Http\Controllers\Admin\AccountManagementController;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\RuangTitipController as AdminRuangTitipController;
+use App\Http\Controllers\Admin\TokoPackingController;
+use App\Http\Controllers\Admin\TokoPrelovedController;
 use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\Auth\OtpController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
-<<<<<<< Updated upstream
 use App\Http\Controllers\PackingController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\RuangTitipController;
 use App\Http\Controllers\PackingPaymentNotificationController;
 use App\Http\Controllers\PesananController;
-=======
 use App\Http\Controllers\PrelovedController;
-use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\CartController;
->>>>>>> Stashed changes
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RuangTitipController as UserRuangTitipController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes — RUTIP (Passwordless: OTP Email + Google OAuth)
+| Public routes
 |--------------------------------------------------------------------------
 */
 
-// ─── PUBLIC ──────────────────────────────────────────────────────────────
-Route::get('/', function () {
-    return view('landing.index');
-})->name('home');
-
+Route::get('/', fn () => view('landing.index'))->name('home');
 Route::post('/midtrans/notification', [PackingPaymentNotificationController::class, 'handle'])
     ->name('midtrans.notification');
 
+/*
+|--------------------------------------------------------------------------
+| Guest routes
+|--------------------------------------------------------------------------
+*/
 
-// ─── GUEST ONLY ──────────────────────────────────────────────────────────
 Route::middleware('guest')->group(function () {
-    // Login via OTP email
     Route::get('/login', [OtpController::class, 'showLogin'])->name('login');
     Route::post('/login', [OtpController::class, 'sendOtp'])->name('otp.send');
     Route::get('/login/otp', [OtpController::class, 'showOtp'])->name('otp.form');
     Route::post('/login/otp', [OtpController::class, 'verifyOtp'])->name('otp.verify');
     Route::post('/login/otp/resend', [OtpController::class, 'resendOtp'])->name('otp.resend');
 
-    // Login via Google OAuth (asli)
     Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('auth.google');
-    Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->name('auth.google.callback');
+    Route::get('/auth/google/callback', [GoogleController::class, 'callback'])
+        ->name('auth.google.callback');
 });
 
+/*
+|--------------------------------------------------------------------------
+| Authenticated routes
+|--------------------------------------------------------------------------
+*/
 
-// ─── AUTHENTICATED ONLY (General) ────────────────────────────────────────
 Route::middleware('auth')->group(function () {
-    
-    // Dashboard & Logout
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [OtpController::class, 'logout'])->name('logout');
 
-    // Profil
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profil', [ProfileController::class, 'index'])->name('profile.index');
     Route::post('/profil/update', [ProfileController::class, 'update'])->name('profile.update');
 
-    // Pesanan (Tambahan Baru)
     Route::get('/dashboard/pesanan', [PesananController::class, 'index'])->name('pesanan.index');
     Route::get('/dashboard/pesanan/{order}', [PesananController::class, 'show'])->name('pesanan.detail');
-    
+
+    Route::prefix('dashboard/packing')->name('packing.')->group(function () {
+        Route::get('/', [PackingController::class, 'index'])->name('index');
+        Route::get('/produk/{product}', [PackingController::class, 'show'])->name('show');
+        Route::post('/produk/{product}/beli', [PackingController::class, 'buy'])->name('buy');
+        Route::get('/logistik', [PackingController::class, 'logistics'])->name('logistics');
+        Route::post('/logistik', [PackingController::class, 'chooseLogistics'])->name('logistics.choose');
+        Route::get('/alamat', [PackingController::class, 'address'])->name('address');
+        Route::post('/alamat', [PackingController::class, 'chooseAddress'])->name('address.choose');
+        Route::get('/pembayaran', [PackingController::class, 'payment'])->name('payment');
+        Route::post('/pembayaran', [PackingController::class, 'pay'])->name('pay');
+        Route::get('/sukses/{orderCode}', [PackingController::class, 'success'])->name('success');
+    });
+
+    Route::prefix('dashboard/ruang-titip')->name('ruang-titip.')->group(function () {
+        Route::get('/', [UserRuangTitipController::class, 'index'])->name('index');
+        Route::get('/{storage}/detail', [UserRuangTitipController::class, 'show'])->name('detail');
+        Route::get('/detail-item', [UserRuangTitipController::class, 'detailForm'])->name('detail-item');
+        Route::post('/detail-item', [UserRuangTitipController::class, 'detailStore'])->name('detail-item.store');
+        Route::get('/logistik', [UserRuangTitipController::class, 'logistikForm'])->name('logistik');
+        Route::post('/logistik', [UserRuangTitipController::class, 'logistikStore'])->name('logistik.store');
+        Route::get('/alamat', [UserRuangTitipController::class, 'alamatForm'])->name('alamat');
+        Route::post('/alamat', [UserRuangTitipController::class, 'alamatStore'])->name('alamat.store');
+        Route::get('/kurir', [UserRuangTitipController::class, 'kurirForm'])->name('kurir');
+        Route::post('/kurir', [UserRuangTitipController::class, 'kurirStore'])->name('kurir.store');
+        Route::get('/checkout', [UserRuangTitipController::class, 'checkout'])->name('checkout');
+        Route::post('/checkout', [UserRuangTitipController::class, 'place'])->name('place');
+        Route::get('/sukses/{order}', [UserRuangTitipController::class, 'success'])->name('success');
+    });
+
+    Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
+        Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('/ruang-titip', [AdminRuangTitipController::class, 'index'])->name('ruang-titip');
+        Route::post('/ruang-titip', [AdminRuangTitipController::class, 'store'])->name('ruang-titip.store');
+        Route::put('/ruang-titip/{room}', [AdminRuangTitipController::class, 'update'])->name('ruang-titip.update');
+        Route::delete('/ruang-titip/{room}', [AdminRuangTitipController::class, 'destroy'])->name('ruang-titip.destroy');
+        Route::post('/ruang-titip/{room}/toggle-active', [AdminRuangTitipController::class, 'toggleActive'])
+            ->name('ruang-titip.toggle-active');
+
+        Route::get('/preloved', [TokoPrelovedController::class, 'index'])->name('preloved');
+        Route::post('/preloved', [TokoPrelovedController::class, 'store'])->name('preloved.store');
+        Route::put('/preloved/{item}', [TokoPrelovedController::class, 'update'])->name('preloved.update');
+        Route::delete('/preloved/{item}', [TokoPrelovedController::class, 'destroy'])->name('preloved.destroy');
+        Route::post('/preloved/{item}/toggle-draft', [TokoPrelovedController::class, 'toggleDraft'])
+            ->name('preloved.toggle-draft');
+        Route::post('/preloved/orders/{order}/advance', [TokoPrelovedController::class, 'advanceOrder'])
+            ->name('preloved.advance-order');
+
+        Route::get('/toko-packing', [TokoPackingController::class, 'index'])->name('packing.index');
+        Route::post('/toko-packing', [TokoPackingController::class, 'store'])->name('packing.store');
+        Route::put('/toko-packing/{id}', [TokoPackingController::class, 'update'])->name('packing.update');
+        Route::delete('/toko-packing/{id}', [TokoPackingController::class, 'destroy'])->name('packing.destroy');
+
+        Route::get('/accounts', [AccountManagementController::class, 'index'])->name('accounts');
+        Route::post('/accounts/{user}/toggle-active', [AccountManagementController::class, 'toggleActive'])
+            ->name('accounts.toggle-active');
+    });
 });
 
-<<<<<<< Updated upstream
+/*
+|--------------------------------------------------------------------------
+| Toko preloved routes
+|--------------------------------------------------------------------------
+*/
 
-// ─── PACKING ─────────────────────────────────────────────────────────────
-Route::middleware('auth')->prefix('dashboard/packing')->name('packing.')->group(function () {
-    Route::get('/', [PackingController::class, 'index'])->name('index');
-    Route::get('/produk/{product}', [PackingController::class, 'show'])->name('show');
-    Route::post('/produk/{product}/beli', [PackingController::class, 'buy'])->name('buy');
-    Route::get('/logistik',  [PackingController::class, 'logistics'])->name('logistics');
-    Route::post('/logistik', [PackingController::class, 'chooseLogistics'])->name('logistics.choose');
-    Route::get('/alamat',  [PackingController::class, 'address'])->name('address');
-    Route::post('/alamat', [PackingController::class, 'chooseAddress'])->name('address.choose');
-    Route::get('/pembayaran',  [PackingController::class, 'payment'])->name('payment');
-    Route::post('/pembayaran', [PackingController::class, 'pay'])->name('pay');
-    Route::get('/sukses/{orderCode}', [PackingController::class, 'success'])->name('success');
-});
-
-
-// ─── RUANG TITIP (alur 7 langkah) ───────────────────────────────────────
-Route::middleware('auth')->prefix('dashboard/ruang-titip')->name('ruang-titip.')->group(function () {
-    // Screen 1
-    Route::get('/', [RuangTitipController::class, 'index'])->name('index');
-    // Screen 2
-    Route::get('/{storage}/detail', [RuangTitipController::class, 'show'])->name('detail');
-    // Screen 3 — GABUNGAN item + tanggal
-    Route::get('/detail-item', [RuangTitipController::class, 'detailForm'])->name('detail-item');
-    Route::post('/detail-item', [RuangTitipController::class, 'detailStore'])->name('detail-item.store');
-    // Screen 4 — Opsi Logistik
-    Route::get('/logistik', [RuangTitipController::class, 'logistikForm'])->name('logistik');
-    Route::post('/logistik', [RuangTitipController::class, 'logistikStore'])->name('logistik.store');
-    // Screen 5 — Alamat
-    Route::get('/alamat', [RuangTitipController::class, 'alamatForm'])->name('alamat');
-    Route::post('/alamat', [RuangTitipController::class, 'alamatStore'])->name('alamat.store');
-    // Screen 6 — Kurir (instant only)
-    Route::get('/kurir', [RuangTitipController::class, 'kurirForm'])->name('kurir');
-    Route::post('/kurir', [RuangTitipController::class, 'kurirStore'])->name('kurir.store');
-    // Screen 7 — Checkout
-    Route::get('/checkout', [RuangTitipController::class, 'checkout'])->name('checkout');
-    Route::post('/checkout', [RuangTitipController::class, 'place'])->name('place');
-    // Sukses
-    Route::get('/sukses/{order}', [RuangTitipController::class, 'success'])->name('success');
-=======
-// Toko Preloved Routes
 Route::prefix('toko-preloved')->name('preloved.')->group(function () {
     Route::get('/', [PrelovedController::class, 'index'])->name('index');
     Route::get('/produk/{id}', [PrelovedController::class, 'show'])->name('show');
@@ -114,33 +136,10 @@ Route::prefix('toko-preloved')->name('preloved.')->group(function () {
     Route::post('/keranjang/hapus', [CartController::class, 'remove'])->name('cart.remove');
 });
 
-// Checkout Routes
-Route::prefix('checkout')->name('checkout.')->group(function () {
+Route::middleware('auth')->prefix('checkout')->name('checkout.')->group(function () {
     Route::get('/pengiriman', [CheckoutController::class, 'shipping'])->name('shipping');
     Route::post('/pengiriman/simpan', [CheckoutController::class, 'saveShipping'])->name('shipping.save');
     Route::get('/pembayaran', [CheckoutController::class, 'payment'])->name('payment');
     Route::post('/proses', [CheckoutController::class, 'process'])->name('process');
     Route::get('/berhasil/{orderId}', [CheckoutController::class, 'success'])->name('success');
-});
-
-// // Biteship API Routes
-// Route::prefix('api/biteship')->name('biteship.')->group(function () {
-//     Route::post('/rates', [BiteshipController::class, 'getRates'])->name('rates');
-//     Route::post('/order', [BiteshipController::class, 'createOrder'])->name('order');
-//     Route::get('/track/{trackingId}', [BiteshipController::class, 'track'])->name('track');
-// });
-
-// // Midtrans Payment Routes
-// Route::prefix('payment')->name('payment.')->group(function () {
-//     Route::post('/create-token', [PaymentController::class, 'createToken'])->name('create-token');
-//     Route::post('/notification', [PaymentController::class, 'notification'])->name('notification');
-//     Route::get('/finish', [PaymentController::class, 'finish'])->name('finish');
-//     Route::get('/unfinish', [PaymentController::class, 'unfinish'])->name('unfinish');
-//     Route::get('/error', [PaymentController::class, 'error'])->name('error');
-// });
-
-// Redirect root to preloved
-Route::get('/', function () {
-    return redirect()->route('preloved.index');
->>>>>>> Stashed changes
 });

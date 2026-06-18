@@ -93,34 +93,35 @@
         @foreach ($storages as $s)
             <div class="rounded-2xl overflow-hidden shrink-0 w-72 lg:w-auto transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);">
                 <div class="h-32 flex items-center justify-center relative" style="background:linear-gradient(135deg,#7c3aed20,#7c3aed08);">
-                    <span class="text-5xl">{{ $s['emoji'] }}</span>
-                    <div class="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold" style="background:rgba(0,0,0,0.35);color:#fbbf24;">
-                        <x-lucide-star class="w-3 h-3" /> {{ $s['rating'] }}
-                    </div>
+                    @if($s->primary_photo)
+                        <img src="{{ asset('storage/'.$s->primary_photo) }}" alt="{{ $s->name }}" class="w-full h-full object-cover">
+                    @else
+                        <x-lucide-warehouse class="w-12 h-12" style="color:#a78bfa;" />
+                    @endif
                 </div>
                 <div class="p-4">
-                    <h3 class="text-sm font-bold text-white leading-snug mb-1">{{ $s['name'] }}</h3>
+                    <h3 class="text-sm font-bold text-white leading-snug mb-1">{{ $s->name }}</h3>
                     <div class="flex items-center gap-1.5 mb-3">
                         <x-lucide-map-pin class="w-3 h-3 shrink-0" style="color:rgba(255,255,255,0.3);" />
-                        <p class="text-[11px] truncate" style="color:rgba(255,255,255,0.45);">{{ $s['address'] }}</p>
+                        <p class="text-[11px] truncate" style="color:rgba(255,255,255,0.45);">{{ $s->address }}</p>
                     </div>
                     <div class="mb-3">
                         <div class="flex justify-between mb-1.5">
                             <span class="text-[10px]" style="color:rgba(255,255,255,0.4);">Kapasitas terisi</span>
-                            <span class="text-[10px] font-bold" style="color:{{ $s['filled'] >= 80 ? '#7c3aed' : '#34d399' }};">{{ $s['filled'] }}%</span>
+                            <span class="text-[10px] font-bold" style="color:{{ $s->capacity_pct >= 80 ? '#7c3aed' : '#34d399' }};">{{ $s->capacity_pct }}%</span>
                         </div>
                         <div class="h-1.5 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.07);">
-                            <div class="h-full rounded-full" style="width:{{ $s['filled'] }}%;background:linear-gradient(90deg,#7c3aed,#7c3aed99);"></div>
+                            <div class="h-full rounded-full" style="width:{{ $s->capacity_pct }}%;background:linear-gradient(90deg,#7c3aed,#7c3aed99);"></div>
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-1.5 mb-4">
-                        @foreach ($s['tags'] as $tag)
+                        @foreach (($s->facilities ?? []) as $tag)
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.5);">{{ $tag }}</span>
                         @endforeach
                     </div>
                     <div class="pt-3 mb-3" style="border-top:1px solid rgba(255,255,255,0.07);">
-                        <p class="text-sm font-bold" style="color:#7c3aed;">{{ rupiah($s['price']) }}</p>
-                        <p class="text-[10px]" style="color:rgba(255,255,255,0.3);">per kardus/bulan</p>
+                        <p class="text-sm font-bold" style="color:#7c3aed;">{{ rupiah($s->min_price) }}</p>
+                        <p class="text-[10px]" style="color:rgba(255,255,255,0.3);">mulai dari / hari</p>
                     </div>
                     <a href="{{ route('ruang-titip.detail', $s) }}" class="block text-center w-full py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-[1.02]" style="border:1.5px solid #7c3aed;color:#7c3aed;background:#7c3aed10;">Lihat</a>
                 </div>
@@ -138,11 +139,17 @@
     <div class="flex gap-4 overflow-x-auto pb-2 lg:overflow-visible lg:grid lg:grid-cols-4 lg:pb-0 no-scrollbar">
         @foreach ($packing as $p)
             <div class="rounded-2xl overflow-hidden shrink-0 w-44 lg:w-auto transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);">
-                <div class="h-24 flex items-center justify-center text-4xl" style="background:#7c3aed12;">{{ $p['emoji'] }}</div>
+                <div class="h-24 flex items-center justify-center text-4xl" style="background:#7c3aed12;">
+                    @if($p->primary_image)
+                        <img src="{{ asset('storage/'.$p->primary_image) }}" alt="{{ $p->name }}" class="w-full h-full object-cover">
+                    @else
+                        <x-lucide-package class="w-10 h-10" style="color:#a78bfa;" />
+                    @endif
+                </div>
                 <div class="p-3">
-                    <p class="text-xs font-bold text-white mb-0.5">{{ $p['name'] }}</p>
-                    <p class="text-xs font-bold mb-0.5" style="color:#7c3aed;">{{ rupiah($p['price']) }}</p>
-                    <p class="text-[10px] mb-3" style="color:rgba(255,255,255,0.35);">Stok: {{ $p['stock'] }}</p>
+                    <p class="text-xs font-bold text-white mb-0.5">{{ $p->name }}</p>
+                    <p class="text-xs font-bold mb-0.5" style="color:#7c3aed;">{{ rupiah($p->price) }}</p>
+                    <p class="text-[10px] mb-3" style="color:rgba(255,255,255,0.35);">Stok: {{ $p->stock }}</p>
                     <div class="flex gap-1.5">
                         <a href="{{ route('packing.show', $p) }}" class="flex-1 flex items-center justify-center gap-0.5 py-2 rounded-xl text-[10px] font-bold" style="border:1.5px solid rgba(124,58,237,0.5);color:#a78bfa;"><x-lucide-plus class="w-3 h-3" /> Keranjang</a>
                         <a href="{{ route('packing.show', $p) }}" class="flex-1 text-center py-2 rounded-xl text-[10px] font-bold text-white" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Beli</a>
@@ -173,12 +180,18 @@
     <div class="flex gap-4 overflow-x-auto pb-2 lg:overflow-visible lg:grid lg:grid-cols-4 lg:pb-0 no-scrollbar">
         @foreach ($preloved as $p)
             <div class="rounded-2xl overflow-hidden shrink-0 w-44 lg:w-auto transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);">
-                <div class="h-24 flex items-center justify-center text-4xl" style="background:rgba(255,255,255,0.04);">{{ $p['emoji'] }}</div>
+                <div class="h-24 flex items-center justify-center text-4xl" style="background:rgba(255,255,255,0.04);">
+                    @if($p->primary_photo)
+                        <img src="{{ asset('storage/'.$p->primary_photo) }}" alt="{{ $p->name }}" class="w-full h-full object-cover">
+                    @else
+                        <x-lucide-image class="w-10 h-10" style="color:#a78bfa;" />
+                    @endif
+                </div>
                 <div class="p-3">
-                    <span class="inline-block text-[9px] font-bold px-2 py-0.5 rounded-full mb-2" style="background:{{ $p['cBg'] }};color:{{ $p['cColor'] }};">{{ $p['condition'] }}</span>
-                    <p class="text-xs font-bold text-white mb-0.5">{{ $p['name'] }}</p>
-                    <p class="text-xs font-bold mb-3" style="color:#a78bfa;">{{ rupiah($p['price']) }}</p>
-                    <a href="#" class="block text-center w-full py-2 rounded-xl text-[10px] font-bold text-white" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);">Beli</a>
+                    <span class="inline-block text-[9px] font-bold px-2 py-0.5 rounded-full mb-2" style="background:rgba(52,211,153,0.12);color:#34d399;">{{ $p->condition }}%</span>
+                    <p class="text-xs font-bold text-white mb-0.5">{{ $p->name }}</p>
+                    <p class="text-xs font-bold mb-3" style="color:#a78bfa;">{{ rupiah($p->price) }}</p>
+                    <a href="{{ route('preloved.show', $p->id) }}" class="block text-center w-full py-2 rounded-xl text-[10px] font-bold text-white" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);">Beli</a>
                 </div>
             </div>
         @endforeach

@@ -21,7 +21,11 @@
     {{-- Galeri --}}
     <div class="relative rounded-2xl overflow-hidden mb-5 flex items-center justify-center"
          style="height:220px;background:rgba(124,58,237,0.1);">
-        <span class="text-9xl">{{ $product->emoji }}</span>
+        @if($product->primary_image)
+            <img src="{{ asset('storage/'.$product->primary_image) }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
+        @else
+            <x-lucide-package class="w-20 h-20" style="color:#a78bfa;" />
+        @endif
         @if ($product->discount)
             <div class="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
                  style="background:#ef4444;color:white;">

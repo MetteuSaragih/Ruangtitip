@@ -27,17 +27,10 @@
     }
     $navLinks = [
         ['label' => 'Beranda', 'route' => 'dashboard'],
-<<<<<<< Updated upstream
         ['label' => 'Toko Packing', 'url' => 'Toko Packing', 'route' => 'packing.index'],
         ['label' => 'Ruang Titip', 'route' => 'ruang-titip.index'],
-        ['label' => 'Toko Preloved', 'url' => '#'],
         ['label' => 'Pesanan Saya', 'route' => 'pesanan.index'],
-=======
-        ['label' => 'Ruang Titip', 'url' => '#'],
-        ['label' => 'Toko Packing', 'url' => '#'],
         ['label' => 'Toko Preloved', 'route' => 'preloved.index'],
-        ['label' => 'Pesanan Saya', 'url' => '#'],
->>>>>>> Stashed changes
     ];
 @endphp
 

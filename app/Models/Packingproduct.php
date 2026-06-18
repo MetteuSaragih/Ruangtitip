@@ -11,15 +11,22 @@ class PackingProduct extends Model
 
     protected $fillable = [
         'name', 'category', 'price', 'stock',
-        'discount', 'emoji', 'description', 'is_active',
+        'unit', 'low_threshold', 'discount', 'emoji', 'description', 'images', 'is_active',
     ];
 
     protected $casts = [
         'price'     => 'integer',
         'stock'     => 'integer',
+        'low_threshold' => 'integer',
         'discount'  => 'integer',
+        'images'    => 'array',
         'is_active' => 'boolean',
     ];
+
+    public function getPrimaryImageAttribute(): ?string
+    {
+        return collect($this->images ?? [])->first();
+    }
 
     /**
      * Harga sebelum diskon (untuk ditampilkan dicoret), null jika tanpa diskon.

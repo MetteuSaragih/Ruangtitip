@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\UserAddress;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CheckoutController extends Controller
 {
@@ -13,17 +15,41 @@ class CheckoutController extends Controller
             return redirect()->route('preloved.index');
         }
         $cartCount = count($cart);
-        return view('checkout.shipping', compact('cart', 'cartCount'));
+        $addresses = UserAddress::where('user_id', Auth::id())
+            ->orderByDesc('is_primary')
+            ->orderByDesc('id')
+            ->get();
+
+        return view('checkout.shipping', compact('cart', 'cartCount', 'addresses'));
     }
 
     public function saveShipping(Request $request)
     {
         $method = $request->input('shipping_method');
-        $address = $request->input('address', []);
+        $address = null;
+        if ($request->input('mode') === 'new') {
+            if ($request->boolean('is_primary')) {
+                UserAddress::where('user_id', Auth::id())->update(['is_primary' => false]);
+            }
+
+            $address = UserAddress::create([
+                'user_id' => Auth::id(),
+                'label' => $request->input('label', 'Alamat'),
+                'address' => $request->input('address.full'),
+                'note' => $request->input('address.note'),
+                'is_primary' => $request->boolean('is_primary'),
+            ]);
+        } elseif ($request->filled('address_id')) {
+            $address = UserAddress::where('user_id', Auth::id())->findOrFail($request->input('address_id'));
+        }
 
         session(['checkout_shipping' => [
             'method' => $method,
-            'address' => $address,
+            'address' => [
+                'id' => $address?->id,
+                'full' => $address?->address,
+                'note' => $address?->note,
+            ],
             'cost' => $method === 'pickup' ? 0 : (int)$request->input('shipping_cost', 0),
             'courier' => $request->input('courier', null),
             'service' => $request->input('service', null),

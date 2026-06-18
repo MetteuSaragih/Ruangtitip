@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PackingOrder;
 use App\Models\PackingProduct;
+use App\Models\UserAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Midtrans\Config as MidtransConfig;
@@ -29,7 +30,7 @@ class PackingController extends Controller
     public function index(Request $request)
     {
         $category   = $request->query('kategori', 'Semua');
-        $categories = ['Semua', 'Kardus', 'Pelindung', 'Perekat'];
+        $categories = ['Semua', 'Kardus', 'Pelindung', 'Perekat', 'Aksesoris'];
 
         $products = PackingProduct::active()
             ->when($category !== 'Semua', fn ($q) => $q->where('category', $category))
@@ -98,18 +99,31 @@ class PackingController extends Controller
             return redirect()->route('packing.logistics');
         }
 
-        return view('packing.address', ['couriers' => $this->couriers]);
+        $addresses = UserAddress::where('user_id', Auth::id())
+            ->orderByDesc('is_primary')
+            ->orderByDesc('id')
+            ->get();
+
+        return view('packing.address', ['couriers' => $this->couriers, 'addresses' => $addresses]);
     }
 
     public function chooseAddress(Request $request)
     {
         $data = $request->validate([
-            'address' => 'required|string|max:500',
+            'mode' => 'required|in:select,new',
+            'address_id' => 'nullable|required_if:mode,select|exists:user_addresses,id',
+            'label' => 'nullable|string|max:50',
+            'address' => 'nullable|required_if:mode,new|string|max:500',
+            'note' => 'nullable|string|max:500',
+            'is_primary' => 'nullable|boolean',
             'courier' => 'required|in:gojek,grab,lalamove',
         ]);
 
+        $address = $this->resolveAddress($data);
+
         $checkout = session('packing.checkout', []);
-        $checkout['address'] = $data['address'];
+        $checkout['address'] = $address->address;
+        $checkout['address_id'] = $address->id;
         $checkout['courier'] = $data['courier'];
         session(['packing.checkout' => $checkout]);
 
@@ -243,6 +257,25 @@ class PackingController extends Controller
         $checkout = session('packing.checkout');
 
         return (is_array($checkout) && ! empty($checkout['items'])) ? $checkout : null;
+    }
+
+    private function resolveAddress(array $data): UserAddress
+    {
+        if ($data['mode'] === 'new') {
+            if (! empty($data['is_primary'])) {
+                UserAddress::where('user_id', Auth::id())->update(['is_primary' => false]);
+            }
+
+            return UserAddress::create([
+                'user_id' => Auth::id(),
+                'label' => $data['label'] ?? 'Alamat',
+                'address' => $data['address'],
+                'note' => $data['note'] ?? null,
+                'is_primary' => (bool) ($data['is_primary'] ?? false),
+            ]);
+        }
+
+        return UserAddress::where('user_id', Auth::id())->findOrFail($data['address_id']);
     }
 
     /** @return array{0:int,1:int,2:int,3:?array} [subtotal, shipping, total, courierData] */

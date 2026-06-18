@@ -13,11 +13,12 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         @foreach ($storages as $s)
             <div class="rounded-2xl overflow-hidden transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-                <div class="h-36 flex items-center justify-center relative" style="background:linear-gradient(135deg,{{ $s->color }}20,{{ $s->color }}08);">
-                    <span class="text-6xl">{{ $s->emoji }}</span>
-                    <div class="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold" style="background:rgba(0,0,0,0.35);color:#fbbf24;">
-                        <x-lucide-star class="w-3 h-3" /> {{ $s->rating }}
-                    </div>
+                <div class="h-36 flex items-center justify-center relative" style="background:rgba(124,58,237,0.12);">
+                    @if($s->primary_photo)
+                        <img src="{{ asset('storage/'.$s->primary_photo) }}" alt="{{ $s->name }}" class="w-full h-full object-cover">
+                    @else
+                        <x-lucide-warehouse class="w-12 h-12" style="color:#a78bfa;" />
+                    @endif
                 </div>
                 <div class="p-4">
                     <h3 class="text-sm font-bold text-white leading-snug mb-1">{{ $s->name }}</h3>
@@ -28,23 +29,23 @@
                     <div class="mb-3">
                         <div class="flex justify-between mb-1.5">
                             <span class="text-[10px]" style="color:rgba(255,255,255,0.4);">Kapasitas terisi</span>
-                            <span class="text-[10px] font-bold" style="color:{{ $s->filled >= 80 ? '#7c3aed' : '#34d399' }};">{{ $s->filled }}%</span>
+                            <span class="text-[10px] font-bold" style="color:{{ $s->capacity_pct >= 80 ? '#7c3aed' : '#34d399' }};">{{ $s->capacity_pct }}%</span>
                         </div>
                         <div class="h-1.5 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.07);">
-                            <div class="h-full rounded-full" style="width:{{ $s->filled }}%;background:linear-gradient(90deg,{{ $s->color }},{{ $s->color }}99);"></div>
+                            <div class="h-full rounded-full" style="width:{{ $s->capacity_pct }}%;background:linear-gradient(90deg,#7c3aed,#7c3aed99);"></div>
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-1.5 mb-4">
-                        @foreach (($s->tags ?? []) as $tag)
+                        @foreach (($s->facilities ?? []) as $tag)
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.5);">{{ $tag }}</span>
                         @endforeach
                     </div>
                     <div class="flex items-center justify-between pt-3" style="border-top:1px solid rgba(255,255,255,0.07);">
                         <div>
-                            <p class="text-sm font-bold" style="color:{{ $s->color }};">{{ rp($s->price) }}</p>
-                            <p class="text-[10px]" style="color:rgba(255,255,255,0.3);">per kardus/bulan</p>
+                            <p class="text-sm font-bold" style="color:#7c3aed;">{{ rp($s->min_price) }}</p>
+                            <p class="text-[10px]" style="color:rgba(255,255,255,0.3);">mulai dari / hari</p>
                         </div>
-                        <a href="{{ route('ruang-titip.detail', $s) }}" class="px-4 py-2 rounded-xl text-xs font-bold transition-all hover:scale-105" style="border:1.5px solid {{ $s->color }};color:{{ $s->color }};background:{{ $s->color }}10;">Lihat</a>
+                        <a href="{{ route('ruang-titip.detail', $s) }}" class="px-4 py-2 rounded-xl text-xs font-bold transition-all hover:scale-105" style="border:1.5px solid #7c3aed;color:#a78bfa;background:#7c3aed10;">Lihat</a>
                     </div>
                 </div>
             </div>

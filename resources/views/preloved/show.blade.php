@@ -250,7 +250,7 @@
             @if (!empty($product['image']))
                 <img src="{{ Storage::url($product['image']) }}" alt="{{ $product['name'] }}" />
             @else
-                {{ $product['emoji'] ?? '📦' }}
+                <x-lucide-image class="w-16 h-16" style="color:#a78bfa;" />
             @endif
         </div>
         <div class="img-dots">

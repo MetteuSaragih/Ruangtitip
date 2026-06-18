@@ -15,7 +15,7 @@ class TitipanOrder extends Model
 
     protected $casts = ['items' => 'array', 'date_start' => 'date', 'date_end' => 'date'];
 
-    public function storage(): BelongsTo { return $this->belongsTo(Storage::class); }
+    public function storage(): BelongsTo { return $this->belongsTo(StorageRoom::class, 'storage_id'); }
     public function user(): BelongsTo { return $this->belongsTo(User::class); }
 
     /* ─── Status fase pesanan (urut sesuai dokumen) ─── */

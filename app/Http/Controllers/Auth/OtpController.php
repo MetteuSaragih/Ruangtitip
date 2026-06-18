@@ -104,7 +104,7 @@ class OtpController extends Controller
             [
                 'name'              => null,            // diisi nanti di halaman profil
                 'email_verified_at' => now(),
-                'role'              => 'user',
+                'role'              => 'penitip',       // <-- SUDAH DIUBAH MENJADI 'penitip'
             ]
         );
 
@@ -116,6 +116,11 @@ class OtpController extends Controller
         Auth::login($user, remember: true);
         $request->session()->regenerate();
         $request->session()->forget(['otp_email', 'otp_last_sent']);
+
+        // ─── PENAMBAHAN CEK ROLE DI SINI ───
+        if ($user->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
 
         return redirect()->intended(route('dashboard'));
     }

@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PrelovedOrder extends Model
 {
     protected $fillable = [
-        'order_code', 'user_id', 'preloved_product_id', 'quantity',
+        'order_code', 'user_id', 'preloved_product_id', 'preloved_item_id', 'quantity',
+        'buyer_name', 'buyer_wa', 'price', 'delivery', 'address', 'status',
         'product_subtotal', 'service_fee', 'shipping_fee', 'total_amount',
         'delivery_method', 'courier_code', 'courier_name', 'delivery_address',
         'payment_method', 'payment_gateway', 'midtrans_order_id',
@@ -33,6 +34,11 @@ class PrelovedOrder extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(PrelovedProduct::class, 'preloved_product_id');
+    }
+
+    public function item(): BelongsTo
+    {
+        return $this->belongsTo(PrelovedItem::class, 'preloved_item_id');
     }
 
     public static function generateOrderCode(): string

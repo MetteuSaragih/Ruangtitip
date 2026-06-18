@@ -19,6 +19,7 @@ return new class extends Migration
             $table->unsignedInteger('stock')->default(0);
             $table->unsignedTinyInteger('discount')->nullable(); // persen, mis. 10
             $table->string('emoji', 16)->default('📦');  // placeholder gambar (sesuai desain)
+            $table->json('images')->nullable();
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();

@@ -45,7 +45,11 @@
                     {{-- Gambar / emoji --}}
                     <a href="{{ route('packing.show', $p) }}" class="block h-28 flex items-center justify-center relative"
                        style="background:rgba(124,58,237,0.08);">
-                        <span class="text-5xl">{{ $p->emoji }}</span>
+                        @if($p->primary_image)
+                            <img src="{{ asset('storage/'.$p->primary_image) }}" alt="{{ $p->name }}" class="w-full h-full object-cover">
+                        @else
+                            <x-lucide-package class="w-12 h-12" style="color:#a78bfa;" />
+                        @endif
                         @if ($p->discount)
                             <span class="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1"
                                   style="background:#ef4444;color:white;">

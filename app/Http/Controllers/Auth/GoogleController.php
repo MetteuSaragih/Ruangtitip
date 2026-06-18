@@ -30,12 +30,19 @@ class GoogleController extends Controller
                 'name'      => $googleUser->getName(),
                 'google_id' => $googleUser->getId(),
                 'avatar'    => $googleUser->getAvatar(),
-                // Password tidak diubah jika user sudah ada (menggunakan null)
-            ]
-        );
+               ] // Password tidak diubah jika user sudah ada (menggunakan null)
+            );
 
         Auth::login($user, remember: true);
 
-        return redirect()->intended('dashboard');
+        // ─── PENAMBAHAN CEK ROLE DI SINI ───
+        if ($user->role === 'admin') {
+            // Jika dia admin, arahkan ke dashboard admin
+            return redirect()->route('admin.dashboard');
+        }
+
+        // Jika dia penitip biasa, arahkan ke dashboard penitip
+        return redirect()->route('dashboard');
     }
 }
+      

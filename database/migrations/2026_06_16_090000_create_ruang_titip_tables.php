@@ -70,7 +70,7 @@ return new class extends Migration
         Schema::create('titipan_orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('storage_id')->constrained();
+            $table->foreignId('storage_id')->constrained('storage_rooms');
             $table->string('item_type');             // kardus/koper/dimensi
             $table->json('items');                   // {"km":2,"kl":1}
             $table->date('date_start')->nullable();
