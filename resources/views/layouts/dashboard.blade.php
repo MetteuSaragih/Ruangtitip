@@ -28,7 +28,7 @@
     $navLinks = [
         ['label' => 'Beranda', 'route' => 'dashboard'],
         ['label' => 'Ruang Titip', 'url' => '#'],
-        ['label' => 'Toko Packing', 'url' => '#'],
+        ['label' => 'Toko Packing', 'url' => 'Toko Packing', 'route' => 'packing.index'],
         ['label' => 'Toko Preloved', 'url' => '#'],
         ['label' => 'Pesanan Saya', 'url' => '#'],
     ];
@@ -46,6 +46,7 @@
             </div>
             <span class="text-xl font-extrabold text-white font-display">RUTIP</span>
         </a>
+        
 
         {{-- Desktop nav --}}
         <div class="hidden lg:flex items-center gap-1">
@@ -71,6 +72,7 @@
                 <x-lucide-shopping-cart class="w-5 h-5" />
             </a>
 
+          
             {{-- Notifikasi --}}
             <div class="relative">
                 <button type="button" onclick="toggleMenu('notifMenu')" class="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-white/5" style="color:rgba(255,255,255,0.6);">
@@ -99,7 +101,7 @@
                 </div>
             </div>
 
-            {{-- Profil dropdown --}}
+            {{-- Profil dropdown (Hanya boleh ada satu) --}}
             <div class="relative hidden lg:block">
                 <button type="button" onclick="toggleMenu('profileMenu')" class="flex items-center gap-2 px-2 py-1.5 rounded-xl transition-all hover:bg-white/5">
                     <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">{{ $initials ?: '?' }}</div>
@@ -111,12 +113,14 @@
                 </button>
                 <div id="profileMenu" class="hidden absolute right-0 w-52 rounded-2xl overflow-hidden z-50 py-1.5"
                      style="top:52px;background:rgba(18,10,35,0.98);border:1px solid rgba(139,92,246,0.25);box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-                    <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5" style="color:rgba(255,255,255,0.7);">
+                    
+                    <a href="{{ route('profile.index') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5" style="color:rgba(255,255,255,0.7);">
                         <x-lucide-user class="w-4 h-4" style="color:rgba(255,255,255,0.35);" /> Profil
                     </a>
-                    <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5" style="color:rgba(255,255,255,0.7);">
+                    <a href="{{ route('profile.index', ['tab' => 'bantuan']) }}" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5" style="color:rgba(255,255,255,0.7);">
                         <x-lucide-help-circle class="w-4 h-4" style="color:rgba(255,255,255,0.35);" /> Bantuan
                     </a>
+                    
                     <div style="border-top:1px solid rgba(255,255,255,0.07);margin:4px 0;"></div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -126,7 +130,6 @@
                     </form>
                 </div>
             </div>
-
             {{-- Mobile hamburger --}}
             <button type="button" onclick="toggleMenu('mobileDrawer')" class="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg" style="color:rgba(255,255,255,0.7);">
                 <x-lucide-menu class="w-5 h-5" />

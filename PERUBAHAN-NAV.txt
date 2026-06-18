@@ -1,0 +1,52 @@
+PERUBAHAN NAVIGASI — resources/views/layouts/dashboard.blade.php
+================================================================
+
+Tujuan: mengaktifkan menu "Toko Packing" agar mengarah ke route packing.index
+dan menyala (active) saat berada di halaman packing.
+
+------------------------------------------------------------------
+1) ARRAY $navLinks (navbar desktop & drawer mobile)
+------------------------------------------------------------------
+CARI baris:
+
+    ['label' => 'Toko Packing', 'url' => '#'],
+
+GANTI menjadi:
+
+    ['label' => 'Toko Packing', 'route' => 'packing.index'],
+
+(Dengan ini, logika `request()->routeIs($link['route'])` yang sudah ada
+akan otomatis menandai menu sebagai aktif di semua halaman packing,
+karena nama route-nya berawalan "packing.". Agar match seluruh sub-halaman,
+lihat catatan opsional di bawah.)
+
+------------------------------------------------------------------
+2) (OPSIONAL) Active state untuk SEMUA sub-halaman packing
+------------------------------------------------------------------
+Logika active saat ini:
+
+    $active = isset($link['route']) && request()->routeIs($link['route']);
+
+routeIs() mendukung wildcard. Jika ingin menu "Toko Packing" tetap menyala
+di halaman detail/checkout (packing.show, packing.payment, dst.), ubah array:
+
+    ['label' => 'Toko Packing', 'route' => 'packing.index', 'match' => 'packing.*'],
+
+lalu ubah baris $active menjadi:
+
+    $active = isset($link['route'])
+        && request()->routeIs($link['match'] ?? $link['route']);
+
+Lakukan hal yang sama pada blok perhitungan $href/$active di drawer mobile
+bila Anda mau konsisten (tidak wajib, drawer tidak menampilkan garis aktif).
+
+------------------------------------------------------------------
+3) BOTTOM NAV (mobile) — tombol "Toko"
+------------------------------------------------------------------
+Pada array $bottom, CARI:
+
+    ['label' => 'Toko', 'url' => '#', 'icon' => 'shopping-bag'],
+
+GANTI menjadi:
+
+    ['label' => 'Toko', 'route' => 'packing.index', 'icon' => 'shopping-bag'],
