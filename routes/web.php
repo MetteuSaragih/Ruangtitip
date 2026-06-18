@@ -4,11 +4,17 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\DashboardController;
+<<<<<<< Updated upstream
 use App\Http\Controllers\PackingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RuangTitipController;
 use App\Http\Controllers\PackingPaymentNotificationController;
 use App\Http\Controllers\PesananController;
+=======
+use App\Http\Controllers\PrelovedController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\CartController;
+>>>>>>> Stashed changes
 
 /*
 |--------------------------------------------------------------------------
@@ -57,6 +63,7 @@ Route::middleware('auth')->group(function () {
     
 });
 
+<<<<<<< Updated upstream
 
 // ─── PACKING ─────────────────────────────────────────────────────────────
 Route::middleware('auth')->prefix('dashboard/packing')->name('packing.')->group(function () {
@@ -96,4 +103,44 @@ Route::middleware('auth')->prefix('dashboard/ruang-titip')->name('ruang-titip.')
     Route::post('/checkout', [RuangTitipController::class, 'place'])->name('place');
     // Sukses
     Route::get('/sukses/{order}', [RuangTitipController::class, 'success'])->name('success');
+=======
+// Toko Preloved Routes
+Route::prefix('toko-preloved')->name('preloved.')->group(function () {
+    Route::get('/', [PrelovedController::class, 'index'])->name('index');
+    Route::get('/produk/{id}', [PrelovedController::class, 'show'])->name('show');
+    Route::post('/keranjang/tambah', [CartController::class, 'add'])->name('cart.add');
+    Route::get('/keranjang', [CartController::class, 'index'])->name('cart.index');
+    Route::post('/keranjang/update', [CartController::class, 'update'])->name('cart.update');
+    Route::post('/keranjang/hapus', [CartController::class, 'remove'])->name('cart.remove');
+});
+
+// Checkout Routes
+Route::prefix('checkout')->name('checkout.')->group(function () {
+    Route::get('/pengiriman', [CheckoutController::class, 'shipping'])->name('shipping');
+    Route::post('/pengiriman/simpan', [CheckoutController::class, 'saveShipping'])->name('shipping.save');
+    Route::get('/pembayaran', [CheckoutController::class, 'payment'])->name('payment');
+    Route::post('/proses', [CheckoutController::class, 'process'])->name('process');
+    Route::get('/berhasil/{orderId}', [CheckoutController::class, 'success'])->name('success');
+});
+
+// // Biteship API Routes
+// Route::prefix('api/biteship')->name('biteship.')->group(function () {
+//     Route::post('/rates', [BiteshipController::class, 'getRates'])->name('rates');
+//     Route::post('/order', [BiteshipController::class, 'createOrder'])->name('order');
+//     Route::get('/track/{trackingId}', [BiteshipController::class, 'track'])->name('track');
+// });
+
+// // Midtrans Payment Routes
+// Route::prefix('payment')->name('payment.')->group(function () {
+//     Route::post('/create-token', [PaymentController::class, 'createToken'])->name('create-token');
+//     Route::post('/notification', [PaymentController::class, 'notification'])->name('notification');
+//     Route::get('/finish', [PaymentController::class, 'finish'])->name('finish');
+//     Route::get('/unfinish', [PaymentController::class, 'unfinish'])->name('unfinish');
+//     Route::get('/error', [PaymentController::class, 'error'])->name('error');
+// });
+
+// Redirect root to preloved
+Route::get('/', function () {
+    return redirect()->route('preloved.index');
+>>>>>>> Stashed changes
 });
