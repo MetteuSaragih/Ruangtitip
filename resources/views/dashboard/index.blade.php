@@ -87,7 +87,7 @@
 <section class="mb-10">
     <div class="flex items-center justify-between mb-5">
         <h2 class="text-base font-bold text-white">Ruang Titip</h2>
-        <a href="#" class="flex items-center gap-1 text-xs font-semibold" style="color:#a78bfa;">Lihat Semua <x-lucide-chevron-right class="w-3.5 h-3.5" /></a>
+        <a href="{{ route('ruang-titip.index') }}" class="flex items-center gap-1 text-xs font-semibold" style="color:#a78bfa;">Lihat Semua <x-lucide-chevron-right class="w-3.5 h-3.5" /></a>
     </div>
     <div class="flex gap-4 overflow-x-auto pb-2 lg:overflow-visible lg:grid lg:grid-cols-3 lg:pb-0 no-scrollbar">
         @foreach ($storages as $s)
@@ -122,7 +122,7 @@
                         <p class="text-sm font-bold" style="color:#7c3aed;">{{ rupiah($s['price']) }}</p>
                         <p class="text-[10px]" style="color:rgba(255,255,255,0.3);">per kardus/bulan</p>
                     </div>
-                    <a href="#" class="block text-center w-full py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-[1.02]" style="border:1.5px solid #7c3aed;color:#7c3aed;background:#7c3aed10;">Lihat</a>
+                    <a href="{{ route('ruang-titip.detail', $s) }}" class="block text-center w-full py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-[1.02]" style="border:1.5px solid #7c3aed;color:#7c3aed;background:#7c3aed10;">Lihat</a>
                 </div>
             </div>
         @endforeach
@@ -144,8 +144,8 @@
                     <p class="text-xs font-bold mb-0.5" style="color:#7c3aed;">{{ rupiah($p['price']) }}</p>
                     <p class="text-[10px] mb-3" style="color:rgba(255,255,255,0.35);">Stok: {{ $p['stock'] }}</p>
                     <div class="flex gap-1.5">
-                        <a href="#" class="flex-1 flex items-center justify-center gap-0.5 py-2 rounded-xl text-[10px] font-bold" style="border:1.5px solid rgba(124,58,237,0.5);color:#a78bfa;"><x-lucide-plus class="w-3 h-3" /> Keranjang</a>
-                        <a href="#" class="flex-1 text-center py-2 rounded-xl text-[10px] font-bold text-white" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Beli</a>
+                        <a href="{{ route('packing.show', $p) }}" class="flex-1 flex items-center justify-center gap-0.5 py-2 rounded-xl text-[10px] font-bold" style="border:1.5px solid rgba(124,58,237,0.5);color:#a78bfa;"><x-lucide-plus class="w-3 h-3" /> Keranjang</a>
+                        <a href="{{ route('packing.show', $p) }}" class="flex-1 text-center py-2 rounded-xl text-[10px] font-bold text-white" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Beli</a>
                     </div>
                 </div>
             </div>

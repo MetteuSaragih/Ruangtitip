@@ -27,10 +27,10 @@
     }
     $navLinks = [
         ['label' => 'Beranda', 'route' => 'dashboard'],
-        ['label' => 'Ruang Titip', 'url' => '#'],
         ['label' => 'Toko Packing', 'url' => 'Toko Packing', 'route' => 'packing.index'],
+        ['label' => 'Ruang Titip', 'route' => 'ruang-titip.index'],
         ['label' => 'Toko Preloved', 'url' => '#'],
-        ['label' => 'Pesanan Saya', 'url' => '#'],
+        ['label' => 'Pesanan Saya', 'route' => 'pesanan.index'],
     ];
 @endphp
 
@@ -53,7 +53,13 @@
             @foreach ($navLinks as $link)
                 @php
                     $href = isset($link['route']) ? route($link['route']) : $link['url'];
-                    $active = isset($link['route']) && request()->routeIs($link['route']);
+                    $active = false;
+                    if (isset($link['route'])) {
+                        $base = \Illuminate\Support\Str::contains($link['route'], '.')
+                            ? \Illuminate\Support\Str::beforeLast($link['route'], '.') . '.*'
+                            : $link['route'];
+                        $active = request()->routeIs($link['route']) || request()->routeIs($base);
+                    }
                 @endphp
                 <a href="{{ $href }}" class="relative px-3.5 py-2 rounded-lg text-sm font-medium transition-all"
                    style="color:{{ $active ? '#a78bfa' : 'rgba(255,255,255,0.55)' }};">
@@ -80,7 +86,7 @@
                     <span class="absolute top-1 right-1 w-4 h-4 rounded-full text-[9px] font-bold text-white flex items-center justify-center" style="background:#ef4444;">2</span>
                 </button>
                 <div id="notifMenu" class="hidden absolute right-0 top-12 w-80 rounded-2xl overflow-hidden z-50"
-                     style="background:rgba(18,10,35,0.98);border:1px solid rgba(139,92,246,0.25);box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+                      style="background:rgba(18,10,35,0.98);border:1px solid rgba(139,92,246,0.25);box-shadow:0 20px 60px rgba(0,0,0,0.5);">
                     <div class="px-4 py-3 flex items-center justify-between" style="border-bottom:1px solid rgba(255,255,255,0.07);">
                         <span class="text-sm font-semibold text-white">Notifikasi</span>
                         <span class="text-xs px-2 py-0.5 rounded-full font-semibold" style="background:rgba(167,139,250,0.15);color:#a78bfa;">2 baru</span>
@@ -106,23 +112,22 @@
                 <button type="button" onclick="toggleMenu('profileMenu')" class="flex items-center gap-2 px-2 py-1.5 rounded-xl transition-all hover:bg-white/5">
                     <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">{{ $initials ?: '?' }}</div>
                     <div class="text-left">
-                        <p class="text-xs font-semibold text-white leading-tight">{{ $u->name ?? 'Pengguna' }}</p>
+                        <p class="text-xs font-semibold text-white leading-tight">{{ $u?->name ?? 'Pengguna' }}</p>
                         <p class="text-[10px]" style="color:rgba(255,255,255,0.35);">Penitip Aktif</p>
                     </div>
                     <x-lucide-chevron-down class="w-3.5 h-3.5 ml-0.5" style="color:rgba(255,255,255,0.35);" />
                 </button>
                 <div id="profileMenu" class="hidden absolute right-0 w-52 rounded-2xl overflow-hidden z-50 py-1.5"
-                     style="top:52px;background:rgba(18,10,35,0.98);border:1px solid rgba(139,92,246,0.25);box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-                    
+                      style="top:52px;background:rgba(18,10,35,0.98);border:1px solid rgba(139,92,246,0.25);box-shadow:0 20px 60px rgba(0,0,0,0.5);">
                     <a href="{{ route('profile.index') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5" style="color:rgba(255,255,255,0.7);">
                         <x-lucide-user class="w-4 h-4" style="color:rgba(255,255,255,0.35);" /> Profil
                     </a>
                     <a href="{{ route('profile.index', ['tab' => 'bantuan']) }}" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/5" style="color:rgba(255,255,255,0.7);">
                         <x-lucide-help-circle class="w-4 h-4" style="color:rgba(255,255,255,0.35);" /> Bantuan
                     </a>
-                    
+
                     <div style="border-top:1px solid rgba(255,255,255,0.07);margin:4px 0;"></div>
-                    <form method="POST" action="{{ route('logout') }}">
+                    <form method="POST" action="{{ route('logout') }}" class="logout-form">
                         @csrf
                         <button type="submit" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-red-500/10" style="color:#f87171;">
                             <x-lucide-log-out class="w-4 h-4" /> Keluar
@@ -143,16 +148,26 @@
             <div class="flex items-center gap-3 px-3 py-3 rounded-xl mb-2" style="background:rgba(139,92,246,0.1);">
                 <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">{{ $initials ?: '?' }}</div>
                 <div>
-                    <p class="text-sm font-semibold text-white">{{ $u->name ?? 'Pengguna' }}</p>
+                    <p class="text-sm font-semibold text-white">{{ $u?->name ?? 'Pengguna' }}</p>
+
                     <p class="text-xs" style="color:rgba(255,255,255,0.4);">Penitip Aktif</p>
                 </div>
             </div>
             @foreach ($navLinks as $link)
-                @php $href = isset($link['route']) ? route($link['route']) : $link['url']; @endphp
-                <a href="{{ $href }}" class="flex items-center px-3 py-2.5 rounded-xl text-sm font-medium" style="color:rgba(255,255,255,0.6);">{{ $link['label'] }}</a>
+                @php
+                    $href = isset($link['route']) ? route($link['route']) : $link['url'];
+                    $active = false;
+                    if (isset($link['route'])) {
+                        $base = \Illuminate\Support\Str::contains($link['route'], '.')
+                            ? \Illuminate\Support\Str::beforeLast($link['route'], '.') . '.*'
+                            : $link['route'];
+                        $active = request()->routeIs($link['route']) || request()->routeIs($base);
+                    }
+                @endphp
+                <a href="{{ $href }}" class="flex items-center px-3 py-2.5 rounded-xl text-sm font-medium" style="color:{{ $active ? '#a78bfa' : 'rgba(255,255,255,0.6)' }};">{{ $link['label'] }}</a>
             @endforeach
             <div style="border-top:1px solid rgba(255,255,255,0.07);margin-top:8px;padding-top:8px;">
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('logout') }}" class="logout-form">
                     @csrf
                     <button type="submit" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium" style="color:#f87171;">
                         <x-lucide-log-out class="w-4 h-4" /> Keluar
@@ -174,15 +189,21 @@
     @php
         $bottom = [
             ['label' => 'Beranda', 'route' => 'dashboard', 'icon' => 'home'],
-            ['label' => 'Pesanan', 'url' => '#', 'icon' => 'clipboard-list'],
+            ['label' => 'Pesanan', 'route' => 'pesanan.index', 'icon' => 'clipboard-list'],
             ['label' => 'Toko', 'url' => '#', 'icon' => 'shopping-bag'],
-            ['label' => 'Profil', 'url' => '#', 'icon' => 'user'],
+            ['label' => 'Profil', 'route' => 'profile.index', 'icon' => 'user'],
         ];
     @endphp
     @foreach ($bottom as $item)
         @php
             $href = isset($item['route']) ? route($item['route']) : $item['url'];
-            $active = isset($item['route']) && request()->routeIs($item['route']);
+            $active = false;
+            if (isset($item['route'])) {
+                $base = \Illuminate\Support\Str::contains($item['route'], '.')
+                    ? \Illuminate\Support\Str::beforeLast($item['route'], '.') . '.*'
+                    : $item['route'];
+                $active = request()->routeIs($item['route']) || request()->routeIs($base);
+            }
         @endphp
         <a href="{{ $href }}" class="flex-1 flex flex-col items-center justify-center gap-1" style="color:{{ $active ? '#a78bfa' : 'rgba(255,255,255,0.35)' }};">
             <x-dynamic-component :component="'lucide-' . $item['icon']" class="w-5 h-5" />
@@ -198,7 +219,24 @@
     <x-lucide-message-circle class="w-6 h-6 text-white" />
 </a>
 
+{{-- Logout confirmation --}}
+<div id="logoutConfirm" class="hidden fixed inset-0 z-[80] items-center justify-center px-4" style="background:rgba(0,0,0,0.58);backdrop-filter:blur(8px);">
+    <div class="w-full max-w-sm rounded-2xl p-5" style="background:rgba(18,10,35,0.98);border:1px solid rgba(139,92,246,0.28);box-shadow:0 24px 70px rgba(0,0,0,0.55);">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style="background:rgba(248,113,113,0.13);color:#f87171;">
+            <x-lucide-log-out class="w-5 h-5" />
+        </div>
+        <h2 class="text-base font-extrabold text-white font-display mb-1">Apakah anda yakin untuk keluar?</h2>
+        <p class="text-xs leading-relaxed mb-5" style="color:rgba(255,255,255,0.48);">Sesi akun akan diakhiri dari perangkat ini.</p>
+        <div class="flex gap-2">
+            <button type="button" id="cancelLogout" class="flex-1 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/5" style="border:1.5px solid rgba(255,255,255,0.14);color:rgba(255,255,255,0.72);">Batal</button>
+            <button type="button" id="confirmLogout" class="flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.01]" style="background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 8px 24px rgba(239,68,68,0.28);">Yakin</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    let pendingLogoutForm = null;
+
     function toggleMenu(id) {
         const el = document.getElementById(id);
         const isHidden = el.classList.contains('hidden');
@@ -212,6 +250,37 @@
     document.addEventListener('click', function (e) {
         if (!e.target.closest('[onclick^="toggleMenu"]') && !e.target.closest('#notifMenu,#profileMenu,#mobileDrawer')) {
             ['notifMenu','profileMenu','mobileDrawer'].forEach(m => document.getElementById(m)?.classList.add('hidden'));
+        }
+    });
+
+    function setLogoutModal(open) {
+        const modal = document.getElementById('logoutConfirm');
+        modal.classList.toggle('hidden', !open);
+        modal.classList.toggle('flex', open);
+    }
+
+    document.querySelectorAll('.logout-form').forEach(form => {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            pendingLogoutForm = form;
+            ['notifMenu','profileMenu','mobileDrawer'].forEach(m => document.getElementById(m)?.classList.add('hidden'));
+            setLogoutModal(true);
+        });
+    });
+
+    document.getElementById('cancelLogout')?.addEventListener('click', function () {
+        pendingLogoutForm = null;
+        setLogoutModal(false);
+    });
+
+    document.getElementById('confirmLogout')?.addEventListener('click', function () {
+        if (pendingLogoutForm) pendingLogoutForm.submit();
+    });
+
+    document.getElementById('logoutConfirm')?.addEventListener('click', function (e) {
+        if (e.target === this) {
+            pendingLogoutForm = null;
+            setLogoutModal(false);
         }
     });
 </script>

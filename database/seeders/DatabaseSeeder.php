@@ -13,11 +13,17 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // 1. Jalankan Seeder kustom untuk RUTIP
+        $this->call([
+            RuangTitipSeeder::class,
+            PackingProductSeeder::class,
+        ]);
 
+        // 2. Data Testing (Opsional: bisa dikomentari jika tidak butuh)
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'password' => bcrypt('password'), // Tambahkan password agar user bisa login
         ]);
     }
 }
