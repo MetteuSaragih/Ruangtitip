@@ -245,7 +245,21 @@
         </div>
 
         <div class="courier-selector" id="courier-selector">
-            <h4>Masukkan Alamat Pengiriman</h4>
+            <h4>Alamat Pengiriman</h4>
+            @if($addresses->isNotEmpty())
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+                    @foreach($addresses as $address)
+                        <label class="courier-item" style="align-items:flex-start;">
+                            <input type="radio" name="address_id" value="{{ $address->id }}" {{ $loop->first ? 'checked' : '' }} onchange="setAddressMode('select')" style="margin-top:3px;">
+                            <div class="courier-info" style="flex:1;">
+                                <h5>{{ $address->label }} @if($address->is_primary)<span style="font-size:10px;color:#22c55e;">Utama</span>@endif</h5>
+                                <p>{{ $address->address }}</p>
+                            </div>
+                        </label>
+                    @endforeach
+                </div>
+                <button type="button" class="btn-load-couriers" onclick="setAddressMode('new')" style="margin-bottom:12px;">+ Tambah alamat baru</button>
+            @endif
             <div class="form-group">
                 <label class="form-label">Alamat Lengkap</label>
                 <input type="text" class="form-input" id="address" placeholder="Jl. Veteran No. 1, Lowokwaru">
@@ -260,6 +274,19 @@
                     <input type="text" class="form-input" id="postal" placeholder="65145" value="65145">
                 </div>
             </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Label Alamat</label>
+                    <input type="text" class="form-input" id="address-label" placeholder="Kos / Rumah">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Catatan</label>
+                    <input type="text" class="form-input" id="address-note" placeholder="Patokan, nomor kamar">
+                </div>
+            </div>
+            <label style="display:flex;align-items:center;gap:8px;color:#a0a0c0;font-size:13px;margin-top:4px;">
+                <input type="checkbox" id="address-primary"> Jadikan alamat utama
+            </label>
             <button class="btn-load-couriers" onclick="loadCouriers()">Cek Ongkos Kirim →</button>
             <div class="courier-list" id="courier-list"></div>
         </div>
@@ -273,9 +300,18 @@
 
 <script>
 const csrfToken = '{{ csrf_token() }}';
+const availableCouriers = @json($couriers->map(fn ($courier) => [
+    'courier_name' => $courier->name,
+    'courier_service_name' => $courier->service,
+    'duration' => $courier->eta,
+    'price' => $courier->price,
+    'courier_code' => $courier->code,
+    'courier_service_code' => $courier->service,
+])->values());
 let selectedMethod = null;
 let selectedCourier = null;
 let shippingCost = 0;
+let addressMode = '{{ $addresses->isNotEmpty() ? 'select' : 'new' }}';
 
 function selectShipping(method) {
     selectedMethod = method;
@@ -294,15 +330,25 @@ function selectShipping(method) {
 }
 
 function loadCouriers() {
+    if (addressMode === 'new' && !document.getElementById('address').value.trim()) return;
+
     const btn = document.querySelector('.btn-load-couriers');
     btn.textContent = 'Memuat...';
     btn.disabled = true;
 
-    setTimeout(() => {
-        renderCouriers(getMockCouriers());
+    {
+        renderCouriers(availableCouriers);
         btn.textContent = 'Cek Ongkos Kirim →';
         btn.disabled = false;
-    }, 800);
+    }
+}
+
+function setAddressMode(mode) {
+    addressMode = mode;
+    if (mode === 'new') {
+        document.querySelectorAll('input[name="address_id"]').forEach(input => input.checked = false);
+        document.getElementById('address').focus();
+    }
 }
 
 function getMockCouriers() {
@@ -344,10 +390,15 @@ function goToPayment() {
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
         body: JSON.stringify({
             shipping_method: selectedMethod,
+            mode: selectedMethod === 'pickup' ? 'select' : addressMode,
+            address_id: document.querySelector('input[name="address_id"]:checked')?.value || null,
+            label: document.getElementById('address-label')?.value || 'Alamat',
+            is_primary: document.getElementById('address-primary')?.checked || false,
             address: {
                 full: document.getElementById('address')?.value || '',
                 city: document.getElementById('city')?.value || 'Malang',
                 postal_code: document.getElementById('postal')?.value || '65145',
+                note: document.getElementById('address-note')?.value || '',
             },
             shipping_cost: shippingCost,
             courier: selectedCourier?.code,

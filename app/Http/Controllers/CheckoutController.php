@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Courier;
 use App\Models\UserAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,12 +20,24 @@ class CheckoutController extends Controller
             ->orderByDesc('is_primary')
             ->orderByDesc('id')
             ->get();
+        $couriers = Courier::where('group', 'instant')->orderBy('name')->get();
 
-        return view('checkout.shipping', compact('cart', 'cartCount', 'addresses'));
+        return view('checkout.shipping', compact('cart', 'cartCount', 'addresses', 'couriers'));
     }
 
     public function saveShipping(Request $request)
     {
+        $request->validate([
+            'shipping_method' => 'required|in:pickup,biteship',
+            'mode' => 'nullable|in:select,new',
+            'address_id' => 'nullable|exists:user_addresses,id',
+            'address.full' => 'nullable|required_if:mode,new|string|max:500',
+            'address.note' => 'nullable|string|max:500',
+            'label' => 'nullable|string|max:50',
+            'is_primary' => 'nullable|boolean',
+            'courier' => 'nullable|exists:couriers,code',
+        ]);
+
         $method = $request->input('shipping_method');
         $address = null;
         if ($request->input('mode') === 'new') {

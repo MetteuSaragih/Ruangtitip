@@ -3,37 +3,61 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\PackingOrder;
+use App\Models\PrelovedOrder;
+use App\Models\StorageRoom;
+use App\Models\TitipanOrder;
+use Carbon\CarbonPeriod;
 
 class AdminDashboardController extends Controller
 {
     public function index()
     {
-        // Nanti diganti query database yang sesungguhnya
-        $pendapatan     = 15450000;
-        $transaksiAktif = 48;
-        $kapasitasGudang = 75;
+        $pendapatan = TitipanOrder::where('status', 'selesai')->sum('total')
+            + PackingOrder::where('status', 'selesai')->sum('total')
+            + PrelovedOrder::where('status', 'Selesai')->sum('price');
 
-        $trenPesanan = [
-            ['day' => 'Sen', 'pesanan' => 8],
-            ['day' => 'Sel', 'pesanan' => 14],
-            ['day' => 'Rab', 'pesanan' => 11],
-            ['day' => 'Kam', 'pesanan' => 19],
-            ['day' => 'Jum', 'pesanan' => 16],
-            ['day' => 'Sab', 'pesanan' => 22],
-            ['day' => 'Min', 'pesanan' => 13],
-        ];
+        $transaksiAktif = TitipanOrder::where('status', '!=', 'selesai')->count()
+            + PackingOrder::where('status', '!=', 'selesai')->count()
+            + PrelovedOrder::where('status', '!=', 'Selesai')->count();
 
-        $tugasPrioritas = [
-            ['id'=>'#RTP-1092','badge'=>'Jadwal Jemput',        'customer'=>'Ahmad Rizki',   'wa'=>'0812-3456-7890','deadline'=>'Hari ini, 10:00 WIB','href'=>'/admin/ruang-titip'],
-            ['id'=>'#RTP-1089','badge'=>'Batas Waktu Habis',    'customer'=>'Siti Rahayu',   'wa'=>'0856-1122-3344','deadline'=>'Hari ini, 11:30 WIB','href'=>'/admin/ruang-titip'],
-            ['id'=>'#PKG-0341','badge'=>'Antar/Kirim Ekspedisi','customer'=>'Bima Pratama',  'wa'=>'0877-5566-7788','deadline'=>'Hari ini, 13:00 WIB','href'=>'/admin'],
-            ['id'=>'#PL-0229', 'badge'=>'Jadwal Jemput',        'customer'=>'Nadia Kusuma',  'wa'=>'0821-9900-1122','deadline'=>'Hari ini, 14:00 WIB','href'=>'/admin'],
-            ['id'=>'#RTP-1095','badge'=>'Antar/Kirim Ekspedisi','customer'=>'Fajar Nugraha', 'wa'=>'0813-4433-2211','deadline'=>'Hari ini, 15:30 WIB','href'=>'/admin/ruang-titip'],
-        ];
+        $totalCapacity = StorageRoom::sum('capacity_total');
+        $usedCapacity = StorageRoom::sum('capacity_used');
+        $kapasitasGudang = $totalCapacity > 0 ? (int) round(($usedCapacity / $totalCapacity) * 100) : 0;
+
+        $period = CarbonPeriod::create(now()->subDays(6)->startOfDay(), now()->startOfDay());
+        $trenPesanan = collect($period)->map(function ($date) {
+            $dateString = $date->toDateString();
+
+            return [
+                'day' => $date->translatedFormat('D'),
+                'pesanan' => TitipanOrder::whereDate('created_at', $dateString)->count()
+                    + PackingOrder::whereDate('created_at', $dateString)->count()
+                    + PrelovedOrder::whereDate('created_at', $dateString)->count(),
+            ];
+        })->values()->all();
+
+        $tugasPrioritas = TitipanOrder::with('user')
+            ->whereIn('status', ['menunggu_pembayaran', 'penjadwalan_penjemputan', 'proses_pengembalian'])
+            ->latest()
+            ->limit(5)
+            ->get()
+            ->map(fn (TitipanOrder $order) => [
+                'id' => $order->code(),
+                'badge' => $order->statusMeta()['label'],
+                'customer' => $order->user?->name ?? 'Pelanggan',
+                'wa' => $order->user?->phone ?? '-',
+                'deadline' => optional($order->date_end)->format('d M Y') ?? '-',
+                'href' => route('admin.ruang-titip'),
+            ])
+            ->all();
 
         return view('admin.dashboard', compact(
-            'pendapatan', 'transaksiAktif', 'kapasitasGudang',
-            'trenPesanan', 'tugasPrioritas'
+            'pendapatan',
+            'transaksiAktif',
+            'kapasitasGudang',
+            'trenPesanan',
+            'tugasPrioritas'
         ));
     }
 }
