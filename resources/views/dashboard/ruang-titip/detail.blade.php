@@ -9,11 +9,27 @@
         <x-lucide-chevron-left class="w-4 h-4" /> Kembali
     </a>
 
-    <div class="rounded-2xl overflow-hidden mb-5 flex items-center justify-center" style="background:rgba(124,58,237,0.1);height:220px;">
-        @if($storage->primary_photo)
-            <img src="{{ asset('storage/'.$storage->primary_photo) }}" alt="{{ $storage->name }}" class="w-full h-full object-cover">
-        @else
+    @php
+        $images = !empty($storage->photos) ? $storage->photos : ($storage->primary_photo ? [$storage->primary_photo] : []);
+    @endphp
+    <div class="relative rounded-2xl overflow-hidden mb-5 flex items-center justify-center rt-carousel" style="background:rgba(124,58,237,0.1);height:220px;">
+        @forelse ($images as $i => $img)
+            <img src="{{ asset('storage/'.$img) }}" alt="{{ $storage->name }}" class="rt-slide {{ $i === 0 ? 'active' : '' }}">
+        @empty
             <x-lucide-warehouse class="w-16 h-16" style="color:#a78bfa;" />
+        @endforelse
+        @if (count($images) > 1)
+            <button type="button" class="rt-carousel-btn rt-prev" onclick="event.preventDefault();event.stopPropagation();rtCarouselNav(this,-1)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <button type="button" class="rt-carousel-btn rt-next" onclick="event.preventDefault();event.stopPropagation();rtCarouselNav(this,1)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+            <div class="rt-carousel-dots">
+                @foreach ($images as $i => $img)
+                    <span class="{{ $i === 0 ? 'active' : '' }}"></span>
+                @endforeach
+            </div>
         @endif
     </div>
 
@@ -55,14 +71,6 @@
             @endforeach
         </div>
     </div>
-
-    @if(($storage->photos ?? []) && count($storage->photos) > 1)
-    <div class="grid grid-cols-3 gap-2 mb-5">
-        @foreach(array_slice($storage->photos, 1, 3) as $photo)
-            <img src="{{ asset('storage/'.$photo) }}" alt="{{ $storage->name }}" class="h-24 w-full rounded-xl object-cover">
-        @endforeach
-    </div>
-    @endif
 
     <div class="mb-4 hidden">
         <h3 class="text-sm font-bold text-white mb-3">Ulasan Gudang</h3>

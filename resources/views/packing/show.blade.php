@@ -19,17 +19,33 @@
     </a>
 
     {{-- Galeri --}}
-    <div class="relative rounded-2xl overflow-hidden mb-5 flex items-center justify-center"
+    @php
+        $images = !empty($product->images) ? $product->images : ($product->primary_image ? [$product->primary_image] : []);
+    @endphp
+    <div class="relative rounded-2xl overflow-hidden mb-5 flex items-center justify-center rt-carousel"
          style="height:220px;background:rgba(124,58,237,0.1);">
-        @if($product->primary_image)
-            <img src="{{ asset('storage/'.$product->primary_image) }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
-        @else
+        @forelse ($images as $i => $img)
+            <img src="{{ asset('storage/'.$img) }}" alt="{{ $product->name }}" class="rt-slide {{ $i === 0 ? 'active' : '' }}">
+        @empty
             <x-lucide-package class="w-20 h-20" style="color:#a78bfa;" />
-        @endif
+        @endforelse
         @if ($product->discount)
             <div class="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
-                 style="background:#ef4444;color:white;">
+                 style="background:#ef4444;color:white;z-index:2;">
                 <x-lucide-tag class="w-3 h-3" /> Promo {{ $product->discount }}%
+            </div>
+        @endif
+        @if (count($images) > 1)
+            <button type="button" class="rt-carousel-btn rt-prev" onclick="event.preventDefault();event.stopPropagation();rtCarouselNav(this,-1)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <button type="button" class="rt-carousel-btn rt-next" onclick="event.preventDefault();event.stopPropagation();rtCarouselNav(this,1)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+            <div class="rt-carousel-dots">
+                @foreach ($images as $i => $img)
+                    <span class="{{ $i === 0 ? 'active' : '' }}"></span>
+                @endforeach
             </div>
         @endif
     </div>
@@ -101,8 +117,7 @@
              style="background:linear-gradient(to top,#080313 65%,transparent);">
             <div class="max-w-xl mx-auto px-4 pb-3 pt-2">
                 <div class="flex gap-3">
-                    {{-- + Keranjang: placeholder. Hubungkan ke fitur cart global bila sudah tersedia. --}}
-                    <button type="button"
+                    <button type="button" id="btnKeranjang" onclick="addToCart()"
                             class="flex-1 py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all hover:bg-violet-900/30"
                             style="border:1.5px solid rgba(124,58,237,0.4);color:#a78bfa;">
                         <x-lucide-shopping-cart class="w-4 h-4" /> + Keranjang
@@ -117,6 +132,31 @@
         </div>
     </form>
 </div>
+
+{{-- Toast Notification --}}
+<div class="toast-notif" id="toastNotif">
+    <span id="toastIcon">✅</span>
+    <span id="toastMsg">Berhasil!</span>
+</div>
+
+<style>
+    .toast-notif {
+        position: fixed;
+        bottom: 24px; right: 24px;
+        background: #1e1e35;
+        border: 1px solid rgba(139,92,246,0.4);
+        border-radius: 12px;
+        padding: 12px 18px;
+        display: flex; align-items: center; gap: 10px;
+        font-size: 14px; font-weight: 500; color: #fff;
+        z-index: 999;
+        transform: translateY(80px);
+        opacity: 0;
+        transition: all .3s cubic-bezier(.34,1.56,.64,1);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .toast-notif.show { transform: translateY(0); opacity: 1; }
+</style>
 
 <script>
 (function () {
@@ -141,6 +181,50 @@
     minus.addEventListener('click', () => { qty = Math.max(1, qty - 1); render(); });
     plus.addEventListener('click',  () => { qty = Math.min(max, qty + 1); render(); });
     render();
+
+    window.getPackingQty = () => qty;
 })();
+
+const csrfToken = '{{ csrf_token() }}';
+const cartUrl   = '{{ route("preloved.cart.add") }}';
+const productId = {{ $product->id }};
+
+function showToast(msg, icon = '✅') {
+    document.getElementById('toastMsg').textContent  = msg;
+    document.getElementById('toastIcon').textContent = icon;
+    const el = document.getElementById('toastNotif');
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function addToCart() {
+    const btn = document.getElementById('btnKeranjang');
+    btn.disabled = true;
+    btn.innerHTML = 'Menambahkan...';
+
+    fetch(cartUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+        },
+        body: JSON.stringify({ type: 'packing', product_id: productId, qty: window.getPackingQty() })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Produk ditambahkan ke keranjang!', '✅');
+        } else {
+            showToast(data.message ?? 'Gagal menambahkan.', '❌');
+        }
+    })
+    .catch(() => showToast('Terjadi kesalahan.', '❌'))
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+            + Keranjang`;
+    });
+}
 </script>
 @endsection

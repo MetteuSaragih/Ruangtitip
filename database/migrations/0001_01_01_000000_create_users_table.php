@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Schema;
 | 1. Email + Password manual
 | 2. Google OAuth (google_id diisi, password null)
 |
-| Kolom 'role' untuk membedakan user biasa vs admin di masa depan.
+| Kolom 'role' untuk membedakan penitip biasa vs admin.
 |
 */
 
@@ -29,7 +29,7 @@ return new class extends Migration
     $table->string('google_id')->nullable()->unique();
     $table->string('avatar')->nullable();
     $table->string('phone')->nullable();
-    $table->enum('role', ['user', 'admin'])->default('user');
+    $table->enum('role', ['penitip', 'admin'])->default('penitip');
     $table->boolean('is_active')->default(true);
     $table->timestamp('email_verified_at')->nullable();
     $table->rememberToken();

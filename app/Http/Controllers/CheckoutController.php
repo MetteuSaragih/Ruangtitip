@@ -11,34 +11,82 @@ class CheckoutController extends Controller
 {
     public function shipping()
     {
-        $cart = session('cart', []);
+        $cart = $this->checkoutCart();
         if (empty($cart)) {
-            return redirect()->route('preloved.index');
+            return redirect()->route('preloved.cart.index');
         }
         $cartCount = count($cart);
+
+        return view('checkout.shipping', compact('cart', 'cartCount'));
+    }
+
+    public function chooseShipping(Request $request)
+    {
+        $request->validate([
+            'shipping_method' => 'required|in:pickup,biteship',
+        ]);
+
+        if ($request->input('shipping_method') === 'pickup') {
+            session(['checkout_shipping' => [
+                'method' => 'pickup',
+                'address' => [
+                    'id' => null,
+                    'full' => null,
+                    'note' => null,
+                ],
+                'cost' => 0,
+                'courier' => null,
+                'service' => null,
+            ]]);
+
+            return redirect()->route('checkout.payment');
+        }
+
+        session()->forget('checkout_shipping');
+        session(['checkout_shipping_method' => 'biteship']);
+
+        return redirect()->route('checkout.address');
+    }
+
+    public function address()
+    {
+        $cart = $this->checkoutCart();
+        if (empty($cart)) {
+            return redirect()->route('preloved.cart.index');
+        }
+
+        $shipping = session('checkout_shipping', []);
+        if (session('checkout_shipping_method') !== 'biteship' && ($shipping['method'] ?? null) !== 'biteship') {
+            return redirect()->route('checkout.shipping');
+        }
+
         $addresses = UserAddress::where('user_id', Auth::id())
             ->orderByDesc('is_primary')
             ->orderByDesc('id')
             ->get();
         $couriers = Courier::where('group', 'instant')->orderBy('name')->get();
 
-        return view('checkout.shipping', compact('cart', 'cartCount', 'addresses', 'couriers'));
+        return view('checkout.address', compact('addresses', 'couriers'));
     }
 
     public function saveShipping(Request $request)
     {
         $request->validate([
-            'shipping_method' => 'required|in:pickup,biteship',
-            'mode' => 'nullable|in:select,new',
-            'address_id' => 'nullable|exists:user_addresses,id',
+            'shipping_method' => 'required|in:biteship',
+            'mode' => 'required|in:select,new',
+            'address_id' => 'nullable|required_if:mode,select|exists:user_addresses,id',
             'address.full' => 'nullable|required_if:mode,new|string|max:500',
             'address.note' => 'nullable|string|max:500',
             'label' => 'nullable|string|max:50',
             'is_primary' => 'nullable|boolean',
-            'courier' => 'nullable|exists:couriers,code',
+            'courier' => 'required|exists:couriers,code',
+            'service' => 'nullable|string|max:100',
         ]);
 
         $method = $request->input('shipping_method');
+        $courier = Courier::where('group', 'instant')
+            ->where('code', $request->input('courier'))
+            ->firstOrFail();
         $address = null;
         if ($request->input('mode') === 'new') {
             if ($request->boolean('is_primary')) {
@@ -63,17 +111,23 @@ class CheckoutController extends Controller
                 'full' => $address?->address,
                 'note' => $address?->note,
             ],
-            'cost' => $method === 'pickup' ? 0 : (int)$request->input('shipping_cost', 0),
-            'courier' => $request->input('courier', null),
-            'service' => $request->input('service', null),
+            'cost' => (int) $courier->price,
+            'courier' => $courier->code,
+            'service' => $request->input('service', $courier->service),
         ]]);
 
-        return response()->json(['success' => true, 'redirect' => route('checkout.payment')]);
+        session()->forget('checkout_shipping_method');
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'redirect' => route('checkout.payment')]);
+        }
+
+        return redirect()->route('checkout.payment');
     }
 
     public function payment()
     {
-        $cart = session('cart', []);
+        $cart = $this->checkoutCart();
         $shipping = session('checkout_shipping', []);
 
         if (empty($cart) || empty($shipping)) {
@@ -92,7 +146,7 @@ class CheckoutController extends Controller
 
     public function process(Request $request)
     {
-        $cart = session('cart', []);
+        $cart = $this->checkoutCart();
         $shipping = session('checkout_shipping', []);
         $paymentMethod = $request->input('payment_method');
 
@@ -147,14 +201,25 @@ class CheckoutController extends Controller
     {
         $order = session('last_order');
         if (!$order) {
-            return redirect()->route('preloved.index');
+            return redirect()->route('preloved.cart.index');
         }
 
-        // Clear cart after successful payment
-        session()->forget(['cart', 'checkout_shipping']);
+        // Only drop the items that were actually checked out; anything the
+        // customer left unselected in the cart stays there for later.
+        $cart = session('cart', []);
+        foreach (array_keys($order['cart'] ?? []) as $key) {
+            unset($cart[$key]);
+        }
+        session(['cart' => $cart]);
+        session()->forget(['checkout_cart', 'checkout_shipping']);
 
-        $cartCount = 0;
+        $cartCount = count($cart);
         return view('checkout.success', compact('order', 'orderId', 'cartCount'));
+    }
+
+    private function checkoutCart(): array
+    {
+        return session('checkout_cart', []);
     }
 
     private function createMidtransToken($orderId, $total, $cart)

@@ -32,6 +32,12 @@ $orderTabCfg = [
         {{ session('success') }}
     </div>
     @endif
+    @if($errors->any())
+    <div class="mb-4 px-4 py-3 rounded-2xl text-sm font-medium"
+         style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;">
+        {{ $errors->first() }}
+    </div>
+    @endif
 
     {{-- Page title --}}
     <div class="mb-5">
@@ -393,10 +399,21 @@ $orderTabCfg = [
 
                 <div>
                     <label class="block text-xs font-bold mb-2" style="color:rgba(255,255,255,0.55);">Foto Ruangan</label>
-                    <input type="file" name="images[]" accept="image/*" multiple
-                           class="w-full px-4 py-3 rounded-xl text-sm text-white"
-                           style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">
-                    <p class="text-[10px] mt-1.5" style="color:rgba(255,255,255,0.35);">Bisa pilih lebih dari satu gambar.</p>
+                    <label for="room-images-input" class="rt-img-drop">
+                        <div class="rt-img-drop-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-white">Klik untuk pilih / tambah foto</p>
+                            <p class="text-[10px]" style="color:rgba(255,255,255,0.35);">Bisa diklik berkali-kali untuk menambah foto satu per satu.</p>
+                        </div>
+                        <input id="room-images-input" type="file" name="images[]" accept="image/*" multiple data-existing-count="0" class="sr-only">
+                    </label>
+                    <div id="room-images-preview" class="rt-img-pick-grid hidden"></div>
+                    <p id="room-images-label" class="text-[10px] mt-1.5" style="color:rgba(255,255,255,0.35);">Bisa pilih lebih dari satu gambar. Maksimal 10 foto asli per ruangan.</p>
+                    @error('images')
+                        <p class="text-[10px] mt-1.5 text-red-400">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- Pricing --}}
@@ -501,8 +518,17 @@ $orderTabCfg = [
 /* ── Default pricing data ── */
 const DEFAULT_PRICING = @json($defaultPricing);
 const ALL_FACILITIES  = @json($allFacilities);
+const MAX_ROOM_IMAGES = 10;
 
 let activeField = true;
+
+const roomImagePicker = createMultiImagePicker({
+    inputId: 'room-images-input',
+    previewId: 'room-images-preview',
+    labelId: 'room-images-label',
+    maxImages: MAX_ROOM_IMAGES,
+    emptyText: 'Bisa pilih lebih dari satu gambar. Maksimal 10 foto asli per ruangan.',
+});
 
 /* ── Page tab ── */
 function switchPageTab(key) {
@@ -648,6 +674,7 @@ function openRoomModal(room) {
         document.getElementById('field-active').value = activeField ? '1' : '0';
         document.getElementById('active-toggle').style.background = activeField ? 'linear-gradient(135deg,#7c3aed,#6366f1)' : 'rgba(255,255,255,0.12)';
         document.getElementById('active-knob').style.left = activeField ? '24px' : '2px';
+        roomImagePicker.reset(Array.isArray(room.photos) ? room.photos.length : 0);
 
     } else {
         // Create mode
@@ -663,6 +690,7 @@ function openRoomModal(room) {
         document.getElementById('field-active').value = '1';
         document.getElementById('active-toggle').style.background = 'linear-gradient(135deg,#7c3aed,#6366f1)';
         document.getElementById('active-knob').style.left = '24px';
+        roomImagePicker.reset(0);
     }
 
     renderFacilityHidden();

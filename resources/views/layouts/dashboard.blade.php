@@ -14,6 +14,44 @@
         .font-display { font-family: var(--font-display); }
         .no-scrollbar::-webkit-scrollbar { display:none; }
         .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+
+        /* ─── Product card image carousel ─── */
+        .rt-carousel { position: relative; }
+        .rt-carousel img.rt-slide {
+            display: none;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            position: absolute; inset: 0;
+        }
+        .rt-carousel img.rt-slide.active { display: block; }
+        .rt-carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.45);
+            color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            border: none;
+            cursor: pointer;
+            z-index: 3;
+            transition: background .2s;
+        }
+        .rt-carousel-btn:hover { background: rgba(124,58,237,0.85); }
+        .rt-carousel-btn.rt-prev { left: 6px; }
+        .rt-carousel-btn.rt-next { right: 6px; }
+        .rt-carousel-dots {
+            position: absolute;
+            bottom: 6px; left: 0; right: 0;
+            display: flex; justify-content: center; gap: 4px;
+            z-index: 3;
+        }
+        .rt-carousel-dots span {
+            width: 5px; height: 5px; border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+        }
+        .rt-carousel-dots span.active { background: #fff; }
     </style>
 </head>
 <body class="min-h-screen pb-20 lg:pb-0" style="background:#0c0618;">
@@ -27,10 +65,10 @@
     }
     $navLinks = [
         ['label' => 'Beranda', 'route' => 'dashboard'],
-        ['label' => 'Toko Packing', 'url' => 'Toko Packing', 'route' => 'packing.index'],
         ['label' => 'Ruang Titip', 'route' => 'ruang-titip.index'],
+        ['label' => 'Toko Packing', 'route' => 'packing.index'],
+        ['label' => 'Toko Preloved', 'route' => 'preloved.index', 'match' => ['preloved.index', 'preloved.show']],
         ['label' => 'Pesanan Saya', 'route' => 'pesanan.index'],
-        ['label' => 'Toko Preloved', 'route' => 'preloved.index'],
     ];
 @endphp
 
@@ -58,7 +96,13 @@
                         $base = \Illuminate\Support\Str::contains($link['route'], '.')
                             ? \Illuminate\Support\Str::beforeLast($link['route'], '.') . '.*'
                             : $link['route'];
-                        $active = request()->routeIs($link['route']) || request()->routeIs($base);
+                        $patterns = $link['match'] ?? [$link['route'], $base];
+                        foreach ((array) $patterns as $pattern) {
+                            if (request()->routeIs($pattern)) {
+                                $active = true;
+                                break;
+                            }
+                        }
                     }
                 @endphp
                 <a href="{{ $href }}" class="relative px-3.5 py-2 rounded-lg text-sm font-medium transition-all"
@@ -74,14 +118,19 @@
         {{-- Right actions --}}
         <div class="flex items-center gap-1">
             {{-- Cart --}}
-            <a href="#" class="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-white/5" style="color:rgba(255,255,255,0.6);">
+            @php $cartActive = request()->routeIs('preloved.cart.*') || request()->routeIs('checkout.*'); @endphp
+            <a href="{{ route('preloved.cart.index') }}" aria-label="Keranjang" class="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-white/5"
+               style="color:{{ $cartActive ? '#a78bfa' : 'rgba(255,255,255,0.6)' }};background:{{ $cartActive ? 'rgba(124,58,237,0.16)' : 'transparent' }};">
                 <x-lucide-shopping-cart class="w-5 h-5" />
+                @if ($cartActive)
+                    <span class="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full" style="background:#7c3aed;"></span>
+                @endif
             </a>
 
           
             {{-- Notifikasi --}}
             <div class="relative">
-                <button type="button" onclick="toggleMenu('notifMenu')" class="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-white/5" style="color:rgba(255,255,255,0.6);">
+                <button type="button" onclick="toggleMenu('notifMenu')" aria-label="Notifikasi" class="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-white/5" style="color:rgba(255,255,255,0.6);">
                     <x-lucide-bell class="w-5 h-5" />
                     <span class="absolute top-1 right-1 w-4 h-4 rounded-full text-[9px] font-bold text-white flex items-center justify-center" style="background:#ef4444;">2</span>
                 </button>
@@ -108,14 +157,14 @@
             </div>
 
             {{-- Profil dropdown (Hanya boleh ada satu) --}}
-            <div class="relative hidden lg:block">
-                <button type="button" onclick="toggleMenu('profileMenu')" class="flex items-center gap-2 px-2 py-1.5 rounded-xl transition-all hover:bg-white/5">
+            <div class="relative">
+                <button type="button" onclick="toggleMenu('profileMenu')" aria-label="Profil" class="flex items-center gap-2 px-1.5 lg:px-2 py-1.5 rounded-xl transition-all hover:bg-white/5">
                     <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">{{ $initials ?: '?' }}</div>
-                    <div class="text-left">
+                    <div class="hidden lg:block text-left">
                         <p class="text-xs font-semibold text-white leading-tight">{{ $u?->name ?? 'Pengguna' }}</p>
                         <p class="text-[10px]" style="color:rgba(255,255,255,0.35);">Penitip Aktif</p>
                     </div>
-                    <x-lucide-chevron-down class="w-3.5 h-3.5 ml-0.5" style="color:rgba(255,255,255,0.35);" />
+                    <x-lucide-chevron-down class="hidden lg:block w-3.5 h-3.5 ml-0.5" style="color:rgba(255,255,255,0.35);" />
                 </button>
                 <div id="profileMenu" class="hidden absolute right-0 w-52 rounded-2xl overflow-hidden z-50 py-1.5"
                       style="top:52px;background:rgba(18,10,35,0.98);border:1px solid rgba(139,92,246,0.25);box-shadow:0 20px 60px rgba(0,0,0,0.5);">
@@ -161,7 +210,13 @@
                         $base = \Illuminate\Support\Str::contains($link['route'], '.')
                             ? \Illuminate\Support\Str::beforeLast($link['route'], '.') . '.*'
                             : $link['route'];
-                        $active = request()->routeIs($link['route']) || request()->routeIs($base);
+                        $patterns = $link['match'] ?? [$link['route'], $base];
+                        foreach ((array) $patterns as $pattern) {
+                            if (request()->routeIs($pattern)) {
+                                $active = true;
+                                break;
+                            }
+                        }
                     }
                 @endphp
                 <a href="{{ $href }}" class="flex items-center px-3 py-2.5 rounded-xl text-sm font-medium" style="color:{{ $active ? '#a78bfa' : 'rgba(255,255,255,0.6)' }};">{{ $link['label'] }}</a>
@@ -182,6 +237,7 @@
 <main class="max-w-7xl mx-auto px-4 lg:px-6 pt-20">
     @yield('content')
 </main>
+@include('layouts.footer')
 
 {{-- ─── BOTTOM NAV (mobile) ─── --}}
 <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center"
@@ -190,7 +246,7 @@
         $bottom = [
             ['label' => 'Beranda', 'route' => 'dashboard', 'icon' => 'home'],
             ['label' => 'Pesanan', 'route' => 'pesanan.index', 'icon' => 'clipboard-list'],
-            ['label' => 'Toko', 'url' => '#', 'icon' => 'shopping-bag'],
+            ['label' => 'Toko', 'route' => 'preloved.index', 'match' => ['preloved.index', 'preloved.show'], 'icon' => 'shopping-bag'],
             ['label' => 'Profil', 'route' => 'profile.index', 'icon' => 'user'],
         ];
     @endphp
@@ -202,7 +258,13 @@
                 $base = \Illuminate\Support\Str::contains($item['route'], '.')
                     ? \Illuminate\Support\Str::beforeLast($item['route'], '.') . '.*'
                     : $item['route'];
-                $active = request()->routeIs($item['route']) || request()->routeIs($base);
+                $patterns = $item['match'] ?? [$item['route'], $base];
+                foreach ((array) $patterns as $pattern) {
+                    if (request()->routeIs($pattern)) {
+                        $active = true;
+                        break;
+                    }
+                }
             }
         @endphp
         <a href="{{ $href }}" class="flex-1 flex flex-col items-center justify-center gap-1" style="color:{{ $active ? '#a78bfa' : 'rgba(255,255,255,0.35)' }};">
@@ -235,6 +297,19 @@
 </div>
 
 <script>
+    function rtCarouselNav(btn, dir) {
+        const wrap = btn.closest('.rt-carousel');
+        if (!wrap) return;
+        const slides = wrap.querySelectorAll('.rt-slide');
+        if (slides.length < 2) return;
+        let idx = Array.from(slides).findIndex(s => s.classList.contains('active'));
+        if (idx === -1) idx = 0;
+        slides[idx].classList.remove('active');
+        idx = (idx + dir + slides.length) % slides.length;
+        slides[idx].classList.add('active');
+        wrap.querySelectorAll('.rt-carousel-dots span').forEach((d, i) => d.classList.toggle('active', i === idx));
+    }
+
     let pendingLogoutForm = null;
 
     function toggleMenu(id) {

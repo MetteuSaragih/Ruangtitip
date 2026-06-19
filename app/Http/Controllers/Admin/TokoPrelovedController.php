@@ -65,9 +65,13 @@ class TokoPrelovedController extends Controller
             'price'     => 'required|integer|min:1000',
             'seller'    => 'nullable|string|max:255',
             'photo'     => 'nullable|image|max:5120',
-            'images'    => 'nullable|array',
+            'images'    => 'nullable|array|max:10',
             'images.*'  => 'image|max:5120',
         ]);
+
+        if ($this->uploadedImagesCount($request) > 10) {
+            return back()->withErrors(['images' => 'Maksimal 10 gambar untuk setiap produk preloved.'])->withInput();
+        }
 
         $photos = $this->storeImages($request);
         if ($request->hasFile('photo')) {
@@ -95,9 +99,13 @@ class TokoPrelovedController extends Controller
             'price'     => 'required|integer|min:1000',
             'seller'    => 'nullable|string|max:255',
             'photo'     => 'nullable|image|max:5120',
-            'images'    => 'nullable|array',
+            'images'    => 'nullable|array|max:10',
             'images.*'  => 'image|max:5120',
         ]);
+
+        if ($this->existingPhotosCount($item) + $this->uploadedImagesCount($request) > 10) {
+            return back()->withErrors(['images' => 'Maksimal 10 gambar untuk setiap produk preloved.'])->withInput();
+        }
 
         $photos = $this->storeImages($request);
         if ($request->hasFile('photo')) {
@@ -166,5 +174,22 @@ class TokoPrelovedController extends Controller
             ->map(fn ($file) => $file->store('preloved', 'public'))
             ->values()
             ->all();
+    }
+
+    private function uploadedImagesCount(Request $request): int
+    {
+        $count = $request->hasFile('images') ? count($request->file('images')) : 0;
+
+        return $count + ($request->hasFile('photo') ? 1 : 0);
+    }
+
+    private function existingPhotosCount(PrelovedItem $item): int
+    {
+        $photos = $item->photos ?? [];
+        if ($item->photo && ! in_array($item->photo, $photos, true)) {
+            $photos[] = $item->photo;
+        }
+
+        return count($photos);
     }
 }

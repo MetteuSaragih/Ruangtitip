@@ -43,6 +43,12 @@ $filterOptions = ['Semua', 'Menunggu Konfirmasi', 'Siap Dikirim', 'Siap Diambil'
         {{ session('success') }}
     </div>
     @endif
+    @if($errors->any())
+    <div class="mb-4 px-4 py-3 rounded-2xl text-sm font-medium"
+         style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;">
+        {{ $errors->first() }}
+    </div>
+    @endif
 
     {{-- Page title --}}
     <div class="mb-5">
@@ -368,21 +374,26 @@ $filterOptions = ['Semua', 'Menunggu Konfirmasi', 'Siap Dikirim', 'Siap Diambil'
                 {{-- Foto --}}
                 <div>
                     <label class="block text-xs font-bold mb-2.5 text-white">Foto Barang</label>
-                    <label class="flex flex-col items-center gap-2.5 py-8 cursor-pointer rounded-2xl border-2 border-dashed transition-all"
-                           style="border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.025);"
-                           onmouseover="this.style.borderColor='rgba(124,58,237,0.4)'"
-                           onmouseout="this.style.borderColor='rgba(255,255,255,0.12)'">
-                        <div class="w-10 h-10 rounded-2xl flex items-center justify-center" style="background:rgba(124,58,237,0.12);">
+                    <label for="item-images-input" class="flex items-center gap-2.5 py-4 px-4 cursor-pointer rounded-2xl border-2 border-dashed transition-all"
+                           style="border-color:rgba(124,58,237,0.4);background:rgba(124,58,237,0.06);"
+                           onmouseover="this.style.borderColor='rgba(124,58,237,0.7)'"
+                           onmouseout="this.style.borderColor='rgba(124,58,237,0.4)'">
+                        <div class="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0" style="background:rgba(124,58,237,0.18);">
                             <svg class="w-5 h-5" style="color:#a78bfa" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                         </div>
-                        <div class="text-center">
-                            <p class="text-sm font-medium text-white">Klik untuk pilih foto</p>
-                            <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.3);">JPG / PNG · Maks 5 MB</p>
+                        <div>
+                            <p class="text-sm font-medium text-white">Klik untuk pilih / tambah foto</p>
+                            <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.3);">Bisa diklik berkali-kali · JPG / PNG · Maks 5 MB</p>
                         </div>
-                        <input type="file" name="images[]" accept="image/*" multiple class="sr-only"
-                               onchange="document.getElementById('photo-preview-label').textContent = this.files.length + ' foto dipilih'">
+                        <input id="item-images-input" type="file" name="images[]" accept="image/*" multiple class="sr-only"
+                               data-existing-count="0">
                     </label>
+                    <div id="item-images-preview" class="rt-img-pick-grid hidden"></div>
                     <p id="photo-preview-label" class="text-[10px] mt-1.5" style="color:rgba(255,255,255,0.35);"></p>
+                    <p class="text-[10px] mt-1" style="color:rgba(255,255,255,0.35);">Maksimal 10 foto asli per produk.</p>
+                    @error('images')
+                        <p class="text-[10px] mt-1.5 text-red-400">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- Nama + Kategori --}}
@@ -478,6 +489,21 @@ $filterOptions = ['Semua', 'Menunggu Konfirmasi', 'Siap Dikirim', 'Siap Diambil'
 @push('scripts')
 <script>
 const CONDITION_COLORS = @json($conditionLabels);
+const MAX_ITEM_IMAGES = 10;
+
+function countItemImages(item) {
+    const photos = Array.isArray(item?.photos) ? [...item.photos] : [];
+    if (item?.photo && !photos.includes(item.photo)) photos.push(item.photo);
+    return photos.length;
+}
+
+const itemImagePicker = createMultiImagePicker({
+    inputId: 'item-images-input',
+    previewId: 'item-images-preview',
+    labelId: 'photo-preview-label',
+    maxImages: MAX_ITEM_IMAGES,
+    emptyText: '',
+});
 
 function selectCondition(val) {
     document.getElementById('field-condition').value = val;
@@ -509,6 +535,7 @@ function openEditModal(item) {
     document.getElementById('field-seller').value   = item.seller || '';
 
     selectCondition(item.condition || 90);
+    itemImagePicker.reset(countItemImages(item));
 
     document.getElementById('item-modal').classList.remove('hidden');
     document.getElementById('item-modal').classList.add('flex');
@@ -522,6 +549,7 @@ function closeItemModal() {
     document.getElementById('method-field').innerHTML = '';
     document.getElementById('modal-title').textContent = 'Tambah Barang Preloved';
     document.getElementById('modal-submit-label').textContent = 'Tambah ke Katalog';
+    itemImagePicker.reset(0);
     selectCondition(90);
 }
 

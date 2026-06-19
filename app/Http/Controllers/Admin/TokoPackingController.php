@@ -34,6 +34,10 @@ class TokoPackingController extends Controller
     public function store(Request $request)
     {
         $data = $this->validatedData($request);
+        if ($this->uploadedImagesCount($request) > 10) {
+            return back()->withErrors(['images' => 'Maksimal 10 gambar untuk setiap produk packing.'])->withInput();
+        }
+
         $data['is_active'] = true;
         $data['images'] = $this->storeImages($request);
 
@@ -55,6 +59,10 @@ class TokoPackingController extends Controller
 
         // Jika update full dari form modal
         $data = $this->validatedData($request);
+        if (count($item->images ?? []) + $this->uploadedImagesCount($request) > 10) {
+            return back()->withErrors(['images' => 'Maksimal 10 gambar untuk setiap produk packing.'])->withInput();
+        }
+
         $images = $this->storeImages($request);
         if (! empty($images)) {
             $data['images'] = array_values(array_merge($item->images ?? [], $images));
@@ -82,7 +90,7 @@ class TokoPackingController extends Controller
             'discount' => ['nullable', 'integer', 'min:0', 'max:100'],
             'emoji' => ['nullable', 'string', 'max:16'],
             'description' => ['nullable', 'string'],
-            'images' => ['nullable', 'array'],
+            'images' => ['nullable', 'array', 'max:10'],
             'images.*' => ['image', 'max:5120'],
         ]);
     }
@@ -97,5 +105,10 @@ class TokoPackingController extends Controller
             ->map(fn ($file) => $file->store('packing-products', 'public'))
             ->values()
             ->all();
+    }
+
+    private function uploadedImagesCount(Request $request): int
+    {
+        return $request->hasFile('images') ? count($request->file('images')) : 0;
     }
 }

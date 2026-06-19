@@ -309,7 +309,7 @@
 
 {{-- Fixed Bottom Bar --}}
 <div class="checkout-bottom">
-    <a href="{{ route('checkout.shipping') }}" class="checkout-bottom-back">← Kembali</a>
+    <a href="{{ ($shipping['method'] ?? 'pickup') === 'biteship' ? route('checkout.address') : route('checkout.shipping') }}" class="checkout-bottom-back">← Kembali</a>
     <div class="checkout-bottom-main">
         <div class="checkout-bottom-total">
             <p>Total Pembayaran</p>

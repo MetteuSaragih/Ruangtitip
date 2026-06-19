@@ -14,6 +14,41 @@
         .font-display { font-family: var(--font-display); }
         .no-scrollbar::-webkit-scrollbar { display:none; }
         .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+
+        /* ─── Multi-image picker (admin forms) ─── */
+        .rt-img-drop {
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 16px;
+            cursor: pointer;
+            border-radius: 14px;
+            border: 1.5px dashed rgba(124,58,237,0.4);
+            background: rgba(124,58,237,0.06);
+            transition: border-color .2s, background .2s;
+        }
+        .rt-img-drop:hover { border-color: rgba(124,58,237,0.7); background: rgba(124,58,237,0.1); }
+        .rt-img-drop-icon {
+            width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(124,58,237,0.18); color: #a78bfa;
+        }
+        .rt-img-pick-grid {
+            display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
+        }
+        .rt-img-pick-thumb {
+            position: relative; width: 64px; height: 64px;
+            border-radius: 10px; overflow: hidden; flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.14);
+        }
+        .rt-img-pick-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .rt-img-pick-remove {
+            position: absolute; top: 2px; right: 2px;
+            width: 18px; height: 18px; border-radius: 50%;
+            background: rgba(0,0,0,0.65); color: #fff;
+            border: none; font-size: 13px; line-height: 1;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; padding: 0;
+        }
+        .rt-img-pick-remove:hover { background: #ef4444; }
     </style>
 </head>
 <body class="min-h-screen" style="background:#080313;">
@@ -119,6 +154,85 @@
     @yield('content')
 </main>
 
+<script>
+/**
+ * Lets an admin pick images across several separate file-dialog openings
+ * (instead of one all-at-once selection), previews every staged file as a
+ * small removable thumbnail, and keeps the underlying <input type="file">
+ * in sync with the full accumulated set so the form submits all of them.
+ */
+function createMultiImagePicker({ inputId, previewId, labelId, maxImages = 10, emptyText = '' }) {
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+    const label = document.getElementById(labelId);
+    let staged = [];
+
+    function rebuildInputFiles() {
+        const dt = new DataTransfer();
+        staged.forEach((file) => dt.items.add(file));
+        input.files = dt.files;
+    }
+
+    function render() {
+        rebuildInputFiles();
+
+        preview.innerHTML = '';
+        staged.forEach((file, idx) => {
+            const thumb = document.createElement('div');
+            thumb.className = 'rt-img-pick-thumb';
+            thumb.innerHTML = `<img src="${URL.createObjectURL(file)}" alt="">
+                <button type="button" class="rt-img-pick-remove" aria-label="Hapus foto ini">&times;</button>`;
+            thumb.querySelector('button').addEventListener('click', () => {
+                staged.splice(idx, 1);
+                render();
+            });
+            preview.appendChild(thumb);
+        });
+        preview.classList.toggle('hidden', staged.length === 0);
+
+        const existing = parseInt(input.dataset.existingCount || '0', 10);
+        const total = existing + staged.length;
+        if (total > maxImages) {
+            label.textContent = `Maksimal ${maxImages} foto total. Sisa slot: ${Math.max(maxImages - existing, 0)} foto.`;
+            label.style.color = '#f87171';
+        } else if (staged.length) {
+            label.textContent = `${staged.length} foto dipilih${existing ? ` · ${existing} foto sudah tersimpan` : ''} · sisa ${maxImages - total} slot`;
+            label.style.color = 'rgba(255,255,255,0.35)';
+        } else {
+            label.textContent = existing
+                ? `${existing} foto sudah tersimpan · sisa ${maxImages - existing} foto`
+                : emptyText;
+            label.style.color = 'rgba(255,255,255,0.35)';
+        }
+    }
+
+    input.addEventListener('change', () => {
+        const existing = parseInt(input.dataset.existingCount || '0', 10);
+        const room = Math.max(maxImages - existing - staged.length, 0);
+        const incoming = Array.from(input.files || []);
+
+        if (room <= 0) {
+            label.textContent = `Maksimal ${maxImages} foto total tercapai.`;
+            label.style.color = '#f87171';
+            rebuildInputFiles();
+            return;
+        }
+
+        staged.push(...incoming.slice(0, room));
+        render();
+    });
+
+    render();
+
+    return {
+        reset(existingCount = 0) {
+            staged = [];
+            input.dataset.existingCount = existingCount;
+            render();
+        },
+    };
+}
+</script>
 @stack('scripts')
 </body>
 </html>

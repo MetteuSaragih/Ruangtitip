@@ -22,44 +22,67 @@
 <form method="POST" action="{{ route('packing.address.choose') }}" id="addressForm">
     @csrf
     <input type="hidden" name="courier" id="courierInput" value="{{ old('courier') }}">
-    <input type="hidden" name="mode" id="modeInput" value="{{ $addresses->isNotEmpty() ? 'select' : 'new' }}">
+    <input type="hidden" name="mode" id="modeInput" value="new">
+    <input type="hidden" name="address_id" id="addressId" value="{{ old('address_id') }}">
 
     <div class="mb-6">
-        <label class="block text-xs font-bold mb-2 text-white">Alamat Pengiriman</label>
-
         @if($addresses->isNotEmpty())
-            <div class="space-y-2.5 mb-3">
+            <p class="text-xs font-bold text-white mb-3">Alamat Tersimpan</p>
+            <div class="space-y-3 mb-4">
                 @foreach($addresses as $address)
-                    <label class="block p-3 rounded-xl cursor-pointer" style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.09);">
-                        <input type="radio" name="address_id" value="{{ $address->id }}" class="mr-2" {{ $loop->first ? 'checked' : '' }} onclick="setAddressMode('select')">
-                        <span class="text-sm font-bold text-white">{{ $address->label }}</span>
-                        @if($address->is_primary)
-                            <span class="ml-2 text-[10px] px-2 py-0.5 rounded-full" style="background:rgba(52,211,153,0.12);color:#34d399;">Utama</span>
-                        @endif
-                        <p class="text-xs mt-1" style="color:rgba(255,255,255,0.45);">{{ $address->address }}</p>
-                    </label>
+                    <button type="button" data-id="{{ $address->id }}" onclick="pickAddress('{{ $address->id }}')"
+                            class="addr w-full flex items-start gap-3 p-4 rounded-2xl text-left transition-all hover:scale-[1.01]"
+                            style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.09);">
+                        <x-lucide-map-pin class="w-4 h-4 shrink-0 mt-0.5" style="color:#a78bfa;" />
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-0.5">
+                                <span class="text-sm font-bold text-white">{{ $address->label ?: 'Alamat' }}</span>
+                                @if($address->is_primary)
+                                    <span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:rgba(124,58,237,0.2);color:#a78bfa;">Utama</span>
+                                @endif
+                            </div>
+                            <p class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.55);">{{ $address->address }}</p>
+                            @if($address->note)
+                                <p class="text-[10px] mt-1" style="color:rgba(255,255,255,0.35);">Catatan: {{ $address->note }}</p>
+                            @endif
+                        </div>
+                        <div class="addr-radio w-5 h-5 rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center" style="border-color:rgba(255,255,255,0.2);"></div>
+                    </button>
                 @endforeach
             </div>
-            <button type="button" onclick="setAddressMode('new')" class="mb-3 text-xs font-bold" style="color:#a78bfa;">+ Tambah alamat baru</button>
+
+            <div class="flex items-center gap-3 my-5">
+                <div class="flex-1 h-px" style="background:rgba(255,255,255,0.08);"></div>
+                <span class="text-[10px]" style="color:rgba(255,255,255,0.3);">atau tambah alamat baru</span>
+                <div class="flex-1 h-px" style="background:rgba(255,255,255,0.08);"></div>
+            </div>
         @endif
 
-        <input type="text" name="address" id="addressInput" value="{{ old('address') }}"
-               placeholder="Masukkan alamat lengkap pengiriman..."
-               class="w-full px-4 py-3.5 rounded-xl text-sm text-white outline-none transition-all"
-               style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);" />
-
-        <div class="mt-3 grid grid-cols-2 gap-3">
-            <input type="text" name="label" placeholder="Label alamat"
-                   class="px-4 py-3 rounded-xl text-sm text-white outline-none"
-                   style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">
-            <label class="flex items-center gap-2 px-4 py-3 rounded-xl text-xs text-white"
-                   style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);">
-                <input type="checkbox" name="is_primary" value="1"> Jadikan utama
+        <div class="rounded-2xl p-5 space-y-4" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
+            <p class="text-xs font-bold text-white">{{ $addresses->count() ? 'Daftarkan Alamat Baru' : 'Masukkan Alamat Pengiriman' }}</p>
+            <div>
+                <label class="block text-[11px] font-semibold mb-2" style="color:rgba(255,255,255,0.55);">Label <span style="color:rgba(255,255,255,0.3);">(opsional)</span></label>
+                <input type="text" name="label" placeholder="Kos / Rumah / Kontrakan" value="{{ old('label') }}"
+                       class="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/20 outline-none"
+                       style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold mb-2" style="color:rgba(255,255,255,0.55);">Alamat Lengkap <span style="color:#f87171;">*</span></label>
+                <textarea name="address" id="addressInput" rows="3" placeholder="Jl. Veteran No. 10, Kec. Lowokwaru, Malang"
+                          class="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/20 outline-none resize-none"
+                          style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">{{ old('address') }}</textarea>
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold mb-2" style="color:rgba(255,255,255,0.55);">Catatan untuk Kurir <span style="color:rgba(255,255,255,0.3);">(opsional)</span></label>
+                <textarea name="note" rows="2" placeholder="Rumah cat hijau, pagar depan, dekat masjid"
+                          class="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/20 outline-none resize-none"
+                          style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">{{ old('note') }}</textarea>
+            </div>
+            <label class="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox" name="is_primary" value="1" class="accent-violet-500 w-4 h-4" {{ old('is_primary') ? 'checked' : '' }}>
+                <span class="text-xs" style="color:rgba(255,255,255,0.6);">Jadikan alamat utama</span>
             </label>
         </div>
-        <textarea name="note" rows="2" placeholder="Catatan alamat (opsional)"
-                  class="mt-3 w-full px-4 py-3 rounded-xl text-sm text-white outline-none resize-none"
-                  style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);"></textarea>
     </div>
 
     <div class="mb-6">
@@ -101,28 +124,49 @@
 (function () {
     const addr = document.getElementById('addressInput');
     const mode = document.getElementById('modeInput');
+    const addressId = document.getElementById('addressId');
     const couriers = document.querySelectorAll('.courier-opt');
     const cInput = document.getElementById('courierInput');
     const btn = document.getElementById('continueBtn');
 
     const refresh = () => {
-        const ok = (mode.value === 'select' || addr.value.trim().length > 0) && cInput.value !== '';
+        const ok = ((mode.value === 'select' && addressId.value !== '') || (mode.value === 'new' && addr.value.trim().length > 0)) && cInput.value !== '';
         btn.disabled = !ok;
         btn.style.opacity = ok ? '1' : '0.4';
         btn.style.cursor = ok ? 'pointer' : 'not-allowed';
         btn.style.boxShadow = ok ? '0 6px 20px rgba(124,58,237,0.4)' : 'none';
     };
 
-    window.setAddressMode = (value) => {
-        mode.value = value;
-        if (value === 'new') {
-            document.querySelectorAll('input[name="address_id"]').forEach(input => input.checked = false);
-            addr.focus();
-        }
+    window.pickAddress = (id) => {
+        mode.value = 'select';
+        addressId.value = id;
+        document.querySelectorAll('.addr').forEach(b => {
+            const on = b.dataset.id === String(id);
+            b.style.background = on ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.04)';
+            b.style.borderColor = on ? '#7c3aed' : 'rgba(255,255,255,0.09)';
+            const radio = b.querySelector('.addr-radio');
+            radio.style.background = on ? '#7c3aed' : 'transparent';
+            radio.style.borderColor = on ? '#7c3aed' : 'rgba(255,255,255,0.2)';
+            radio.innerHTML = on ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '';
+        });
         refresh();
     };
 
-    addr.addEventListener('input', refresh);
+    addr.addEventListener('input', () => {
+        if (addr.value.trim().length > 0) {
+            mode.value = 'new';
+            addressId.value = '';
+            document.querySelectorAll('.addr').forEach(b => {
+                b.style.background = 'rgba(255,255,255,0.04)';
+                b.style.borderColor = 'rgba(255,255,255,0.09)';
+                const radio = b.querySelector('.addr-radio');
+                radio.style.background = 'transparent';
+                radio.style.borderColor = 'rgba(255,255,255,0.2)';
+                radio.innerHTML = '';
+            });
+        }
+        refresh();
+    });
     couriers.forEach(opt => {
         opt.addEventListener('click', () => {
             cInput.value = opt.dataset.id;

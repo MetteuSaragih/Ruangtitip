@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PackingProduct;
 use App\Models\PrelovedItem;
 use Illuminate\Http\Request;
 
@@ -9,34 +10,36 @@ class CartController extends Controller
 {
     public function add(Request $request)
     {
+        $type = $request->input('type', 'preloved') === 'packing' ? 'packing' : 'preloved';
         $productId = (int) $request->input('product_id');
         $qty = max(1, (int) $request->input('qty', 1));
         $buyNow = $request->boolean('buy_now');
 
-        $item = PrelovedItem::where('status', 'Tersedia')->find($productId);
-        if (! $item) {
+        $product = $this->resolveProduct($type, $productId);
+        if (! $product) {
             return response()->json(['success' => false, 'message' => 'Produk tidak ditemukan'], 404);
         }
 
-        $product = $this->toCartProduct($item, $qty);
-        $cart = session('cart', []);
+        $key = $type . '_' . $productId;
+        $item = $this->toCartItem($type, $product, $qty);
 
         if ($buyNow) {
-            session(['cart' => [$productId => $product]]);
+            session(['checkout_cart' => [$key => $item]]);
 
             return response()->json([
                 'success' => true,
                 'buy_now' => true,
                 'redirect' => route('checkout.shipping'),
-                'cart_count' => 1,
             ]);
         }
 
-        if (isset($cart[$productId])) {
-            $cart[$productId]['qty'] += $qty;
-            $cart[$productId]['subtotal'] = $cart[$productId]['price'] * $cart[$productId]['qty'];
+        $cart = session('cart', []);
+
+        if (isset($cart[$key])) {
+            $cart[$key]['qty'] += $qty;
+            $cart[$key]['subtotal'] = $cart[$key]['price'] * $cart[$key]['qty'];
         } else {
-            $cart[$productId] = $product;
+            $cart[$key] = $item;
         }
 
         session(['cart' => $cart]);
@@ -50,15 +53,15 @@ class CartController extends Controller
 
     public function update(Request $request)
     {
-        $productId = $request->input('product_id');
+        $key = (string) $request->input('product_id');
         $qty = (int) $request->input('qty', 1);
         $cart = session('cart', []);
 
         if ($qty <= 0) {
-            unset($cart[$productId]);
-        } elseif (isset($cart[$productId])) {
-            $cart[$productId]['qty'] = $qty;
-            $cart[$productId]['subtotal'] = $cart[$productId]['price'] * $qty;
+            unset($cart[$key]);
+        } elseif (isset($cart[$key])) {
+            $cart[$key]['qty'] = $qty;
+            $cart[$key]['subtotal'] = $cart[$key]['price'] * $qty;
         }
 
         session(['cart' => $cart]);
@@ -68,9 +71,9 @@ class CartController extends Controller
 
     public function remove(Request $request)
     {
-        $productId = $request->input('product_id');
+        $key = (string) $request->input('product_id');
         $cart = session('cart', []);
-        unset($cart[$productId]);
+        unset($cart[$key]);
         session(['cart' => $cart]);
 
         return response()->json(['success' => true, 'cart_count' => count($cart)]);
@@ -83,18 +86,62 @@ class CartController extends Controller
         return view('preloved.cart', compact('cart'));
     }
 
-    private function toCartProduct(PrelovedItem $item, int $qty): array
+    public function checkout(Request $request)
     {
+        $data = $request->validate([
+            'selected' => 'required|array|min:1',
+            'selected.*' => 'string',
+        ], [
+            'selected.required' => 'Pilih minimal satu produk untuk checkout.',
+        ]);
+
+        $cart = session('cart', []);
+        $selectedItems = array_intersect_key($cart, array_flip($data['selected']));
+
+        if (empty($selectedItems)) {
+            return back()->withErrors(['selected' => 'Produk yang dipilih tidak ditemukan di keranjang.']);
+        }
+
+        session(['checkout_cart' => $selectedItems]);
+
+        return redirect()->route('checkout.shipping');
+    }
+
+    private function resolveProduct(string $type, int $id)
+    {
+        if ($type === 'packing') {
+            return PackingProduct::active()->find($id);
+        }
+
+        return PrelovedItem::where('status', 'Tersedia')->find($id);
+    }
+
+    private function toCartItem(string $type, $product, int $qty): array
+    {
+        if ($type === 'packing') {
+            return [
+                'type' => 'packing',
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => (int) $product->price,
+                'image' => $product->primary_image,
+                'unit' => $product->unit,
+                'weight' => 500,
+                'qty' => $qty,
+                'subtotal' => (int) $product->price * $qty,
+            ];
+        }
+
         return [
-            'id' => $item->id,
-            'name' => $item->name,
-            'price' => (int) $item->price,
-            'emoji' => null,
-            'image' => $item->primary_photo,
-            'condition_label' => $item->condition . '%',
+            'type' => 'preloved',
+            'id' => $product->id,
+            'name' => $product->name,
+            'price' => (int) $product->price,
+            'image' => $product->primary_photo,
+            'condition_label' => $product->condition . '%',
             'weight' => 1000,
             'qty' => $qty,
-            'subtotal' => (int) $item->price * $qty,
+            'subtotal' => (int) $product->price * $qty,
         ];
     }
 }

@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan *)",
+      "Bash(curl -s -o /tmp/preloved.html -w \"%{http_code}\\\\n\" http://127.0.0.1:8765/toko-preloved)",
+      "Bash(curl -s -o /tmp/cart.html -w \"%{http_code}\\\\n\" http://127.0.0.1:8765/toko-preloved/keranjang)",
+      "Read(//tmp/**)",
+      "Bash(pkill -f \"artisan serve --port=8765\")",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //F //FI \"WINDOWTITLE eq*\")",
+      "Bash(php artisan tinker --execute=\" *)",
+      "Bash(php artisan tinker '--execute= *)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(rm -f /tmp/detail_full.txt /tmp/detail.html)",
+      "Bash(grep -n 'condition_label\\\\|item\\\\['\\\\''\\\\|$item\\\\[' resources/views/checkout/shipping.blade.php resources/views/checkout/payment.blade.php resources/views/checkout/address.blade.php)",
+      "Bash(php -l app/Http/Controllers/CartController.php)",
+      "Bash(php -l app/Http/Controllers/CheckoutController.php)"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
+    ]
+  }
+}

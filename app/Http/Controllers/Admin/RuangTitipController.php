@@ -60,9 +60,13 @@ class RuangTitipController extends Controller
             'active'         => 'boolean',
             'facilities'     => 'nullable|array',
             'pricing'        => 'required|array',
-            'images'         => 'nullable|array',
+            'images'         => 'nullable|array|max:10',
             'images.*'       => 'image|max:5120',
         ]);
+
+        if ($this->uploadedImagesCount($request) > 10) {
+            return back()->withErrors(['images' => 'Maksimal 10 gambar untuk setiap ruangan.'])->withInput();
+        }
 
         $data['facilities'] = $request->input('facilities', []);
         $data['active']     = $request->boolean('active', true);
@@ -87,9 +91,14 @@ class RuangTitipController extends Controller
             'active'         => 'boolean',
             'facilities'     => 'nullable|array',
             'pricing'        => 'required|array',
-            'images'         => 'nullable|array',
+            'images'         => 'nullable|array|max:10',
             'images.*'       => 'image|max:5120',
         ]);
+
+        $existingCount = count($room->photos ?? []);
+        if ($existingCount + $this->uploadedImagesCount($request) > 10) {
+            return back()->withErrors(['images' => 'Maksimal 10 gambar untuk setiap ruangan.'])->withInput();
+        }
 
         $data['facilities'] = $request->input('facilities', []);
         $data['active']     = $request->boolean('active', true);
@@ -132,6 +141,11 @@ class RuangTitipController extends Controller
             ->map(fn ($file) => $file->store($dir, 'public'))
             ->values()
             ->all();
+    }
+
+    private function uploadedImagesCount(Request $request): int
+    {
+        return $request->hasFile('images') ? count($request->file('images')) : 0;
     }
 
     private function orderData(): array

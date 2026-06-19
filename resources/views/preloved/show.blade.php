@@ -53,19 +53,6 @@
     }
     .btn-wish:hover { background: rgba(239,68,68,0.3); color: #ef4444; }
 
-    /* Dots */
-    .img-dots {
-        display: flex; align-items: center; justify-content: center;
-        gap: 6px; padding: 12px 0;
-    }
-    .img-dot {
-        height: 4px; border-radius: 2px;
-        background: rgba(255,255,255,0.2);
-        transition: all .2s;
-    }
-    .img-dot.active { width: 20px; background: #fff; }
-    .img-dot:not(.active) { width: 6px; }
-
     /* Info section */
     .badge-cond {
         display: inline-flex; align-items: center;
@@ -239,24 +226,35 @@
     @endphp
 
     {{-- Image Card --}}
+    @php
+        $images = !empty($product['images']) ? $product['images'] : (!empty($product['image']) ? [$product['image']] : []);
+    @endphp
     <div class="img-card">
-        <div class="img-area">
+        <div class="img-area rt-carousel">
             @if ($disc)
                 <div class="badge-disc">🏷 -{{ $disc }}%</div>
             @endif
             <button class="btn-wish" id="btnWish" onclick="toggleWishlist()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
             </button>
-            @if (!empty($product['image']))
-                <img src="{{ Storage::url($product['image']) }}" alt="{{ $product['name'] }}" />
-            @else
+            @forelse ($images as $i => $img)
+                <img src="{{ Storage::url($img) }}" alt="{{ $product['name'] }}" class="rt-slide {{ $i === 0 ? 'active' : '' }}" />
+            @empty
                 <x-lucide-image class="w-16 h-16" style="color:#a78bfa;" />
+            @endforelse
+            @if (count($images) > 1)
+                <button type="button" class="rt-carousel-btn rt-prev" onclick="event.preventDefault();event.stopPropagation();rtCarouselNav(this,-1)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <button type="button" class="rt-carousel-btn rt-next" onclick="event.preventDefault();event.stopPropagation();rtCarouselNav(this,1)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+                <div class="rt-carousel-dots">
+                    @foreach ($images as $i => $img)
+                        <span class="{{ $i === 0 ? 'active' : '' }}"></span>
+                    @endforeach
+                </div>
             @endif
-        </div>
-        <div class="img-dots">
-            <div class="img-dot active"></div>
-            <div class="img-dot"></div>
-            <div class="img-dot"></div>
         </div>
     </div>
 
@@ -371,7 +369,7 @@
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken
             },
-            body: JSON.stringify({ product_id: productId, qty: qty })
+            body: JSON.stringify({ type: 'preloved', product_id: productId, qty: qty })
         })
         .then(r => r.json())
         .then(data => {
@@ -402,7 +400,7 @@
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken
             },
-            body: JSON.stringify({ product_id: productId, qty: qty, buy_now: true })
+            body: JSON.stringify({ type: 'preloved', product_id: productId, qty: qty, buy_now: true })
         })
         .then(r => r.json())
         .then(data => {

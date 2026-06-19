@@ -134,10 +134,14 @@ Route::prefix('toko-preloved')->name('preloved.')->group(function () {
     Route::get('/keranjang', [CartController::class, 'index'])->name('cart.index');
     Route::post('/keranjang/update', [CartController::class, 'update'])->name('cart.update');
     Route::post('/keranjang/hapus', [CartController::class, 'remove'])->name('cart.remove');
+    Route::post('/keranjang/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
 });
 
 Route::middleware('auth')->prefix('checkout')->name('checkout.')->group(function () {
     Route::get('/pengiriman', [CheckoutController::class, 'shipping'])->name('shipping');
+    Route::post('/pengiriman/pilih', [CheckoutController::class, 'chooseShipping'])->name('shipping.choose');
+    Route::get('/alamat', [CheckoutController::class, 'address'])->name('address');
+    Route::post('/alamat/simpan', [CheckoutController::class, 'saveShipping'])->name('address.save');
     Route::post('/pengiriman/simpan', [CheckoutController::class, 'saveShipping'])->name('shipping.save');
     Route::get('/pembayaran', [CheckoutController::class, 'payment'])->name('payment');
     Route::post('/proses', [CheckoutController::class, 'process'])->name('process');

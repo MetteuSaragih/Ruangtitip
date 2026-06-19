@@ -12,12 +12,28 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         @foreach ($storages as $s)
+            @php
+                $images = !empty($s->photos) ? $s->photos : ($s->primary_photo ? [$s->primary_photo] : []);
+            @endphp
             <div class="rounded-2xl overflow-hidden transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-                <div class="h-36 flex items-center justify-center relative" style="background:rgba(124,58,237,0.12);">
-                    @if($s->primary_photo)
-                        <img src="{{ asset('storage/'.$s->primary_photo) }}" alt="{{ $s->name }}" class="w-full h-full object-cover">
-                    @else
+                <div class="h-36 flex items-center justify-center relative rt-carousel" style="background:rgba(124,58,237,0.12);">
+                    @forelse ($images as $i => $img)
+                        <img src="{{ asset('storage/'.$img) }}" alt="{{ $s->name }}" class="rt-slide {{ $i === 0 ? 'active' : '' }}">
+                    @empty
                         <x-lucide-warehouse class="w-12 h-12" style="color:#a78bfa;" />
+                    @endforelse
+                    @if (count($images) > 1)
+                        <button type="button" class="rt-carousel-btn rt-prev" onclick="event.preventDefault();event.stopPropagation();rtCarouselNav(this,-1)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+                        </button>
+                        <button type="button" class="rt-carousel-btn rt-next" onclick="event.preventDefault();event.stopPropagation();rtCarouselNav(this,1)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+                        </button>
+                        <div class="rt-carousel-dots">
+                            @foreach ($images as $i => $img)
+                                <span class="{{ $i === 0 ? 'active' : '' }}"></span>
+                            @endforeach
+                        </div>
                     @endif
                 </div>
                 <div class="p-4">

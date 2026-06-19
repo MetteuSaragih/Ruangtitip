@@ -43,20 +43,37 @@
                 <div class="rounded-2xl overflow-hidden transition-all hover:-translate-y-0.5"
                      style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
                     {{-- Gambar / emoji --}}
-                    <a href="{{ route('packing.show', $p) }}" class="block h-28 flex items-center justify-center relative"
-                       style="background:rgba(124,58,237,0.08);">
-                        @if($p->primary_image)
-                            <img src="{{ asset('storage/'.$p->primary_image) }}" alt="{{ $p->name }}" class="w-full h-full object-cover">
-                        @else
-                            <x-lucide-package class="w-12 h-12" style="color:#a78bfa;" />
-                        @endif
+                    @php
+                        $images = !empty($p->images) ? $p->images : ($p->primary_image ? [$p->primary_image] : []);
+                    @endphp
+                    <div class="h-28 relative rt-carousel" style="background:rgba(124,58,237,0.08);">
+                        <a href="{{ route('packing.show', $p) }}" class="block h-full w-full flex items-center justify-center relative">
+                            @forelse ($images as $i => $img)
+                                <img src="{{ asset('storage/'.$img) }}" alt="{{ $p->name }}" class="rt-slide {{ $i === 0 ? 'active' : '' }}">
+                            @empty
+                                <x-lucide-package class="w-12 h-12" style="color:#a78bfa;" />
+                            @endforelse
+                        </a>
                         @if ($p->discount)
                             <span class="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1"
                                   style="background:#ef4444;color:white;">
                                 <x-lucide-tag class="w-2.5 h-2.5" /> Promo {{ $p->discount }}%
                             </span>
                         @endif
-                    </a>
+                        @if (count($images) > 1)
+                            <button type="button" class="rt-carousel-btn rt-prev" onclick="event.preventDefault();event.stopPropagation();rtCarouselNav(this,-1)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+                            </button>
+                            <button type="button" class="rt-carousel-btn rt-next" onclick="event.preventDefault();event.stopPropagation();rtCarouselNav(this,1)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+                            </button>
+                            <div class="rt-carousel-dots">
+                                @foreach ($images as $i => $img)
+                                    <span class="{{ $i === 0 ? 'active' : '' }}"></span>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
                     <div class="p-3">
                         <a href="{{ route('packing.show', $p) }}" class="block text-xs font-bold text-white leading-snug mb-0.5 hover:text-violet-300 transition-colors">{{ $p->name }}</a>
                         <p class="text-[10px] mb-1.5" style="color:rgba(255,255,255,0.35);">Stok: {{ $p->stock }}</p>

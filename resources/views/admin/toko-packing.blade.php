@@ -11,6 +11,12 @@
 </style>
 
 <div id="packing-admin" data-active-tab="{{ $tab }}" class="p-6 max-w-[1280px] mx-auto min-h-screen">
+    @if($errors->any())
+    <div class="mb-4 px-4 py-3 rounded-2xl text-sm font-medium"
+         style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;">
+        {{ $errors->first() }}
+    </div>
+    @endif
 
     {{-- Page title --}}
     <div class="mb-6">
@@ -267,7 +273,21 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold mb-2 text-white/55">Foto Produk</label>
-                        <input type="file" name="images[]" accept="image/*" multiple class="w-full px-4 py-3 rounded-xl text-sm text-white" style="background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.1);" />
+                        <label for="packing-images-input" class="rt-img-drop">
+                            <div class="rt-img-drop-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-white">Klik untuk pilih / tambah foto</p>
+                                <p class="text-[10px]" style="color:rgba(255,255,255,0.35);">Bisa diklik berkali-kali untuk menambah foto satu per satu.</p>
+                            </div>
+                            <input id="packing-images-input" type="file" name="images[]" accept="image/*" multiple data-existing-count="0" class="sr-only" />
+                        </label>
+                        <div id="packing-images-preview" class="rt-img-pick-grid hidden"></div>
+                        <p id="packing-images-label" class="text-[10px] mt-1.5" style="color:rgba(255,255,255,0.35);">Maksimal 10 foto asli per produk.</p>
+                        @error('images')
+                            <p class="text-[10px] mt-1.5 text-red-400">{{ $message }}</p>
+                        @enderror
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -427,6 +447,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const formTitle = document.getElementById('packing-form-title');
     const formSubtitle = document.getElementById('packing-form-subtitle');
     const submitLabel = document.getElementById('packing-form-submit-label');
+    const maxImages = 10;
+
+    const imagePicker = createMultiImagePicker({
+        inputId: 'packing-images-input',
+        previewId: 'packing-images-preview',
+        labelId: 'packing-images-label',
+        maxImages,
+        emptyText: 'Maksimal 10 foto asli per produk.',
+    });
 
     const fillForm = (data) => {
         ['name', 'category', 'unit', 'price', 'stock', 'low_threshold'].forEach((key) => {
@@ -442,6 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formSubtitle.textContent = 'Produk baru akan muncul di katalog packing';
         submitLabel.textContent = 'Tambah Produk';
         fillForm({ name: '', category: 'Kardus', unit: 'pcs', price: '', stock: 0, low_threshold: 10 });
+        imagePicker.reset(0);
         formModal.classList.remove('is-hidden');
     };
 
@@ -452,6 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formSubtitle.textContent = item.name || '';
         submitLabel.textContent = 'Simpan Perubahan';
         fillForm(item);
+        imagePicker.reset(Array.isArray(item.images) ? item.images.length : 0);
         formModal.classList.remove('is-hidden');
     };
 
