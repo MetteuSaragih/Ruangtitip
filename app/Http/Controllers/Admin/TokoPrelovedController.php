@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\PrelovedItem;
-use App\Models\PrelovedOrder;
 use Illuminate\Http\Request;
 
 class TokoPrelovedController extends Controller
@@ -25,33 +25,58 @@ class TokoPrelovedController extends Controller
         70 => ['label' => '70% Normal', 'color' => '#fb923c', 'bg' => 'rgba(251,146,60,0.10)'],
     ];
 
+    /* Status fulfillment pesanan preloved (Order.status, sesudah payment_status PAID) */
+    public array $orderStatusLabels = [
+        'paid'       => 'Menunggu Konfirmasi',
+        'processing' => 'Diproses',
+        'shipped'    => 'Dikirim',
+        'delivered'  => 'Selesai',
+        'cancelled'  => 'Dibatalkan',
+    ];
+
     /* ── INDEX ─────────────────────────────────────────────── */
     public function index(Request $request)
     {
         $tab      = $request->query('tab', 'katalog');
         $filter   = $request->query('filter', 'Semua');
         $items    = PrelovedItem::latest()->get();
-        $orders   = PrelovedOrder::with('item')->latest()->get();
+
+        // Pesanan asli yang sudah lunas via Tripay, hanya yang mengandung item preloved
+        // (keranjang campuran packing + preloved tetap disimpan dalam satu Order yang sama).
+        $orders = Order::where('payment_status', 'PAID')
+            ->latest()
+            ->get()
+            ->map(function (Order $o) {
+                $prelovedItems = collect($o->items)->filter(fn ($i) => ($i['type'] ?? 'preloved') === 'preloved');
+                $o->preloved_item_names = $prelovedItems->pluck('name')->implode(', ');
+                $o->preloved_subtotal   = $prelovedItems->sum(fn ($i) => ($i['price'] ?? 0) * ($i['qty'] ?? 1));
+                $o->preloved_count      = $prelovedItems->count();
+
+                return $o;
+            })
+            ->filter(fn (Order $o) => $o->preloved_count > 0)
+            ->values();
 
         $filteredOrders = $filter === 'Semua'
             ? $orders
-            : $orders->where('status', $filter);
+            : $orders->where('status', array_search($filter, $this->orderStatusLabels, true));
 
         $available = $items->where('status', 'Tersedia')->count();
         $sold      = $items->where('status', 'Terjual')->count();
-        $revenue   = $orders->where('status', 'Selesai')->sum('price');
+        $revenue   = $orders->where('status', 'delivered')->sum('preloved_subtotal');
 
         return view('admin.toko-preloved', [
-            'pageTab'         => $tab,
-            'filter'          => $filter,
-            'items'           => $items,
-            'orders'          => $filteredOrders,
-            'available'       => $available,
-            'sold'            => $sold,
-            'revenue'         => $revenue,
-            'categories'      => $this->categories,
-            'conditions'      => $this->conditions,
-            'conditionLabels' => $this->conditionLabels,
+            'pageTab'          => $tab,
+            'filter'           => $filter,
+            'items'            => $items,
+            'orders'           => $filteredOrders,
+            'available'        => $available,
+            'sold'             => $sold,
+            'revenue'          => $revenue,
+            'categories'       => $this->categories,
+            'conditions'       => $this->conditions,
+            'conditionLabels'  => $this->conditionLabels,
+            'orderStatusLabels' => $this->orderStatusLabels,
         ]);
     }
 
@@ -144,20 +169,17 @@ class TokoPrelovedController extends Controller
     }
 
     /* ── ADVANCE ORDER STATUS ──────────────────────────────── */
-    public function advanceOrder(PrelovedOrder $order)
+    public function advanceOrder(Order $order)
     {
-        $next = match($order->status) {
-            'Menunggu Konfirmasi' => 'Siap Dikirim',
-            'Siap Dikirim'        => 'Selesai',
-            'Siap Diambil'        => 'Selesai',
-            default               => null,
+        $next = match ($order->status) {
+            Order::STATUS_PAID => 'processing',
+            'processing'       => $order->shipping_method === 'biteship' ? 'shipped' : 'delivered',
+            'shipped'          => 'delivered',
+            default            => null,
         };
 
         if ($next) {
             $order->update(['status' => $next]);
-            if ($next === 'Selesai') {
-                $order->item?->update(['status' => 'Terjual']);
-            }
         }
 
         return redirect()->route('admin.preloved', ['tab' => 'pesanan'])

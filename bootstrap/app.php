@@ -14,7 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
     $middleware->alias([
             'admin' => \App\Http\Middleware\IsAdmin::class,
         ]);
-    })    
+        $middleware->validateCsrfTokens(except: [
+            'tripay/callback',
+            'biteship/webhook',
+        ]);
+    })
     //
     ->withExceptions(function (Exceptions $exceptions) {
         //

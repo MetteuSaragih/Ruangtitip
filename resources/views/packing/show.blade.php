@@ -112,10 +112,10 @@
             </div>
         </div>
 
-        {{-- Tombol aksi (sticky bawah) --}}
-        <div class="fixed bottom-16 lg:bottom-0 left-0 right-0 z-30"
+        {{-- Tombol aksi (sticky bawah, berhenti sebelum mencapai footer) --}}
+        <div class="sticky bottom-16 lg:bottom-0 z-30"
              style="background:linear-gradient(to top,#080313 65%,transparent);">
-            <div class="max-w-xl mx-auto px-4 pb-3 pt-2">
+            <div class="px-4 pb-3 pt-2">
                 <div class="flex gap-3">
                     <button type="button" id="btnKeranjang" onclick="addToCart()"
                             class="flex-1 py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all hover:bg-violet-900/30"
@@ -142,7 +142,7 @@
 <style>
     .toast-notif {
         position: fixed;
-        bottom: 24px; right: 24px;
+        bottom: 160px; right: 24px;
         background: #1e1e35;
         border: 1px solid rgba(139,92,246,0.4);
         border-radius: 12px;
@@ -156,6 +156,9 @@
         box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
     .toast-notif.show { transform: translateY(0); opacity: 1; }
+    @media (min-width: 1024px) {
+        .toast-notif { bottom: 96px; }
+    }
 </style>
 
 <script>

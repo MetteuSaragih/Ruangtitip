@@ -13,7 +13,11 @@ class PackingOrder extends Model
     protected $fillable = [
         'order_code', 'user_id', 'items', 'subtotal', 'shipping_cost',
         'total', 'logistic', 'courier', 'address', 'payment_method', 'status',
-        'payment_status', 'snap_token',
+        'payment_status',
+        'tripay_reference', 'tripay_checkout_url', 'tripay_pay_code', 'tripay_payment_method',
+        'address_area_id', 'address_postal_code', 'courier_service_code',
+        'courier_company', 'biteship_order_id', 'biteship_tracking_id',
+        'pickup_date', 'pickup_time',
     ];
 
     protected $casts = [

@@ -38,14 +38,29 @@ class RuangTitipController extends Controller
         $rooms = StorageRoom::orderBy('id')->get();
         $orderData = $this->orderData();
 
+        $pendapatanBulanIni = $this->pendapatanDalamRentang(now()->startOfMonth(), now());
+        $pendapatanBulanLalu = $this->pendapatanDalamRentang(now()->subMonth()->startOfMonth(), now()->subMonth()->endOfMonth());
+        $pendapatanGrowth = $pendapatanBulanLalu > 0
+            ? round((($pendapatanBulanIni - $pendapatanBulanLalu) / $pendapatanBulanLalu) * 100)
+            : ($pendapatanBulanIni > 0 ? 100 : 0);
+
         return view('admin.ruang-titip', [
-            'pageTab'        => $tab,
-            'orderTab'       => $oTab,
-            'orderData'      => $orderData,
-            'rooms'          => $rooms,
-            'defaultPricing' => $this->defaultPricing,
-            'allFacilities'  => $this->allFacilities,
+            'pageTab'             => $tab,
+            'orderTab'            => $oTab,
+            'orderData'           => $orderData,
+            'rooms'               => $rooms,
+            'defaultPricing'      => $this->defaultPricing,
+            'allFacilities'       => $this->allFacilities,
+            'pendapatanBulanIni'  => $pendapatanBulanIni,
+            'pendapatanGrowth'    => $pendapatanGrowth,
         ]);
+    }
+
+    private function pendapatanDalamRentang($from, $to): int
+    {
+        return (int) TitipanOrder::where('payment_status', 'PAID')
+            ->whereBetween('created_at', [$from, $to])
+            ->sum('total');
     }
 
     /* ── STORE (Tambah Ruangan) ────────────────────────────── */
@@ -131,6 +146,34 @@ class RuangTitipController extends Controller
         return response()->json(['active' => $room->active]);
     }
 
+    /* ── UPLOAD BUKTI (Operasional) ────────────────────────── */
+    public function uploadProof(Request $request, TitipanOrder $order)
+    {
+        $data = $request->validate([
+            'proof_photo' => 'required|image|max:5120',
+        ]);
+
+        $order->update([
+            'proof_photo' => $request->file('proof_photo')->store('titipan-proofs', 'public'),
+        ]);
+
+        return redirect()->route('admin.ruang-titip', ['tab' => 'operasional'])
+            ->with('success', 'Bukti penitipan berhasil diunggah.');
+    }
+
+    /* ── UPDATE STATUS (Operasional) ───────────────────────── */
+    public function updateStatus(Request $request, TitipanOrder $order)
+    {
+        $data = $request->validate([
+            'status' => 'required|in:' . implode(',', array_keys(TitipanOrder::FLOW)),
+        ]);
+
+        $order->update(['status' => $data['status']]);
+
+        return redirect()->route('admin.ruang-titip', ['tab' => 'operasional'])
+            ->with('success', 'Status pesanan berhasil diperbarui.');
+    }
+
     private function storeImages(Request $request, string $dir): array
     {
         if (! $request->hasFile('images')) {
@@ -151,10 +194,16 @@ class RuangTitipController extends Controller
     private function orderData(): array
     {
         $blank = ['baru' => [], 'inspeksi' => [], 'gudang' => [], 'keluar' => []];
+        $returnModeByLogistic = [
+            'self' => 'Ambil Sendiri',
+            'rutip' => 'Minta Diantar',
+            'instant' => 'Ekspedisi Biteship',
+        ];
 
         return TitipanOrder::with('user')->latest()->get()
-            ->map(function (TitipanOrder $order) {
+            ->map(function (TitipanOrder $order) use ($returnModeByLogistic) {
                 return [
+                    'orderId' => $order->id,
                     'id' => $order->code(),
                     'customer' => $order->user?->name ?? 'Pelanggan',
                     'wa' => $order->user?->phone ?? '-',
@@ -163,8 +212,11 @@ class RuangTitipController extends Controller
                     'duration' => optional($order->date_start)->diffInMonths($order->date_end, false) ?: 1,
                     'deadline' => optional($order->date_end)->format('d M Y') ?? '-',
                     'status' => $order->statusMeta()['label'],
-                    'hasProof' => false,
-                    'returnMode' => null,
+                    'statusKey' => $order->status,
+                    'hasProof' => ! empty($order->proof_photo),
+                    'proofUrl' => $order->proof_photo ? asset('storage/' . $order->proof_photo) : null,
+                    'returnMode' => $returnModeByLogistic[$order->logistic] ?? null,
+                    'trackingId' => $order->biteship_tracking_id,
                     'rackCode' => null,
                     'group' => match ($order->status) {
                         'penjadwalan_penjemputan' => 'inspeksi',

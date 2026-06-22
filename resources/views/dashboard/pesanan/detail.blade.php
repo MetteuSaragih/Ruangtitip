@@ -21,9 +21,20 @@
 
     {{-- Header --}}
     <div class="flex items-start justify-between gap-3 mb-5">
-        <div>
-            <h1 class="text-lg font-extrabold text-white font-display">#{{ $order->code() }}</h1>
-            <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.4);">Dibuat {{ $order->created_at->format('d M Y, H:i') }}</p>
+        <div class="flex items-center gap-3 min-w-0">
+            @if ($order->storage)
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden shrink-0" style="background:rgba(124,58,237,0.15);">
+                    @if ($order->storage->primary_photo)
+                        <img src="{{ asset('storage/'.$order->storage->primary_photo) }}" alt="{{ $order->storage->name }}" class="w-full h-full object-cover">
+                    @else
+                        <x-lucide-warehouse class="w-5 h-5" style="color:#a78bfa;" />
+                    @endif
+                </div>
+            @endif
+            <div class="min-w-0">
+                <h1 class="text-lg font-extrabold text-white font-display">#{{ $order->code() }}</h1>
+                <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.4);">Dibuat {{ $order->created_at->format('d M Y, H:i') }}</p>
+            </div>
         </div>
         <span class="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold shrink-0" style="background:{{ $meta['color'] }}1f;color:{{ $meta['color'] }};">
             <x-dynamic-component :component="'lucide-' . $meta['icon']" class="w-3.5 h-3.5" /> {{ $meta['label'] }}
@@ -100,9 +111,17 @@
 
     {{-- Aksi sesuai status --}}
     @if ($order->status === 'menunggu_pembayaran')
-        <div class="flex items-center gap-2 px-3 py-2.5 rounded-xl mb-4 text-[11px]" style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);color:#fbbf24;">
-            <x-lucide-info class="w-3.5 h-3.5 shrink-0" /> Menunggu pembayaran. Integrasi pembayaran (Midtrans) belum aktif.
-        </div>
+        @if ($order->tripay_checkout_url)
+            <a href="{{ $order->tripay_checkout_url }}"
+               class="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-bold text-white mb-4 transition-all hover:scale-[1.02]"
+               style="background:linear-gradient(135deg,#7c3aed,#6366f1);">
+                <x-lucide-credit-card class="w-4 h-4" /> Lanjutkan Pembayaran
+            </a>
+        @else
+            <div class="flex items-center gap-2 px-3 py-2.5 rounded-xl mb-4 text-[11px]" style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);color:#fbbf24;">
+                <x-lucide-info class="w-3.5 h-3.5 shrink-0" /> Menunggu pembayaran.
+            </div>
+        @endif
     @endif
 
     {{-- Bantuan via WhatsApp (sesuai dokumen) --}}

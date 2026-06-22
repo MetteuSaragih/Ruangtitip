@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserAddress extends Model
 {
-    protected $fillable = ['user_id', 'label', 'address', 'note', 'is_primary'];
+    protected $fillable = [
+        'user_id', 'label', 'address', 'note', 'is_primary',
+        'area_id', 'area_name', 'postal_code', 'latitude', 'longitude',
+    ];
 
     protected $casts = ['is_primary' => 'boolean'];
 

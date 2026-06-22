@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Courier;
+use App\Models\Order;
 use App\Models\UserAddress;
+use App\Services\BiteshipService;
+use App\Services\TripayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -64,30 +66,26 @@ class CheckoutController extends Controller
             ->orderByDesc('is_primary')
             ->orderByDesc('id')
             ->get();
-        $couriers = Courier::where('group', 'instant')->orderBy('name')->get();
 
-        return view('checkout.address', compact('addresses', 'couriers'));
+        return view('checkout.address', compact('addresses'));
     }
 
-    public function saveShipping(Request $request)
+    public function saveAddress(Request $request)
     {
         $request->validate([
-            'shipping_method' => 'required|in:biteship',
             'mode' => 'required|in:select,new',
             'address_id' => 'nullable|required_if:mode,select|exists:user_addresses,id',
             'address.full' => 'nullable|required_if:mode,new|string|max:500',
             'address.note' => 'nullable|string|max:500',
+            'address.area_id' => 'nullable|required_if:mode,new|string',
+            'address.area_name' => 'nullable|string',
+            'address.postal_code' => 'nullable|string',
             'label' => 'nullable|string|max:50',
             'is_primary' => 'nullable|boolean',
-            'courier' => 'required|exists:couriers,code',
-            'service' => 'nullable|string|max:100',
         ]);
 
-        $method = $request->input('shipping_method');
-        $courier = Courier::where('group', 'instant')
-            ->where('code', $request->input('courier'))
-            ->firstOrFail();
         $address = null;
+
         if ($request->input('mode') === 'new') {
             if ($request->boolean('is_primary')) {
                 UserAddress::where('user_id', Auth::id())->update(['is_primary' => false]);
@@ -99,28 +97,92 @@ class CheckoutController extends Controller
                 'address' => $request->input('address.full'),
                 'note' => $request->input('address.note'),
                 'is_primary' => $request->boolean('is_primary'),
+                'area_id' => $request->input('address.area_id'),
+                'area_name' => $request->input('address.area_name'),
+                'postal_code' => $request->input('address.postal_code'),
             ]);
         } elseif ($request->filled('address_id')) {
             $address = UserAddress::where('user_id', Auth::id())->findOrFail($request->input('address_id'));
         }
 
-        session(['checkout_shipping' => [
-            'method' => $method,
-            'address' => [
-                'id' => $address?->id,
-                'full' => $address?->address,
-                'note' => $address?->note,
-            ],
-            'cost' => (int) $courier->price,
-            'courier' => $courier->code,
-            'service' => $request->input('service', $courier->service),
-        ]]);
+        if (! $address || ! $address->area_id) {
+            return back()->withErrors(['address' => 'Pilih kecamatan/kota tujuan terlebih dahulu.'])->withInput();
+        }
 
+        session(['checkout_shipping' => [
+            'method' => 'biteship',
+            'address' => [
+                'id' => $address->id,
+                'full' => $address->address,
+                'note' => $address->note,
+                'area_id' => $address->area_id,
+                'area_name' => $address->area_name,
+                'postal_code' => $address->postal_code,
+            ],
+        ]]);
         session()->forget('checkout_shipping_method');
 
-        if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'redirect' => route('checkout.payment')]);
+        return redirect()->route('checkout.courier');
+    }
+
+    public function courier()
+    {
+        $shipping = session('checkout_shipping', []);
+        if (empty($shipping['address']['area_id'])) {
+            return redirect()->route('checkout.address');
         }
+
+        return view('checkout.courier', ['address' => $shipping['address']['full'] ?? '']);
+    }
+
+    public function courierRates(BiteshipService $biteship)
+    {
+        $cart = $this->checkoutCart();
+        $shipping = session('checkout_shipping', []);
+        if (empty($cart) || empty($shipping['address']['area_id'])) {
+            return response()->json(['success' => false, 'message' => 'Alamat belum dipilih.'], 422);
+        }
+
+        $result = $biteship->getRates(
+            ['area_id' => config('biteship.warehouse.area_id'), 'postal_code' => config('biteship.warehouse.postal_code')],
+            ['area_id' => $shipping['address']['area_id'], 'postal_code' => $shipping['address']['postal_code'] ?? null],
+            $this->cartToItems($cart),
+            config('biteship.checkout_couriers')
+        );
+
+        return response()->json($result);
+    }
+
+    public function chooseCourier(Request $request, BiteshipService $biteship)
+    {
+        $data = $request->validate([
+            'courier_code' => 'required|string',
+            'service_code' => 'required|string',
+        ]);
+
+        $cart = $this->checkoutCart();
+        $shipping = session('checkout_shipping', []);
+
+        $rates = $biteship->getRates(
+            ['area_id' => config('biteship.warehouse.area_id'), 'postal_code' => config('biteship.warehouse.postal_code')],
+            ['area_id' => $shipping['address']['area_id'] ?? null, 'postal_code' => $shipping['address']['postal_code'] ?? null],
+            $this->cartToItems($cart),
+            config('biteship.checkout_couriers')
+        );
+
+        $picked = collect($rates['pricing'] ?? [])->first(fn ($p) => $p['courier_code'] === $data['courier_code']
+            && ($p['courier_service_code'] ?? null) === $data['service_code']);
+
+        if (! $picked) {
+            return back()->withErrors(['courier_code' => 'Tarif kurir tidak valid atau sudah berubah, silakan pilih ulang.']);
+        }
+
+        $shipping['cost'] = (int) $picked['price'];
+        $shipping['courier'] = $picked['courier_code'];
+        $shipping['courier_name'] = $picked['courier_name'] ?? $picked['courier_code'];
+        $shipping['service'] = $picked['courier_service_code'] ?? null;
+        $shipping['company'] = $picked['courier_code'];
+        session(['checkout_shipping' => $shipping]);
 
         return redirect()->route('checkout.payment');
     }
@@ -146,75 +208,107 @@ class CheckoutController extends Controller
 
     public function process(Request $request)
     {
+        $data = $request->validate([
+            'payment_method' => 'required|string',
+            'pickup_date' => 'nullable|date|after_or_equal:today',
+            'pickup_time' => 'nullable|string',
+        ]);
+
         $cart = $this->checkoutCart();
         $shipping = session('checkout_shipping', []);
-        $paymentMethod = $request->input('payment_method');
+
+        if (empty($cart) || empty($shipping)) {
+            return response()->json(['success' => false, 'message' => 'Sesi checkout tidak valid.'], 422);
+        }
 
         $subtotal = array_sum(array_column($cart, 'subtotal'));
         $serviceFee = 1000;
         $shippingCost = $shipping['cost'] ?? 0;
         $total = $subtotal + $serviceFee + $shippingCost;
 
-        $orderId = 'TP-' . date('Y') . '-' . rand(10000, 99999);
-
-        // Store order in session for success page
-        session([
-            'last_order' => [
-                'order_id' => $orderId,
-                'cart' => $cart,
-                'shipping' => $shipping,
-                'payment_method' => $paymentMethod,
-                'subtotal' => $subtotal,
-                'service_fee' => $serviceFee,
-                'shipping_cost' => $shippingCost,
-                'total' => $total,
-            ]
+        $order = Order::create([
+            'order_number' => 'RT-' . now()->year . '-' . random_int(10000, 99999),
+            'user_id' => Auth::id(),
+            'customer_name' => Auth::user()->name ?? 'Pelanggan',
+            'customer_email' => Auth::user()->email ?? 'noreply@rutip.test',
+            'customer_phone' => Auth::user()->phone ?? null,
+            'items' => array_values($cart),
+            'subtotal' => $subtotal,
+            'service_fee' => $serviceFee,
+            'shipping_cost' => $shippingCost,
+            'total' => $total,
+            'shipping_method' => $shipping['method'],
+            'shipping_address' => $shipping['address'] ?? null,
+            'courier_code' => $shipping['courier'] ?? null,
+            'courier_name' => $shipping['courier_name'] ?? null,
+            'courier_service_code' => $shipping['service'] ?? null,
+            'pickup_date' => $data['pickup_date'] ?? null,
+            'pickup_time' => $data['pickup_time'] ?? null,
+            'payment_method' => $data['payment_method'],
+            'payment_status' => 'UNPAID',
+            'status' => Order::STATUS_PENDING,
         ]);
 
-        // For Midtrans, return snap token. If Midtrans is not configured yet,
-        // keep the local checkout flow usable by falling back to success.
-        if ($paymentMethod !== 'pickup') {
-            try {
-                $snapToken = $this->createMidtransToken($orderId, $total, $cart);
-                return response()->json([
-                    'success' => true,
-                    'snap_token' => $snapToken,
-                    'order_id' => $orderId,
-                ]);
-            } catch (\Throwable $e) {
-                // Fallback: simulate success
-                return response()->json([
-                    'success' => true,
-                    'redirect' => route('checkout.success', $orderId),
-                    'order_id' => $orderId,
-                ]);
-            }
+        $orderItems = collect($cart)->map(fn ($item) => [
+            'name' => mb_substr($item['name'], 0, 50),
+            'price' => (int) $item['price'],
+            'quantity' => (int) $item['qty'],
+        ])->values()->all();
+        $orderItems[] = ['name' => 'Biaya Layanan dan Platform', 'price' => $serviceFee, 'quantity' => 1];
+        if ($shippingCost > 0) {
+            $orderItems[] = ['name' => 'Biaya Pengiriman', 'price' => (int) $shippingCost, 'quantity' => 1];
         }
+
+        try {
+            $tripay = app(TripayService::class);
+            $result = $tripay->createTransaction([
+                'method' => $data['payment_method'],
+                'merchant_ref' => $order->order_number,
+                'amount' => $total,
+                'customer_name' => $order->customer_name,
+                'customer_email' => $order->customer_email,
+                'customer_phone' => $order->customer_phone ?? '0800000000',
+                'order_items' => $orderItems,
+                'callback_url' => route('tripay.callback'),
+                'return_url' => route('checkout.success', $order->order_number),
+            ]);
+
+            $order->update([
+                'tripay_reference' => $result['reference'] ?? null,
+                'tripay_checkout_url' => $result['checkout_url'] ?? null,
+                'tripay_pay_code' => $result['pay_code'] ?? null,
+                'tripay_payment_method' => $data['payment_method'],
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+            $order->update(['payment_status' => 'FAILED']);
+
+            return response()->json(['success' => false, 'message' => 'Gagal memulai pembayaran: ' . $e->getMessage()], 500);
+        }
+
+        // Hanya hapus item yang benar-benar di-checkout; sisanya tetap di keranjang.
+        $cartSession = session('cart', []);
+        foreach (array_keys($cart) as $key) {
+            unset($cartSession[$key]);
+        }
+        session(['cart' => $cartSession]);
+        session()->forget(['checkout_cart', 'checkout_shipping']);
 
         return response()->json([
             'success' => true,
-            'redirect' => route('checkout.success', $orderId),
+            'redirect' => route('checkout.success', $order->order_number),
         ]);
     }
 
-    public function success($orderId)
+    public function success($orderNumber)
     {
-        $order = session('last_order');
-        if (!$order) {
-            return redirect()->route('preloved.cart.index');
-        }
+        $order = Order::where('order_number', $orderNumber)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
 
-        // Only drop the items that were actually checked out; anything the
-        // customer left unselected in the cart stays there for later.
-        $cart = session('cart', []);
-        foreach (array_keys($order['cart'] ?? []) as $key) {
-            unset($cart[$key]);
-        }
-        session(['cart' => $cart]);
-        session()->forget(['checkout_cart', 'checkout_shipping']);
+        $cartCount = count(session('cart', []));
 
-        $cartCount = count($cart);
-        return view('checkout.success', compact('order', 'orderId', 'cartCount'));
+        return view('checkout.success', ['order' => $order, 'cartCount' => $cartCount]);
     }
 
     private function checkoutCart(): array
@@ -222,48 +316,13 @@ class CheckoutController extends Controller
         return session('checkout_cart', []);
     }
 
-    private function createMidtransToken($orderId, $total, $cart)
+    private function cartToItems(array $cart): array
     {
-        $serverKey = config('services.midtrans.server_key');
-        if (empty($serverKey)) {
-            throw new \RuntimeException('Midtrans server key is not configured.');
-        }
-
-        $isProduction = config('services.midtrans.is_production', false);
-        $baseUrl = $isProduction ? 'https://app.midtrans.com/snap/v1/transactions' : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
-
-        $items = [];
-        foreach ($cart as $item) {
-            $items[] = [
-                'id' => 'item-' . $item['id'],
-                'price' => $item['price'],
-                'quantity' => $item['qty'],
-                'name' => substr($item['name'], 0, 50),
-            ];
-        }
-        $items[] = ['id' => 'service-fee', 'price' => 1000, 'quantity' => 1, 'name' => 'Biaya Layanan dan Platform'];
-
-        $payload = [
-            'transaction_details' => [
-                'order_id' => $orderId,
-                'gross_amount' => $total,
-            ],
-            'item_details' => $items,
-            'customer_details' => [
-                'first_name' => 'Ahmad',
-                'last_name' => 'Rizki',
-                'email' => 'ahmad.rizki@student.ub.ac.id',
-                'phone' => '081234567890',
-            ],
-        ];
-
-        $response = \Illuminate\Support\Facades\Http::withBasicAuth($serverKey, '')
-            ->post($baseUrl, $payload);
-
-        if ($response->successful()) {
-            return $response->json()['token'];
-        }
-
-        throw new \Exception('Midtrans token creation failed: ' . $response->body());
+        return collect($cart)->map(fn ($item) => [
+            'name' => $item['name'],
+            'value' => (int) $item['price'],
+            'quantity' => (int) $item['qty'],
+            'weight' => (int) ($item['weight'] ?? 1000),
+        ])->values()->all();
     }
 }

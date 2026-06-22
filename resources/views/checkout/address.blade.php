@@ -1,144 +1,109 @@
-@extends('layouts.dashboard')
+@extends('layouts.packing-checkout')
 
 @section('title', 'Alamat Pengiriman')
 
-@section('content')
 @php
     if (! function_exists('rupiah')) {
         function rupiah($n) { return 'Rp ' . number_format($n, 0, ',', '.'); }
     }
 @endphp
 
-<div class="max-w-xl mx-auto pt-6 pb-8">
-    <h1 class="text-xl font-extrabold text-white font-display mb-1">Alamat Pengiriman</h1>
-    <p class="text-xs mb-5" style="color:rgba(255,255,255,0.4);">Pilih alamat tersimpan atau tambah baru</p>
+@section('checkout-content')
+<x-checkout-progress :labels="['Metode Pengiriman', 'Alamat', 'Kurir', 'Pembayaran']" :step="2" />
+<h1 class="text-lg font-extrabold text-white font-display mb-0.5">Alamat Pengiriman</h1>
+<p class="text-xs mb-5" style="color:rgba(255,255,255,0.4);">Pilih alamat tersimpan atau tambah baru</p>
 
-    @if ($errors->any())
-        <div class="rounded-xl px-4 py-2.5 mb-4 text-sm" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;">
-            {{ $errors->first() }}
-        </div>
-    @endif
+@if ($errors->any())
+    <div class="rounded-xl px-4 py-2.5 mb-4 text-xs" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;">
+        {{ $errors->first() }}
+    </div>
+@endif
 
-    <form method="POST" action="{{ route('checkout.address.save') }}" id="addressForm">
-        @csrf
-        <input type="hidden" name="shipping_method" value="biteship">
-        <input type="hidden" name="mode" id="modeInput" value="new">
-        <input type="hidden" name="address_id" id="addressId" value="{{ old('address_id') }}">
-        <input type="hidden" name="courier" id="courierInput" value="{{ old('courier') }}">
-        <input type="hidden" name="service" id="serviceInput" value="{{ old('service') }}">
+<form method="POST" action="{{ route('checkout.address.save') }}" id="addressForm">
+    @csrf
+    <input type="hidden" name="mode" id="modeInput" value="new">
+    <input type="hidden" name="address_id" id="addressId" value="{{ old('address_id') }}">
 
-        <div class="mb-6">
-            @if($addresses->isNotEmpty())
-                <p class="text-xs font-bold text-white mb-3">Alamat Tersimpan</p>
-                <div class="space-y-3 mb-4">
-                    @foreach($addresses as $address)
-                        <button type="button" data-id="{{ $address->id }}" onclick="pickAddress('{{ $address->id }}')"
-                                class="addr w-full flex items-start gap-3 p-4 rounded-2xl text-left transition-all hover:scale-[1.01]"
-                                style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.09);">
-                            <x-lucide-map-pin class="w-4 h-4 shrink-0 mt-0.5" style="color:#a78bfa;" />
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2 mb-0.5">
-                                    <span class="text-sm font-bold text-white">{{ $address->label ?: 'Alamat' }}</span>
-                                    @if($address->is_primary)
-                                        <span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:rgba(124,58,237,0.2);color:#a78bfa;">Utama</span>
-                                    @endif
-                                </div>
-                                <p class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.55);">{{ $address->address }}</p>
-                                @if($address->note)
-                                    <p class="text-[10px] mt-1" style="color:rgba(255,255,255,0.35);">Catatan: {{ $address->note }}</p>
+    <div class="mb-6">
+        @if($addresses->isNotEmpty())
+            <p class="text-xs font-bold text-white mb-3">Alamat Tersimpan</p>
+            <div class="space-y-3 mb-4">
+                @foreach($addresses as $address)
+                    <button type="button" data-id="{{ $address->id }}"
+                            onclick="pickAddress('{{ $address->id }}')"
+                            class="addr w-full flex items-start gap-3 p-4 rounded-2xl text-left transition-all hover:scale-[1.01]"
+                            style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.09);">
+                        <x-lucide-map-pin class="w-4 h-4 shrink-0 mt-0.5" style="color:#a78bfa;" />
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-0.5">
+                                <span class="text-sm font-bold text-white">{{ $address->label ?: 'Alamat' }}</span>
+                                @if($address->is_primary)
+                                    <span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:rgba(124,58,237,0.2);color:#a78bfa;">Utama</span>
                                 @endif
                             </div>
-                            <div class="addr-radio w-5 h-5 rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center" style="border-color:rgba(255,255,255,0.2);"></div>
-                        </button>
-                    @endforeach
-                </div>
-
-                <div class="flex items-center gap-3 my-5">
-                    <div class="flex-1 h-px" style="background:rgba(255,255,255,0.08);"></div>
-                    <span class="text-[10px]" style="color:rgba(255,255,255,0.3);">atau tambah alamat baru</span>
-                    <div class="flex-1 h-px" style="background:rgba(255,255,255,0.08);"></div>
-                </div>
-            @endif
-
-            <div class="rounded-2xl p-5 space-y-4" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-                <p class="text-xs font-bold text-white">{{ $addresses->count() ? 'Daftarkan Alamat Baru' : 'Masukkan Alamat Pengiriman' }}</p>
-                <div>
-                    <label class="block text-[11px] font-semibold mb-2" style="color:rgba(255,255,255,0.55);">Label <span style="color:rgba(255,255,255,0.3);">(opsional)</span></label>
-                    <input type="text" name="label" placeholder="Kos / Rumah / Kontrakan" value="{{ old('label') }}"
-                           class="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/20 outline-none"
-                           style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold mb-2" style="color:rgba(255,255,255,0.55);">Alamat Lengkap <span style="color:#f87171;">*</span></label>
-                    <textarea name="address[full]" id="addressInput" rows="3" placeholder="Jl. Veteran No. 10, Kec. Lowokwaru, Malang"
-                              class="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/20 outline-none resize-none"
-                              style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">{{ old('address.full') }}</textarea>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold mb-2" style="color:rgba(255,255,255,0.55);">Catatan untuk Kurir <span style="color:rgba(255,255,255,0.3);">(opsional)</span></label>
-                    <textarea name="address[note]" rows="2" placeholder="Rumah cat hijau, pagar depan, dekat masjid"
-                              class="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/20 outline-none resize-none"
-                              style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">{{ old('address.note') }}</textarea>
-                </div>
-                <label class="flex items-center gap-2.5 cursor-pointer">
-                    <input type="checkbox" name="is_primary" value="1" class="accent-violet-500 w-4 h-4" {{ old('is_primary') ? 'checked' : '' }}>
-                    <span class="text-xs" style="color:rgba(255,255,255,0.6);">Jadikan alamat utama</span>
-                </label>
-            </div>
-        </div>
-
-        <div class="mb-6">
-            <p class="text-xs font-bold text-white mb-3">Pilih Kurir</p>
-            <div class="space-y-2.5">
-                @forelse ($couriers as $courier)
-                    <button type="button" class="courier-opt w-full flex items-center gap-4 p-4 rounded-2xl text-left transition-all hover:scale-[1.01]"
-                            data-id="{{ $courier->code }}" data-service="{{ $courier->service }}"
-                            style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.09);">
-                        <x-lucide-truck class="w-6 h-6 shrink-0" style="color:#a78bfa;" />
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-bold text-white">{{ $courier->name }}</p>
-                            <p class="text-xs" style="color:rgba(255,255,255,0.45);">{{ $courier->service }} - {{ $courier->eta }}</p>
+                            <p class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.55);">{{ $address->address }}</p>
+                            @if($address->note)
+                                <p class="text-[10px] mt-1" style="color:rgba(255,255,255,0.35);">Catatan: {{ $address->note }}</p>
+                            @endif
+                            @if(! $address->area_id)
+                                <p class="text-[10px] mt-1" style="color:#fbbf24;">Belum ada kecamatan tersimpan, lengkapi dulu via "tambah alamat baru".</p>
+                            @endif
                         </div>
-                        <div class="text-right">
-                            <p class="text-sm font-bold" style="color:#7c3aed;">{{ rupiah($courier->price) }}</p>
-                            <div class="courier-radio w-5 h-5 rounded-full border-2 mt-1 ml-auto flex items-center justify-center" style="border-color:rgba(255,255,255,0.2);">
-                                <x-lucide-check class="check-icon w-3 h-3 text-white" style="display:none;" />
-                            </div>
-                        </div>
+                        <div class="addr-radio w-5 h-5 rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center" style="border-color:rgba(255,255,255,0.2);"></div>
                     </button>
-                @empty
-                    <div class="rounded-2xl p-4 text-xs text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.45);">
-                        Belum ada kurir tersedia.
-                    </div>
-                @endforelse
+                @endforeach
             </div>
-        </div>
 
-        <div class="flex gap-3">
-            <a href="{{ route('checkout.shipping') }}" class="flex items-center justify-center gap-1.5 py-3.5 px-4 rounded-xl font-semibold text-sm hover:bg-white/5 shrink-0" style="border:1.5px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.65);">
-                <x-lucide-chevron-left class="w-4 h-4" /> Kembali
-            </a>
-            <button type="submit" id="continueBtn" disabled
-                    class="flex-1 py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-40"
-                    style="background:linear-gradient(135deg,#7c3aed,#6366f1);">
-                Lanjutkan <x-lucide-arrow-right class="w-4 h-4" />
-            </button>
+            <div class="flex items-center gap-3 my-5">
+                <div class="flex-1 h-px" style="background:rgba(255,255,255,0.08);"></div>
+                <span class="text-[10px]" style="color:rgba(255,255,255,0.3);">atau tambah alamat baru</span>
+                <div class="flex-1 h-px" style="background:rgba(255,255,255,0.08);"></div>
+            </div>
+        @endif
+
+        <div class="rounded-2xl p-5 space-y-4" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
+            <p class="text-xs font-bold text-white">{{ $addresses->count() ? 'Daftarkan Alamat Baru' : 'Masukkan Alamat Pengiriman' }}</p>
+            <div>
+                <label class="block text-[11px] font-semibold mb-2" style="color:rgba(255,255,255,0.55);">Label <span style="color:rgba(255,255,255,0.3);">(opsional)</span></label>
+                <input type="text" name="label" placeholder="Kos / Rumah / Kontrakan" value="{{ old('label') }}"
+                       class="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/20 outline-none"
+                       style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">
+            </div>
+            <x-biteship-area-search prefix="address" />
+            <div>
+                <label class="block text-[11px] font-semibold mb-2" style="color:rgba(255,255,255,0.55);">Alamat Lengkap <span style="color:#f87171;">*</span></label>
+                <textarea name="address[full]" id="addressInput" rows="3" placeholder="Jl. Veteran No. 10, Kec. Lowokwaru, Malang"
+                          class="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/20 outline-none resize-none"
+                          style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">{{ old('address.full') }}</textarea>
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold mb-2" style="color:rgba(255,255,255,0.55);">Catatan untuk Kurir <span style="color:rgba(255,255,255,0.3);">(opsional)</span></label>
+                <textarea name="address[note]" rows="2" placeholder="Rumah cat hijau, pagar depan, dekat masjid"
+                          class="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/20 outline-none resize-none"
+                          style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">{{ old('address.note') }}</textarea>
+            </div>
+            <label class="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox" name="is_primary" value="1" class="accent-violet-500 w-4 h-4" {{ old('is_primary') ? 'checked' : '' }}>
+                <span class="text-xs" style="color:rgba(255,255,255,0.6);">Jadikan alamat utama</span>
+            </label>
         </div>
-    </form>
-</div>
+    </div>
+
+    <div class="flex gap-3">
+        <a href="{{ route('checkout.shipping') }}" class="flex items-center justify-center gap-1.5 py-3.5 px-4 rounded-xl font-semibold text-sm hover:bg-white/5 shrink-0" style="border:1.5px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.65);"><x-lucide-chevron-left class="w-4 h-4" /> Kembali</a>
+        <button type="submit" id="continueBtn" disabled class="flex-1 py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-40" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Simpan &amp; Lanjutkan <x-lucide-arrow-right class="w-4 h-4" /></button>
+    </div>
+</form>
 
 <script>
 (function () {
     const addr = document.getElementById('addressInput');
     const mode = document.getElementById('modeInput');
     const addressId = document.getElementById('addressId');
-    const courierInput = document.getElementById('courierInput');
-    const serviceInput = document.getElementById('serviceInput');
     const btn = document.getElementById('continueBtn');
 
     const refresh = () => {
-        const hasAddress = (mode.value === 'select' && addressId.value !== '') || (mode.value === 'new' && addr.value.trim().length > 0);
-        const ok = hasAddress && courierInput.value !== '';
+        const ok = (mode.value === 'select' && addressId.value !== '') || (mode.value === 'new' && addr.value.trim().length > 0);
         btn.disabled = !ok;
     };
 
@@ -171,24 +136,6 @@
             });
         }
         refresh();
-    });
-
-    document.querySelectorAll('.courier-opt').forEach(opt => {
-        opt.addEventListener('click', () => {
-            courierInput.value = opt.dataset.id;
-            serviceInput.value = opt.dataset.service;
-            document.querySelectorAll('.courier-opt').forEach(o => {
-                const selected = o === opt;
-                o.style.background = selected ? 'rgba(124,58,237,0.1)' : 'rgba(255,255,255,0.04)';
-                o.style.borderColor = selected ? '#7c3aed' : 'rgba(255,255,255,0.09)';
-                const radio = o.querySelector('.courier-radio');
-                const check = o.querySelector('.check-icon');
-                radio.style.background = selected ? '#7c3aed' : 'transparent';
-                radio.style.borderColor = selected ? '#7c3aed' : 'rgba(255,255,255,0.2)';
-                check.style.display = selected ? 'block' : 'none';
-            });
-            refresh();
-        });
     });
 
     refresh();

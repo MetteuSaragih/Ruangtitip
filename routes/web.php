@@ -5,17 +5,19 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\RuangTitipController as AdminRuangTitipController;
 use App\Http\Controllers\Admin\TokoPackingController;
 use App\Http\Controllers\Admin\TokoPrelovedController;
+use App\Http\Controllers\Api\BiteshipAreaController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\OtpController;
+use App\Http\Controllers\BiteshipWebhookController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PackingController;
-use App\Http\Controllers\PackingPaymentNotificationController;
 use App\Http\Controllers\PesananController;
 use App\Http\Controllers\PrelovedController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RuangTitipController as UserRuangTitipController;
+use App\Http\Controllers\TripayCallbackController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,8 +27,10 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', fn () => view('landing.index'))->name('home');
-Route::post('/midtrans/notification', [PackingPaymentNotificationController::class, 'handle'])
-    ->name('midtrans.notification');
+Route::post('/tripay/callback', [TripayCallbackController::class, 'handle'])
+    ->name('tripay.callback');
+Route::post('/biteship/webhook', [BiteshipWebhookController::class, 'handle'])
+    ->name('biteship.webhook');
 
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +66,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/pesanan', [PesananController::class, 'index'])->name('pesanan.index');
     Route::get('/dashboard/pesanan/{order}', [PesananController::class, 'show'])->name('pesanan.detail');
 
+    Route::get('/api/biteship/areas', [BiteshipAreaController::class, 'search'])->name('api.biteship.areas');
+    Route::get('/api/tripay/channels', [\App\Http\Controllers\Api\TripayChannelController::class, 'index'])->name('api.tripay.channels');
+
     Route::prefix('dashboard/packing')->name('packing.')->group(function () {
         Route::get('/', [PackingController::class, 'index'])->name('index');
         Route::get('/produk/{product}', [PackingController::class, 'show'])->name('show');
@@ -69,7 +76,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/logistik', [PackingController::class, 'logistics'])->name('logistics');
         Route::post('/logistik', [PackingController::class, 'chooseLogistics'])->name('logistics.choose');
         Route::get('/alamat', [PackingController::class, 'address'])->name('address');
-        Route::post('/alamat', [PackingController::class, 'chooseAddress'])->name('address.choose');
+        Route::post('/alamat', [PackingController::class, 'saveAddress'])->name('address.save');
+        Route::get('/kurir', [PackingController::class, 'courier'])->name('courier');
+        Route::post('/kurir/ongkir', [PackingController::class, 'courierRates'])->name('courier.rates');
+        Route::post('/kurir', [PackingController::class, 'chooseCourier'])->name('courier.choose');
         Route::get('/pembayaran', [PackingController::class, 'payment'])->name('payment');
         Route::post('/pembayaran', [PackingController::class, 'pay'])->name('pay');
         Route::get('/sukses/{orderCode}', [PackingController::class, 'success'])->name('success');
@@ -85,6 +95,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/alamat', [UserRuangTitipController::class, 'alamatForm'])->name('alamat');
         Route::post('/alamat', [UserRuangTitipController::class, 'alamatStore'])->name('alamat.store');
         Route::get('/kurir', [UserRuangTitipController::class, 'kurirForm'])->name('kurir');
+        Route::post('/kurir/ongkir', [UserRuangTitipController::class, 'kurirRates'])->name('kurir.rates');
         Route::post('/kurir', [UserRuangTitipController::class, 'kurirStore'])->name('kurir.store');
         Route::get('/checkout', [UserRuangTitipController::class, 'checkout'])->name('checkout');
         Route::post('/checkout', [UserRuangTitipController::class, 'place'])->name('place');
@@ -100,6 +111,10 @@ Route::middleware('auth')->group(function () {
         Route::delete('/ruang-titip/{room}', [AdminRuangTitipController::class, 'destroy'])->name('ruang-titip.destroy');
         Route::post('/ruang-titip/{room}/toggle-active', [AdminRuangTitipController::class, 'toggleActive'])
             ->name('ruang-titip.toggle-active');
+        Route::post('/ruang-titip/orders/{order}/proof', [AdminRuangTitipController::class, 'uploadProof'])
+            ->name('ruang-titip.orders.proof');
+        Route::post('/ruang-titip/orders/{order}/status', [AdminRuangTitipController::class, 'updateStatus'])
+            ->name('ruang-titip.orders.status');
 
         Route::get('/preloved', [TokoPrelovedController::class, 'index'])->name('preloved');
         Route::post('/preloved', [TokoPrelovedController::class, 'store'])->name('preloved.store');
@@ -129,6 +144,7 @@ Route::middleware('auth')->group(function () {
 
 Route::prefix('toko-preloved')->name('preloved.')->group(function () {
     Route::get('/', [PrelovedController::class, 'index'])->name('index');
+    Route::get('/cara-jual', [PrelovedController::class, 'caraJual'])->name('cara-jual');
     Route::get('/produk/{id}', [PrelovedController::class, 'show'])->name('show');
     Route::post('/keranjang/tambah', [CartController::class, 'add'])->name('cart.add');
     Route::get('/keranjang', [CartController::class, 'index'])->name('cart.index');
@@ -141,8 +157,10 @@ Route::middleware('auth')->prefix('checkout')->name('checkout.')->group(function
     Route::get('/pengiriman', [CheckoutController::class, 'shipping'])->name('shipping');
     Route::post('/pengiriman/pilih', [CheckoutController::class, 'chooseShipping'])->name('shipping.choose');
     Route::get('/alamat', [CheckoutController::class, 'address'])->name('address');
-    Route::post('/alamat/simpan', [CheckoutController::class, 'saveShipping'])->name('address.save');
-    Route::post('/pengiriman/simpan', [CheckoutController::class, 'saveShipping'])->name('shipping.save');
+    Route::post('/alamat/simpan', [CheckoutController::class, 'saveAddress'])->name('address.save');
+    Route::get('/kurir', [CheckoutController::class, 'courier'])->name('courier');
+    Route::post('/kurir/ongkir', [CheckoutController::class, 'courierRates'])->name('courier.rates');
+    Route::post('/kurir/pilih', [CheckoutController::class, 'chooseCourier'])->name('courier.choose');
     Route::get('/pembayaran', [CheckoutController::class, 'payment'])->name('payment');
     Route::post('/proses', [CheckoutController::class, 'process'])->name('process');
     Route::get('/berhasil/{orderId}', [CheckoutController::class, 'success'])->name('success');

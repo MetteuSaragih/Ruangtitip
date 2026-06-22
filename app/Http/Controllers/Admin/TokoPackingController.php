@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\PackingOrder;
 use App\Models\PackingProduct;
 use Illuminate\Http\Request;
 
@@ -11,20 +12,21 @@ class TokoPackingController extends Controller
     public function index(Request $request)
     {
         $tab = $request->query('tab', 'inventaris');
-        
+
         // Ambil data produk toko packing utama, urutkan dari yang terbaru
         $items = PackingProduct::latest()->get();
-        
-        // Data pesanan (dikosongkan sementara untuk tab pesanan)
-        $orders = collect([]); 
+
+        // Data pesanan asli dari pelanggan (lewat checkout Tripay)
+        $orders = PackingOrder::with('user')->latest()->get();
 
         // Hitung statistik untuk Scorecard
         $lowItems = $items->filter(fn($item) => $item->stock <= $item->low_threshold);
         $mostLow = $lowItems->sortBy('stock')->first();
-        
-        // Pendapatan & Terjual (karena tabel orders kosong, kita set 0)
-        $totalSold = 0; 
-        $revenue = 0;   
+
+        // Pendapatan & Terjual dihitung dari pesanan yang sudah lunas
+        $paidOrders = $orders->where('payment_status', 'PAID');
+        $totalSold  = $paidOrders->sum(fn ($o) => collect($o->items)->sum('qty'));
+        $revenue    = $paidOrders->sum('total');
 
         return view('admin.toko-packing', compact(
             'items', 'orders', 'tab', 'lowItems', 'mostLow', 'totalSold', 'revenue'

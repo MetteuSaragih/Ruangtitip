@@ -54,7 +54,7 @@
         .rt-carousel-dots span.active { background: #fff; }
     </style>
 </head>
-<body class="min-h-screen pb-20 lg:pb-0" style="background:#0c0618;">
+<body class="min-h-screen pb-20 lg:pb-0 flex flex-col" style="background:#0c0618;">
 
 @php
     $u = $user ?? auth()->user();
@@ -63,6 +63,47 @@
         $parts = preg_split('/\s+/', trim($u->name));
         foreach (array_slice($parts, 0, 2) as $p) { $initials .= strtoupper(substr($p, 0, 1)); }
     }
+
+    $notifications = collect();
+    if ($u) {
+        $titipanMsg = [
+            'menunggu_pembayaran'     => fn ($o) => "Pesanan #{$o->code()} menunggu pembayaran",
+            'penjadwalan_penjemputan' => fn ($o) => "Pesanan #{$o->code()} dalam proses penjemputan",
+            'dalam_gudang'            => fn ($o) => "Barangmu aman tersimpan di gudang RUTIP",
+            'proses_pengembalian'     => fn ($o) => "Pesanan #{$o->code()} sedang diproses pengembalian",
+            'selesai'                 => fn ($o) => "Pesanan #{$o->code()} telah selesai",
+        ];
+        foreach (\App\Models\TitipanOrder::where('user_id', $u->id)->latest('updated_at')->take(5)->get() as $o) {
+            if ($msg = $titipanMsg[$o->status] ?? null) {
+                $notifications->push(['text' => $msg($o), 'at' => $o->updated_at]);
+            }
+        }
+
+        foreach (\App\Models\PackingOrder::where('user_id', $u->id)->latest('updated_at')->take(5)->get() as $o) {
+            $text = match (true) {
+                $o->payment_status === 'PAID' => "Pembayaran pesanan #{$o->order_code} berhasil dikonfirmasi",
+                in_array($o->payment_status, ['FAILED', 'EXPIRED']) => "Pembayaran pesanan #{$o->order_code} gagal/kedaluwarsa",
+                default => "Pesanan #{$o->order_code} menunggu pembayaran",
+            };
+            $notifications->push(['text' => $text, 'at' => $o->updated_at]);
+        }
+
+        foreach (\App\Models\Order::where('customer_email', $u->email)->latest('updated_at')->take(5)->get() as $o) {
+            $text = match (true) {
+                $o->status === 'delivered' => "Pesanan #{$o->order_number} telah selesai",
+                $o->status === 'shipped' => "Pesanan #{$o->order_number} sedang dikirim",
+                $o->status === 'processing' => "Pesanan #{$o->order_number} sedang diproses",
+                $o->payment_status === 'PAID' => "Pembayaran pesanan #{$o->order_number} berhasil dikonfirmasi",
+                in_array($o->payment_status, ['FAILED', 'EXPIRED']) => "Pembayaran pesanan #{$o->order_number} gagal/kedaluwarsa",
+                default => "Pesanan #{$o->order_number} menunggu pembayaran",
+            };
+            $notifications->push(['text' => $text, 'at' => $o->updated_at]);
+        }
+
+        $notifications = $notifications->sortByDesc('at')->take(5)->values();
+    }
+    $notifUnreadCount = $notifications->filter(fn ($n) => $n['at'] && $n['at']->gt(now()->subDays(2)))->count();
+
     $navLinks = [
         ['label' => 'Beranda', 'route' => 'dashboard'],
         ['label' => 'Ruang Titip', 'route' => 'ruang-titip.index'],
@@ -78,11 +119,8 @@
     <div class="max-w-7xl mx-auto px-4 lg:px-6 h-16 flex items-center justify-between">
 
         {{-- Logo --}}
-        <a href="{{ route('dashboard') }}" class="flex items-center gap-2 shrink-0">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">
-                <x-lucide-package class="w-4 h-4 text-white" />
-            </div>
-            <span class="text-xl font-extrabold text-white font-display">RUTIP</span>
+        <a href="{{ route('dashboard') }}" class="flex items-center shrink-0">
+            <img src="{{ asset('images/logo-rutip-putih.png') }}" alt="RUTIP" class="h-12 w-auto">
         </a>
         
 
@@ -132,27 +170,32 @@
             <div class="relative">
                 <button type="button" onclick="toggleMenu('notifMenu')" aria-label="Notifikasi" class="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-white/5" style="color:rgba(255,255,255,0.6);">
                     <x-lucide-bell class="w-5 h-5" />
-                    <span class="absolute top-1 right-1 w-4 h-4 rounded-full text-[9px] font-bold text-white flex items-center justify-center" style="background:#ef4444;">2</span>
+                    @if ($notifUnreadCount > 0)
+                        <span class="absolute top-1 right-1 w-4 h-4 rounded-full text-[9px] font-bold text-white flex items-center justify-center" style="background:#ef4444;">{{ $notifUnreadCount }}</span>
+                    @endif
                 </button>
                 <div id="notifMenu" class="hidden absolute right-0 top-12 w-80 rounded-2xl overflow-hidden z-50"
                       style="background:rgba(18,10,35,0.98);border:1px solid rgba(139,92,246,0.25);box-shadow:0 20px 60px rgba(0,0,0,0.5);">
                     <div class="px-4 py-3 flex items-center justify-between" style="border-bottom:1px solid rgba(255,255,255,0.07);">
                         <span class="text-sm font-semibold text-white">Notifikasi</span>
-                        <span class="text-xs px-2 py-0.5 rounded-full font-semibold" style="background:rgba(167,139,250,0.15);color:#a78bfa;">2 baru</span>
+                        @if ($notifUnreadCount > 0)
+                            <span class="text-xs px-2 py-0.5 rounded-full font-semibold" style="background:rgba(167,139,250,0.15);color:#a78bfa;">{{ $notifUnreadCount }} baru</span>
+                        @endif
                     </div>
-                    @foreach ([
-                        ['Pesanan #RTP-001 dalam proses penjemputan', '5 mnt lalu', true],
-                        ['Pembayaran bulan Juni berhasil dikonfirmasi', '1 jam lalu', true],
-                        ['Barangmu aman tersimpan di gudang RUTIP', '2 hari lalu', false],
-                    ] as $n)
+                    @forelse ($notifications as $n)
+                        @php $isNew = $n['at'] && $n['at']->gt(now()->subDays(2)); @endphp
                         <div class="px-4 py-3 flex gap-3" style="border-bottom:1px solid rgba(255,255,255,0.04);">
-                            <div class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background:{{ $n[2] ? '#a78bfa' : 'rgba(255,255,255,0.15)' }};"></div>
+                            <div class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background:{{ $isNew ? '#a78bfa' : 'rgba(255,255,255,0.15)' }};"></div>
                             <div>
-                                <p class="text-xs leading-relaxed" style="color:{{ $n[2] ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)' }};">{{ $n[0] }}</p>
-                                <p class="text-[10px] mt-1" style="color:rgba(255,255,255,0.28);">{{ $n[1] }}</p>
+                                <p class="text-xs leading-relaxed" style="color:{{ $isNew ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)' }};">{{ $n['text'] }}</p>
+                                <p class="text-[10px] mt-1" style="color:rgba(255,255,255,0.28);">{{ $n['at']?->diffForHumans() }}</p>
                             </div>
                         </div>
-                    @endforeach
+                    @empty
+                        <div class="px-4 py-8 text-center">
+                            <p class="text-xs" style="color:rgba(255,255,255,0.35);">Belum ada notifikasi.</p>
+                        </div>
+                    @endforelse
                 </div>
             </div>
 
@@ -234,7 +277,7 @@
 </nav>
 
 {{-- ─── KONTEN ─── --}}
-<main class="max-w-7xl mx-auto px-4 lg:px-6 pt-20">
+<main class="w-full max-w-7xl mx-auto px-4 lg:px-6 pt-20 flex-1">
     @yield('content')
 </main>
 @include('layouts.footer')

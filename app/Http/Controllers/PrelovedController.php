@@ -45,6 +45,11 @@ class PrelovedController extends Controller
         return view('preloved.index', compact('products', 'condition', 'cartCount'));
     }
 
+    public function caraJual()
+    {
+        return view('preloved.cara-jual');
+    }
+
     public function show($id)
     {
         $item = PrelovedItem::where('status', 'Tersedia')->findOrFail($id);

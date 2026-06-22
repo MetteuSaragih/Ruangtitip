@@ -7,6 +7,8 @@ use App\Models\ItemSize;
 use App\Models\StorageRoom;
 use App\Models\TitipanOrder;
 use App\Models\UserAddress;
+use App\Services\BiteshipService;
+use App\Services\TripayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -86,7 +88,7 @@ class RuangTitipController extends Controller
             $packingCost = self::PACKING_PER_BOX * $totalItems;
             $courierCost = $kmCost + $packingCost;
         } elseif ($logistic === 'instant' && !empty($s['courier_code'])) {
-            $courierCost = (int) (Courier::where('code', $s['courier_code'])->value('price') ?? 0);
+            $courierCost = (int) ($s['courier_cost'] ?? 0);
         }
 
         $total = $itemSubtotal + $courierCost + self::PLATFORM_FEE;
@@ -224,6 +226,9 @@ class RuangTitipController extends Controller
                 'label'      => 'nullable|string|max:50',
                 'address'    => 'required|string',
                 'note'       => 'nullable|string',
+                'area_id'    => 'required|string',
+                'area_name'  => 'nullable|string',
+                'postal_code' => 'nullable|string',
                 'is_primary' => 'nullable|boolean',
             ]);
             // jika dijadikan utama, reset utama lama
@@ -236,6 +241,9 @@ class RuangTitipController extends Controller
                 'address'    => $data['address'],
                 'note'       => $data['note'] ?? null,
                 'is_primary' => (bool) ($data['is_primary'] ?? false),
+                'area_id'    => $data['area_id'],
+                'area_name'  => $data['area_name'] ?? null,
+                'postal_code' => $data['postal_code'] ?? null,
             ]);
             $addressId = $addr->id;
         } else {
@@ -245,7 +253,17 @@ class RuangTitipController extends Controller
 
         // pastikan alamat milik user
         $addr = UserAddress::where('user_id', Auth::id())->findOrFail($addressId);
-        $this->setState($r, ['address_id' => $addr->id, 'address' => $addr->address, 'note' => $addr->note]);
+        if (! $addr->area_id) {
+            return back()->withErrors(['address' => 'Alamat ini belum punya kecamatan tersimpan, pilih/tambah alamat baru dengan kecamatan.']);
+        }
+
+        $this->setState($r, [
+            'address_id' => $addr->id,
+            'address' => $addr->address,
+            'note' => $addr->note,
+            'address_area_id' => $addr->area_id,
+            'address_postal_code' => $addr->postal_code,
+        ]);
 
         // instant -> pilih kurir; rutip -> langsung checkout
         return ($this->state($r)['logistic'] ?? '') === 'instant'
@@ -260,17 +278,85 @@ class RuangTitipController extends Controller
         if (($s['logistic'] ?? '') !== 'instant' || empty($s['address'])) {
             return redirect()->route('ruang-titip.logistik');
         }
-        // [DUMMY] daftar kurir instan dari DB (belum API Biteship)
-        $couriers = Courier::where('group', 'instant')->get();
-        return view('dashboard.ruang-titip.kurir', compact('couriers', 's'));
+
+        return view('dashboard.ruang-titip.kurir', compact('s'));
+    }
+
+    /* AJAX — hitung ongkir live Biteship dari alamat pelanggan ke gudang RUTIP */
+    public function kurirRates(Request $r, BiteshipService $biteship)
+    {
+        $s = $this->state($r);
+        if (empty($s['address_area_id'])) {
+            return response()->json(['success' => false, 'message' => 'Alamat belum dipilih.'], 422);
+        }
+
+        $result = $biteship->getRates(
+            ['area_id' => $s['address_area_id'], 'postal_code' => $s['address_postal_code'] ?? null],
+            ['area_id' => config('biteship.warehouse.area_id'), 'postal_code' => config('biteship.warehouse.postal_code')],
+            $this->itemsToBiteship($s),
+            config('biteship.checkout_couriers')
+        );
+
+        return response()->json($result);
     }
 
     /* SCREEN 6 (POST) */
-    public function kurirStore(Request $r)
+    public function kurirStore(Request $r, BiteshipService $biteship)
     {
-        $data = $r->validate(['courier_code' => 'required|exists:couriers,code']);
-        $this->setState($r, ['courier_code' => $data['courier_code']]);
+        $data = $r->validate([
+            'courier_code' => 'required|string',
+            'service_code' => 'required|string',
+        ]);
+
+        $s = $this->state($r);
+        $rates = $biteship->getRates(
+            ['area_id' => $s['address_area_id'] ?? null, 'postal_code' => $s['address_postal_code'] ?? null],
+            ['area_id' => config('biteship.warehouse.area_id'), 'postal_code' => config('biteship.warehouse.postal_code')],
+            $this->itemsToBiteship($s),
+            config('biteship.checkout_couriers')
+        );
+
+        $picked = collect($rates['pricing'] ?? [])->first(fn ($p) => $p['courier_code'] === $data['courier_code']
+            && ($p['courier_service_code'] ?? null) === $data['service_code']);
+
+        if (! $picked) {
+            return back()->withErrors(['courier_code' => 'Tarif kurir tidak valid atau sudah berubah, silakan pilih ulang.']);
+        }
+
+        $this->setState($r, [
+            'courier_code' => $picked['courier_code'],
+            'courier_service_code' => $picked['courier_service_code'] ?? null,
+            'courier_name' => $picked['courier_name'] ?? $picked['courier_code'],
+            'courier_cost' => (int) $picked['price'],
+        ]);
+
         return redirect()->route('ruang-titip.checkout');
+    }
+
+    /** Estimasi berat barang titipan untuk kebutuhan kalkulasi ongkir Biteship. */
+    private function itemsToBiteship(array $s): array
+    {
+        $weights = ['kardus' => 3000, 'koper' => 5000, 'dimensi' => 6000];
+        $items = $s['items'] ?? [];
+        $storage = StorageRoom::find($s['storage_id'] ?? null);
+        $sizes = $this->itemSizesFromStorage($storage)->keyBy('code');
+
+        $result = [];
+        foreach ($items as $code => $qty) {
+            $qty = (int) $qty;
+            if ($qty <= 0) {
+                continue;
+            }
+            $type = $sizes[$code]->type ?? 'kardus';
+            $result[] = [
+                'name' => $sizes[$code]->label ?? 'Barang titipan',
+                'value' => 50000,
+                'quantity' => $qty,
+                'weight' => $weights[$type] ?? 3000,
+            ];
+        }
+
+        return $result ?: [['name' => 'Barang titipan', 'value' => 50000, 'quantity' => 1, 'weight' => 3000]];
     }
 
     /* ═══ SCREEN 7 — Checkout (GET) ═══ */
@@ -281,17 +367,21 @@ class RuangTitipController extends Controller
 
         $calc    = $this->calc($s);
         $storage = StorageRoom::find($s['storage_id'] ?? null);
-        $courier = !empty($s['courier_code']) ? Courier::where('code', $s['courier_code'])->first() : null;
+        $courier = ($s['logistic'] ?? null) === 'instant' && !empty($s['courier_code'])
+            ? (object) ['name' => $s['courier_name'] ?? $s['courier_code'], 'service' => $s['courier_service_code'] ?? '']
+            : (($s['logistic'] ?? null) === 'rutip' ? Courier::where('code', 'rutip_fleet')->first() : null);
 
         return view('dashboard.ruang-titip.checkout', compact('s', 'calc', 'storage', 'courier'));
     }
 
-    /* SCREEN 7 (POST) — simpan pesanan */
-    public function place(Request $r)
+    /* SCREEN 7 (POST) — simpan pesanan & buat transaksi Tripay */
+    public function place(Request $r, TripayService $tripay)
     {
         $r->validate([
             'payment_method' => 'required|string',
             'agree'          => 'accepted',
+            'pickup_date'    => 'nullable|date|after_or_equal:today',
+            'pickup_time'    => 'nullable|string',
         ], [
             'agree.accepted' => 'Kamu harus menyetujui Syarat & Ketentuan.',
         ]);
@@ -306,11 +396,16 @@ class RuangTitipController extends Controller
             'items'          => $s['items'],
             'date_start'     => $s['date_start'] ?? null,
             'date_end'       => $s['date_end'] ?? null,
-            'pickup_time'    => null, // tidak dipakai lagi
+            'pickup_date'    => $r->input('pickup_date'),
+            'pickup_time'    => $r->input('pickup_time'),
             'logistic'       => $s['logistic'],
             'address'        => $s['address'] ?? null,
             'note'           => $s['note'] ?? null,
             'courier_code'   => $s['courier_code'] ?? null,
+            'courier_service_code' => $s['courier_service_code'] ?? null,
+            'courier_company' => $s['courier_code'] ?? null,
+            'address_area_id' => $s['address_area_id'] ?? null,
+            'address_postal_code' => $s['address_postal_code'] ?? null,
             'packing'        => $s['logistic'] === 'rutip' ? 'buy' : null,
             'payment_method' => $r->payment_method,
             'item_subtotal'  => $calc['itemSubtotal'],
@@ -319,7 +414,38 @@ class RuangTitipController extends Controller
             'platform_fee'   => $calc['platform_fee'],
             'total'          => $calc['total'],
             'status'         => 'menunggu_pembayaran',
+            'payment_status' => 'UNPAID',
         ]);
+
+        try {
+            $result = $tripay->createTransaction([
+                'method' => $r->payment_method,
+                'merchant_ref' => $order->code(),
+                'amount' => $calc['total'],
+                'customer_name' => Auth::user()->name ?? 'Penitip RuTip',
+                'customer_email' => Auth::user()->email ?? 'noreply@rutip.test',
+                'customer_phone' => Auth::user()->phone ?? '0800000000',
+                'order_items' => [
+                    ['name' => 'Biaya Penitipan (' . $calc['totalItems'] . ' item)', 'price' => (int) $calc['itemSubtotal'], 'quantity' => 1],
+                    ['name' => 'Biaya Layanan Platform', 'price' => (int) $calc['platform_fee'], 'quantity' => 1],
+                    ...($calc['courierCost'] > 0 ? [['name' => 'Biaya Kurir/Anjem', 'price' => (int) $calc['courierCost'], 'quantity' => 1]] : []),
+                ],
+                'callback_url' => route('tripay.callback'),
+                'return_url' => route('ruang-titip.success', $order),
+            ]);
+
+            $order->update([
+                'tripay_reference' => $result['reference'] ?? null,
+                'tripay_checkout_url' => $result['checkout_url'] ?? null,
+                'tripay_pay_code' => $result['pay_code'] ?? null,
+                'tripay_payment_method' => $r->payment_method,
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+            $order->update(['payment_status' => 'FAILED']);
+
+            return back()->withErrors(['payment_method' => 'Gagal memulai pembayaran: ' . $e->getMessage()]);
+        }
 
         $r->session()->forget('titip');
         return redirect()->route('ruang-titip.success', $order);

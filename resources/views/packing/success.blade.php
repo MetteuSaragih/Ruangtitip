@@ -6,9 +6,9 @@
     if (! function_exists('rupiah')) {
         function rupiah($n) { return 'Rp ' . number_format($n, 0, ',', '.'); }
     }
-    $isPaid    = in_array($order->payment_status, ['settlement', 'capture']);
-    $isPending = $order->payment_status === 'pending';
-    $isFailed  = in_array($order->payment_status, ['deny', 'cancel', 'expire', 'failure']);
+    $isPaid    = $order->payment_status === 'PAID';
+    $isPending = in_array($order->payment_status, ['UNPAID', 'pending']);
+    $isFailed  = in_array($order->payment_status, ['EXPIRED', 'FAILED', 'REFUND']);
 @endphp
 
 @section('content')
@@ -40,13 +40,16 @@
 
     <p class="text-xs font-mono mb-8" style="color:rgba(167,139,250,0.7);">#{{ $order->order_code }}</p>
 
-    {{-- Tombol bayar sekarang (popup Snap) — hanya saat pending & punya token --}}
-    @if ($isPending && $order->snap_token)
-        <button id="payNowBtn"
-                class="w-full py-4 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02] mb-4"
-                style="background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 6px 20px rgba(124,58,237,0.4);">
-            <x-lucide-credit-card class="w-4 h-4" /> Bayar Sekarang
-        </button>
+    {{-- Tombol lanjut bayar — redirect ke halaman checkout Tripay --}}
+    @if ($isPending && $order->tripay_checkout_url)
+        <a href="{{ $order->tripay_checkout_url }}"
+           class="w-full py-4 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02] mb-4"
+           style="background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 6px 20px rgba(124,58,237,0.4);">
+            <x-lucide-credit-card class="w-4 h-4" /> Lanjutkan Pembayaran
+        </a>
+        @if ($order->tripay_pay_code)
+            <p class="text-xs mb-6" style="color:rgba(255,255,255,0.45);">Kode pembayaran: <span class="font-mono font-bold text-white">{{ $order->tripay_pay_code }}</span></p>
+        @endif
     @endif
 
     {{-- Banner WhatsApp tracking (hanya saat sudah lunas) --}}
@@ -75,10 +78,17 @@
     <div class="w-full rounded-2xl p-4 mb-8 text-left" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
         <p class="text-xs font-bold text-white mb-3">Ringkasan Pesanan</p>
         @foreach ($order->items as $i => $item)
-            <div class="flex justify-between items-center py-1.5"
+            <div class="flex items-center gap-3 py-1.5"
                  style="{{ $i < count($order->items) - 1 ? 'border-bottom:1px solid rgba(255,255,255,0.05);' : '' }}">
-                <span class="text-xs" style="color:rgba(255,255,255,0.55);">{{ $item['name'] }} × {{ $item['qty'] }}</span>
-                <span class="text-xs font-semibold text-white">{{ rupiah($item['price'] * $item['qty']) }}</span>
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden shrink-0" style="background:rgba(255,255,255,0.06);">
+                    @if (!empty($item['image']))
+                        <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ $item['name'] }}" class="w-full h-full object-cover">
+                    @else
+                        <x-lucide-package class="w-4 h-4" style="color:#a78bfa;" />
+                    @endif
+                </div>
+                <span class="flex-1 text-xs" style="color:rgba(255,255,255,0.55);">{{ $item['name'] }} × {{ $item['qty'] }}</span>
+                <span class="text-xs font-semibold text-white shrink-0">{{ rupiah($item['price'] * $item['qty']) }}</span>
             </div>
         @endforeach
         <div class="flex justify-between items-center pt-2 mt-1" style="border-top:1px solid rgba(255,255,255,0.1);">
@@ -96,30 +106,4 @@
         <x-lucide-package class="w-4 h-4" /> {{ $isPaid ? 'Belanja Lagi' : 'Kembali ke Toko' }}
     </a>
 </div>
-
-@if ($isPending && $order->snap_token)
-    {{-- Snap.js: pakai URL sandbox saat is_production=false, production saat true --}}
-    <script src="{{ $isProduction ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' }}"
-            data-client-key="{{ $clientKey }}"></script>
-    <script>
-    (function () {
-        const btn   = document.getElementById('payNowBtn');
-        const token = @json($order->snap_token);
-
-        function openSnap() {
-            if (typeof window.snap === 'undefined') return;
-            window.snap.pay(token, {
-                onSuccess: function () { window.location.reload(); },
-                onPending: function () { window.location.reload(); },
-                onError:   function () { window.location.reload(); },
-                onClose:   function () { /* user menutup popup tanpa bayar */ }
-            });
-        }
-
-        if (btn) btn.addEventListener('click', openSnap);
-        // Buka otomatis sekali saat halaman dimuat
-        window.addEventListener('load', openSnap);
-    })();
-    </script>
-@endif
 @endsection

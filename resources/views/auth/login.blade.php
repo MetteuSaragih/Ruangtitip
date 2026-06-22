@@ -5,12 +5,8 @@
 @section('content')
 <div>
     {{-- Logo desktop --}}
-    <div class="hidden lg:flex items-center gap-2.5 mb-8">
-        <div class="w-9 h-9 rounded-xl flex items-center justify-center"
-             style="background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 4px 16px rgba(124,58,237,0.35);">
-            <x-lucide-package class="w-5 h-5 text-white" />
-        </div>
-        <span class="text-xl font-extrabold text-white font-display">RUTIP</span>
+    <div class="hidden lg:flex items-center mb-8">
+        <img src="{{ asset('images/logo-rutip-putih.png') }}" alt="RUTIP" class="h-11 w-auto">
     </div>
 
     <h1 class="text-2xl font-extrabold text-white font-display mb-1">Masuk ke RUTIP</h1>

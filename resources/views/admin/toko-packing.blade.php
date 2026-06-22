@@ -241,14 +241,52 @@
         <div class="px-6 py-4 flex items-start justify-between gap-4" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
             <div>
                 <h3 class="text-sm font-bold text-white">Transaksi Pesanan Packing</h3>
-                <p class="text-[10px] mt-0.5" style="color: rgba(255,255,255,0.35);">Belum ada transaksi</p>
+                <p class="text-[10px] mt-0.5" style="color: rgba(255,255,255,0.35);">{{ $orders->count() }} pesanan tercatat</p>
             </div>
         </div>
-        <div class="py-20 text-center">
-            <x-lucide-package class="w-10 h-10 mx-auto mb-3" style="color: rgba(255,255,255,0.2);" />
-            <p class="text-sm font-semibold text-white">Tidak ada pesanan masuk</p>
-            <p class="text-xs mt-1" style="color: rgba(255,255,255,0.4);">Pesanan dari pelanggan akan muncul di sini.</p>
-        </div>
+        @if ($orders->isEmpty())
+            <div class="py-20 text-center">
+                <x-lucide-package class="w-10 h-10 mx-auto mb-3" style="color: rgba(255,255,255,0.2);" />
+                <p class="text-sm font-semibold text-white">Tidak ada pesanan masuk</p>
+                <p class="text-xs mt-1" style="color: rgba(255,255,255,0.4);">Pesanan dari pelanggan akan muncul di sini.</p>
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Kode Pesanan</th>
+                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Pelanggan</th>
+                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Item</th>
+                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Total</th>
+                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Status</th>
+                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Tanggal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($orders as $order)
+                            @php
+                                $badge = match ($order->payment_status) {
+                                    'PAID' => ['Lunas', '#34d399', 'rgba(52,211,153,0.12)'],
+                                    'FAILED', 'EXPIRED' => ['Gagal', '#f87171', 'rgba(239,68,68,0.12)'],
+                                    default => ['Menunggu', '#fbbf24', 'rgba(251,191,36,0.12)'],
+                                };
+                            @endphp
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                                <td class="px-5 py-4 font-mono font-semibold text-white whitespace-nowrap">{{ $order->order_code }}</td>
+                                <td class="px-5 py-4 text-white">{{ $order->user->name ?? '-' }}</td>
+                                <td class="px-5 py-4" style="color: rgba(255,255,255,0.55);">{{ collect($order->items)->pluck('name')->implode(', ') }}</td>
+                                <td class="px-5 py-4 font-semibold text-white whitespace-nowrap">Rp {{ number_format($order->total, 0, ',', '.') }}</td>
+                                <td class="px-5 py-4 whitespace-nowrap">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:{{ $badge[2] }};color:{{ $badge[1] }};">{{ $badge[0] }}</span>
+                                </td>
+                                <td class="px-5 py-4 whitespace-nowrap" style="color: rgba(255,255,255,0.4);">{{ $order->created_at->format('d M Y, H:i') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
     </div>
 
     {{-- ── MODAL FORM (CREATE/EDIT) ── --}}

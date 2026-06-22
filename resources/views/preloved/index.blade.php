@@ -2,245 +2,102 @@
 
 @section('title', 'Toko Preloved')
 
+@php
+    if (! function_exists('rupiah')) {
+        function rupiah($n) { return 'Rp ' . number_format($n, 0, ',', '.'); }
+    }
+@endphp
+
 @section('content')
-<style>
-    .preloved-wrap { color: #fff; }
+<div class="pt-2 pb-10">
 
-    .filter-pill {
-        display: inline-flex;
-        align-items: center;
-        padding: 6px 16px;
-        border-radius: 999px;
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        border: 1.5px solid rgba(255,255,255,0.15);
-        background: transparent;
-        color: rgba(255,255,255,0.55);
-        transition: all .2s;
-        text-decoration: none;
-    }
-    .filter-pill.active, .filter-pill:hover {
-        background: #7c3aed;
-        border-color: #7c3aed;
-        color: #fff;
-    }
-
-    .product-card {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 16px;
-        overflow: hidden;
-        transition: transform .2s, box-shadow .2s;
-        position: relative;
-    }
-    .product-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 40px rgba(124,58,237,0.18);
-    }
-    .product-img-wrap {
-        width: 100%;
-        aspect-ratio: 1/1;
-        background: rgba(255,255,255,0.05);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 64px;
-        position: relative;
-        overflow: hidden;
-    }
-    .product-img-wrap img {
-        width: 100%; height: 100%; object-fit: cover;
-    }
-    .badge-discount {
-        position: absolute;
-        top: 10px; left: 10px;
-        background: #ef4444;
-        color: #fff;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 3px 8px;
-        border-radius: 6px;
-        z-index: 2;
-    }
-    .badge-wishlist {
-        position: absolute;
-        top: 10px; right: 10px;
-        width: 32px; height: 32px;
-        border-radius: 50%;
-        background: rgba(0,0,0,0.35);
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer;
-        border: none;
-        color: rgba(255,255,255,0.6);
-        transition: all .2s;
-        z-index: 2;
-    }
-    .badge-wishlist:hover { background: rgba(239,68,68,0.3); color: #ef4444; }
-
-    .badge-condition {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 8px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 600;
-        margin-bottom: 6px;
-    }
-    .cond-mulus  { background: rgba(16,185,129,0.2); color: #34d399; }
-    .cond-baik   { background: rgba(59,130,246,0.2); color: #60a5fa; }
-    .cond-pernah { background: rgba(245,158,11,0.2); color: #fbbf24; }
-
-    .price-original {
-        font-size: 12px;
-        color: rgba(255,255,255,0.3);
-        text-decoration: line-through;
-        margin-bottom: 0;
-        line-height: 1.4;
-    }
-    .price-current {
-        font-size: 17px;
-        font-weight: 700;
-        color: #a78bfa;
-        margin-bottom: 10px;
-        line-height: 1.3;
-    }
-    .btn-beli {
-        width: 100%;
-        padding: 9px 0;
-        border-radius: 10px;
-        background: linear-gradient(135deg, #7c3aed, #6366f1);
-        color: #fff !important;
-        font-size: 13px;
-        font-weight: 600;
-        border: none;
-        cursor: pointer;
-        text-align: center;
-        display: block;
-        text-decoration: none;
-        transition: opacity .2s;
-    }
-    .btn-beli:hover { opacity: .85; }
-
-    .banner-jual {
-        background: linear-gradient(135deg, rgba(109,40,217,0.35) 0%, rgba(99,102,241,0.2) 100%);
-        border: 1px solid rgba(139,92,246,0.3);
-        border-radius: 16px;
-        padding: 18px 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-    .banner-left { display: flex; align-items: center; gap: 14px; }
-    .banner-icon {
-        width: 40px; height: 40px;
-        background: rgba(139,92,246,0.25);
-        border-radius: 10px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 18px; flex-shrink: 0;
-    }
-    .banner-eyebrow {
-        font-size: 10px; font-weight: 700; letter-spacing: .08em;
-        color: #a78bfa; text-transform: uppercase; margin-bottom: 3px;
-    }
-    .banner-desc { font-size: 14px; color: rgba(255,255,255,0.85); }
-    .banner-desc a { color: #a78bfa; font-weight: 600; text-decoration: none; }
-    .btn-pelajari {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 9px 20px;
-        background: #7c3aed;
-        color: #fff !important; font-size: 13px; font-weight: 600;
-        border-radius: 10px; text-decoration: none;
-        white-space: nowrap; flex-shrink: 0;
-        transition: opacity .2s;
-    }
-    .btn-pelajari:hover { opacity: .85; }
-
-</style>
-
-<div class="preloved-wrap">
-
-    {{-- Page Header --}}
+    {{-- Heading --}}
     <div class="mb-5">
-        <h1 class="text-2xl font-extrabold font-display text-white mb-1">Toko Preloved</h1>
-        <p style="color:rgba(255,255,255,0.4);font-size:14px;">Barang bekas berkualitas dari sesama mahasiswa</p>
+        <h1 class="text-xl font-extrabold text-white font-display">Toko Preloved</h1>
+        <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.4);">Barang bekas berkualitas dari sesama mahasiswa</p>
     </div>
 
-    {{-- Banner --}}
-    <div class="banner-jual">
-        <div class="banner-left">
-            <div class="banner-icon">✨</div>
+    {{-- Banner jual barang --}}
+    <div class="flex items-center justify-between gap-4 rounded-2xl px-5 py-4 mb-6 flex-wrap"
+         style="background:linear-gradient(135deg,rgba(109,40,217,0.35),rgba(99,102,241,0.2));border:1px solid rgba(139,92,246,0.3);">
+        <div class="flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0" style="background:rgba(139,92,246,0.25);">✨</div>
             <div>
-                <div class="banner-eyebrow">Jual Barang Bekasmu</div>
-                <div class="banner-desc">
-                    Barang kos menumpuk atau mau lulus? <a href="#">Jadi cuan di RuTip!</a>
-                </div>
+                <p class="text-[10px] font-bold uppercase tracking-wider mb-0.5" style="color:#a78bfa;">Jual Barang Bekasmu</p>
+                <p class="text-sm" style="color:rgba(255,255,255,0.85);">Barang kos menumpuk atau mau lulus? <a href="{{ route('preloved.cara-jual') }}" class="font-semibold" style="color:#a78bfa;">Jadi cuan di RuTip!</a></p>
             </div>
         </div>
-        <a href="#" class="btn-pelajari">
-            Pelajari
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        <a href="{{ route('preloved.cara-jual') }}" class="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90" style="background:#7c3aed;color:white;">
+            Pelajari <x-lucide-arrow-right class="w-3.5 h-3.5" />
         </a>
     </div>
 
-    {{-- Filter Pills --}}
-    <div class="flex items-center gap-2 flex-wrap mb-6">
-        @php
-            $filterOptions = [
-                'semua'           => 'Semua',
-                '95_mulus'        => '95%+ Mulus',
-                '85_baik'         => '85%+ Baik',
-                '75_pernah_pakai' => 'Pernah Pakai',
-            ];
-        @endphp
+    {{-- Filter kondisi --}}
+    @php
+        $filterOptions = [
+            'semua'           => 'Semua',
+            '95_mulus'        => '95%+ Mulus',
+            '85_baik'         => '85%+ Baik',
+            '75_pernah_pakai' => 'Pernah Pakai',
+        ];
+    @endphp
+    <div class="flex gap-2 overflow-x-auto pb-2 mb-5 no-scrollbar">
         @foreach ($filterOptions as $key => $label)
+            @php $active = ($condition ?? 'semua') === $key; @endphp
             <a href="{{ route('preloved.index', ['kondisi' => $key]) }}"
-               class="filter-pill {{ ($condition ?? 'semua') === $key ? 'active' : '' }}">
+               class="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+               style="{{ $active
+                    ? 'background:linear-gradient(135deg,#7c3aed,#6366f1);color:#fff;'
+                    : 'background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.1);' }}">
                 {{ $label }}
             </a>
         @endforeach
     </div>
 
-    {{-- Product Grid --}}
-    @if ($products->count())
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    {{-- Grid produk --}}
+    @if ($products->isEmpty())
+        <div class="rounded-2xl p-10 text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
+            <p class="text-3xl mb-2">📦</p>
+            <p class="text-sm" style="color:rgba(255,255,255,0.5);">Belum ada produk di kategori ini.</p>
+        </div>
+    @else
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             @foreach ($products as $product)
                 @php
-                    $disc      = $product['discount_percent'] ?? 0;
+                    $disc = $product['discount_percent'] ?? 0;
                     $origPrice = $product['original_price'] ?? 0;
-                    $price     = $product['price'] ?? 0;
-                    $cond      = $product['condition'] ?? '';
-
-                    // hitung diskon dari harga kalau discount_percent = 0
-                    if (!$disc && $origPrice && $origPrice > $price) {
+                    $price = $product['price'] ?? 0;
+                    if (! $disc && $origPrice && $origPrice > $price) {
                         $disc = round((1 - $price / $origPrice) * 100);
                     }
-
-                    $condClass = match(true) {
-                        str_contains($cond, 'mulus') => 'cond-mulus',
-                        str_contains($cond, 'baik')  => 'cond-baik',
-                        default                       => 'cond-pernah',
+                    $cond = $product['condition'] ?? '';
+                    $condStyle = match(true) {
+                        str_contains($cond, 'mulus') => 'background:rgba(16,185,129,0.2);color:#34d399;',
+                        str_contains($cond, 'baik')  => 'background:rgba(59,130,246,0.2);color:#60a5fa;',
+                        default                       => 'background:rgba(245,158,11,0.2);color:#fbbf24;',
                     };
-                @endphp
-
-                @php
                     $images = !empty($product['images']) ? $product['images'] : (!empty($product['image']) ? [$product['image']] : []);
                 @endphp
-                <div class="product-card">
-                    <div class="product-img-wrap rt-carousel">
+                <div class="rounded-2xl overflow-hidden transition-all hover:-translate-y-0.5"
+                     style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
+                    {{-- Gambar --}}
+                    <div class="aspect-square relative rt-carousel" style="background:rgba(124,58,237,0.08);">
+                        <a href="{{ route('preloved.show', $product['id']) }}" class="block h-full w-full flex items-center justify-center relative">
+                            @forelse ($images as $i => $img)
+                                <img src="{{ Storage::url($img) }}" alt="{{ $product['name'] }}" class="rt-slide {{ $i === 0 ? 'active' : '' }}">
+                            @empty
+                                <x-lucide-image class="w-12 h-12" style="color:#a78bfa;" />
+                            @endforelse
+                        </a>
                         @if ($disc)
-                            <div class="badge-discount">🏷 -{{ $disc }}%</div>
+                            <span class="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1"
+                                  style="background:#ef4444;color:white;">
+                                <x-lucide-tag class="w-2.5 h-2.5" /> -{{ $disc }}%
+                            </span>
                         @endif
-                        <button class="badge-wishlist">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                        <button type="button" class="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center transition-all" style="background:rgba(0,0,0,0.4);color:rgba(255,255,255,0.6);" aria-label="Wishlist">
+                            <x-lucide-heart class="w-3.5 h-3.5" />
                         </button>
-                        @forelse ($images as $i => $img)
-                            <img src="{{ Storage::url($img) }}" alt="{{ $product['name'] }}" class="rt-slide {{ $i === 0 ? 'active' : '' }}" />
-                        @empty
-                            <x-lucide-image class="w-10 h-10" style="color:#a78bfa;" />
-                        @endforelse
                         @if (count($images) > 1)
                             <button type="button" class="rt-carousel-btn rt-prev" onclick="event.preventDefault();event.stopPropagation();rtCarouselNav(this,-1)">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
@@ -256,29 +113,26 @@
                         @endif
                     </div>
 
-                    <div style="padding:12px;">
-                        <div class="badge-condition {{ $condClass }}">
-                            {{ $product['condition_label'] ?? $product['condition'] }}
+                    <div class="p-3">
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold mb-1.5" style="{{ $condStyle }}">
+                            {{ $product['condition_label'] ?? $cond }}
+                        </span>
+                        <a href="{{ route('preloved.show', $product['id']) }}" class="block text-xs font-bold text-white leading-snug mb-0.5 hover:text-violet-300 transition-colors">{{ $product['name'] }}</a>
+                        <p class="text-[10px] mb-1.5" style="color:rgba(255,255,255,0.35);">Stok: {{ $product['stock'] }}</p>
+                        <div class="flex items-center gap-1 mb-3">
+                            @if ($origPrice && $origPrice > $price)
+                                <span class="text-[10px] line-through" style="color:rgba(255,255,255,0.3);">{{ rupiah($origPrice) }}</span>
+                            @endif
+                            <span class="text-sm font-bold" style="color:#a78bfa;">{{ rupiah($price) }}</span>
                         </div>
-                        <p class="text-sm font-semibold text-white mb-0.5 leading-snug">{{ $product['name'] }}</p>
-                        <p style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:4px;">Stok: {{ $product['stock'] }}</p>
-
-                        @if ($origPrice && $origPrice > $price)
-                            <p class="price-original">Rp {{ number_format($origPrice, 0, ',', '.') }}</p>
-                        @endif
-                        <p class="price-current">Rp {{ number_format($price, 0, ',', '.') }}</p>
-
-                        <a href="{{ route('preloved.show', $product['id']) }}" class="btn-beli">Beli</a>
+                        <a href="{{ route('preloved.show', $product['id']) }}"
+                           class="block w-full text-center py-2 rounded-xl text-[10px] font-bold transition-all hover:opacity-90"
+                           style="background:linear-gradient(135deg,#7c3aed,#6366f1);color:white;">
+                            Beli
+                        </a>
                     </div>
                 </div>
             @endforeach
-        </div>
-
-    @else
-        <div class="text-center py-20" style="color:rgba(255,255,255,0.3);">
-            <div style="font-size:48px;margin-bottom:12px;">📦</div>
-            <p class="font-semibold text-white">Belum ada produk</p>
-            <p style="font-size:13px;margin-top:4px;">Coba pilih kategori lain</p>
         </div>
     @endif
 </div>

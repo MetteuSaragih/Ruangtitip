@@ -20,7 +20,7 @@
             <p class="text-xs font-bold text-white mb-3">Alamat Tersimpan</p>
             <div class="space-y-3 mb-4">
                 @foreach ($addresses as $addr)
-                    <button type="button" data-id="{{ $addr->id }}" onclick="pickAddr('{{ $addr->id }}')"
+                    <button type="button" data-id="{{ $addr->id }}" onclick="pickAddr('{{ $addr->id }}', {{ $addr->area_id ? 'true' : 'false' }})"
                             class="addr w-full flex items-start gap-3 p-4 rounded-2xl text-left transition-all hover:scale-[1.01]"
                             style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.09);">
                         <x-lucide-map-pin class="w-4 h-4 shrink-0 mt-0.5" style="color:#a78bfa;" />
@@ -31,6 +31,7 @@
                             </div>
                             <p class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.55);">{{ $addr->address }}</p>
                             @if ($addr->note)<p class="text-[10px] mt-1" style="color:rgba(255,255,255,0.35);">Catatan: {{ $addr->note }}</p>@endif
+                            @if (! $addr->area_id)<p class="text-[10px] mt-1" style="color:#fbbf24;">Belum ada kecamatan tersimpan, tidak bisa dipakai untuk kurir instan.</p>@endif
                         </div>
                         <div class="radio w-5 h-5 rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center" style="border-color:rgba(255,255,255,0.2);"></div>
                     </button>
@@ -60,6 +61,7 @@
                        class="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/20 outline-none"
                        style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">
             </div>
+            <x-biteship-area-search />
             <div>
                 <label class="block text-[11px] font-semibold mb-2" style="color:rgba(255,255,255,0.55);">Alamat Lengkap <span style="color:#f87171;">*</span></label>
                 <textarea name="address" rows="3" placeholder="Jl. Veteran No. 10, Kec. Lowokwaru, Malang"
@@ -84,9 +86,9 @@
     </form>
 </div>
 <script>
-    function pickAddr(id) {
+    function pickAddr(id, hasArea) {
         document.getElementById('addressId').value = id;
-        document.getElementById('useSelected').disabled = false;
+        document.getElementById('useSelected').disabled = !hasArea;
         document.querySelectorAll('.addr').forEach(b => {
             const on = b.dataset.id === String(id);
             b.style.background = on ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.04)';

@@ -34,12 +34,8 @@
                 </div>
 
                 {{-- Logo --}}
-                <a href="{{ route('home') }}" class="relative z-10 flex items-center gap-2.5 w-fit">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center"
-                         style="background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 4px 16px rgba(124,58,237,0.4);">
-                        <x-lucide-package class="w-5 h-5 text-white" />
-                    </div>
-                    <span class="text-2xl font-extrabold text-white font-display">RUTIP</span>
+                <a href="{{ route('home') }}" class="relative z-10 flex items-center w-fit">
+                    <img src="{{ asset('images/logo-rutip-putih.png') }}" alt="RUTIP" class="h-14 w-auto">
                 </a>
 
                 {{-- Ilustrasi + tagline --}}
@@ -85,11 +81,8 @@
         {{-- ─── RIGHT PANEL (form) ─── --}}
         <div class="flex-1 flex flex-col justify-center items-center px-6 py-12 lg:px-12 relative overflow-hidden">
             {{-- Mobile logo --}}
-            <a href="{{ route('home') }}" class="lg:hidden flex items-center gap-2 mb-10 self-start">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">
-                    <x-lucide-package class="w-4 h-4 text-white" />
-                </div>
-                <span class="text-xl font-extrabold text-white font-display">RUTIP</span>
+            <a href="{{ route('home') }}" class="lg:hidden flex items-center mb-10 self-start">
+                <img src="{{ asset('images/logo-rutip-putih.png') }}" alt="RUTIP" class="h-11 w-auto">
             </a>
 
             <div class="w-full" style="max-width:400px;">

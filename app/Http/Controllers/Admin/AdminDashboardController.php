@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\PackingOrder;
-use App\Models\PrelovedOrder;
 use App\Models\StorageRoom;
 use App\Models\TitipanOrder;
 use Carbon\CarbonPeriod;
@@ -13,13 +13,26 @@ class AdminDashboardController extends Controller
 {
     public function index()
     {
-        $pendapatan = TitipanOrder::where('status', 'selesai')->sum('total')
-            + PackingOrder::where('status', 'selesai')->sum('total')
-            + PrelovedOrder::where('status', 'Selesai')->sum('price');
+        $prelovedOrders = Order::where('payment_status', 'PAID')
+            ->get()
+            ->filter(fn (Order $o) => collect($o->items)->contains(fn ($i) => ($i['type'] ?? 'preloved') === 'preloved'));
+
+        $prelovedRevenue = $prelovedOrders->sum(function (Order $o) {
+            return collect($o->items)
+                ->filter(fn ($i) => ($i['type'] ?? 'preloved') === 'preloved')
+                ->sum(fn ($i) => ($i['price'] ?? 0) * ($i['qty'] ?? 1));
+        });
+
+        $pendapatanBulanIni = $this->pendapatanDalamRentang(now()->startOfMonth(), now(), $prelovedOrders);
+        $pendapatanBulanLalu = $this->pendapatanDalamRentang(now()->subMonth()->startOfMonth(), now()->subMonth()->endOfMonth(), $prelovedOrders);
+        $pendapatanGrowth = $pendapatanBulanLalu > 0
+            ? round((($pendapatanBulanIni - $pendapatanBulanLalu) / $pendapatanBulanLalu) * 100)
+            : ($pendapatanBulanIni > 0 ? 100 : 0);
+        $pendapatan = $pendapatanBulanIni;
 
         $transaksiAktif = TitipanOrder::where('status', '!=', 'selesai')->count()
-            + PackingOrder::where('status', '!=', 'selesai')->count()
-            + PrelovedOrder::where('status', '!=', 'Selesai')->count();
+            + PackingOrder::where('payment_status', 'PAID')->count()
+            + $prelovedOrders->where('status', '!=', 'delivered')->count();
 
         $totalCapacity = StorageRoom::sum('capacity_total');
         $usedCapacity = StorageRoom::sum('capacity_used');
@@ -33,7 +46,7 @@ class AdminDashboardController extends Controller
                 'day' => $date->translatedFormat('D'),
                 'pesanan' => TitipanOrder::whereDate('created_at', $dateString)->count()
                     + PackingOrder::whereDate('created_at', $dateString)->count()
-                    + PrelovedOrder::whereDate('created_at', $dateString)->count(),
+                    + Order::whereDate('created_at', $dateString)->count(),
             ];
         })->values()->all();
 
@@ -54,10 +67,26 @@ class AdminDashboardController extends Controller
 
         return view('admin.dashboard', compact(
             'pendapatan',
+            'pendapatanGrowth',
             'transaksiAktif',
             'kapasitasGudang',
             'trenPesanan',
             'tugasPrioritas'
         ));
+    }
+
+    private function pendapatanDalamRentang($from, $to, $prelovedOrders): int
+    {
+        $prelovedRevenue = $prelovedOrders
+            ->whereBetween('created_at', [$from, $to])
+            ->sum(function (Order $o) {
+                return collect($o->items)
+                    ->filter(fn ($i) => ($i['type'] ?? 'preloved') === 'preloved')
+                    ->sum(fn ($i) => ($i['price'] ?? 0) * ($i['qty'] ?? 1));
+            });
+
+        return (int) (TitipanOrder::where('status', 'selesai')->whereBetween('created_at', [$from, $to])->sum('total')
+            + PackingOrder::where('payment_status', 'PAID')->whereBetween('created_at', [$from, $to])->sum('total')
+            + $prelovedRevenue);
     }
 }

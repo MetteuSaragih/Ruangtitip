@@ -12,25 +12,19 @@ $statusStyle = [
 ];
 
 $orderStatusStyle = [
-    'Menunggu Konfirmasi' => ['bg'=>'rgba(251,191,36,0.13)',  'color'=>'#fbbf24'],
-    'Siap Dikirim'        => ['bg'=>'rgba(56,189,248,0.13)',  'color'=>'#38bdf8'],
-    'Siap Diambil'        => ['bg'=>'rgba(99,102,241,0.14)',  'color'=>'#818cf8'],
-    'Selesai'             => ['bg'=>'rgba(52,211,153,0.12)',  'color'=>'#34d399'],
+    'paid'       => ['bg'=>'rgba(251,191,36,0.13)',  'color'=>'#fbbf24'],
+    'processing' => ['bg'=>'rgba(56,189,248,0.13)',  'color'=>'#38bdf8'],
+    'shipped'    => ['bg'=>'rgba(99,102,241,0.14)',  'color'=>'#818cf8'],
+    'delivered'  => ['bg'=>'rgba(52,211,153,0.12)',  'color'=>'#34d399'],
+    'cancelled'  => ['bg'=>'rgba(239,68,68,0.13)',   'color'=>'#f87171'],
 ];
 
 $deliveryStyle = [
-    'Dikirim'            => ['bg'=>'rgba(251,191,36,0.13)',  'color'=>'#fbbf24'],
-    'Ambil Sendiri'      => ['bg'=>'rgba(99,102,241,0.14)',  'color'=>'#818cf8'],
-    'Ekspedisi Biteship' => ['bg'=>'rgba(56,189,248,0.13)',  'color'=>'#38bdf8'],
+    'pickup'   => ['bg'=>'rgba(99,102,241,0.14)',  'color'=>'#818cf8', 'label' => 'Ambil Sendiri'],
+    'biteship' => ['bg'=>'rgba(56,189,248,0.13)',  'color'=>'#38bdf8', 'label' => 'Ekspedisi Biteship'],
 ];
 
-$nextStatus = [
-    'Menunggu Konfirmasi' => 'Siap Dikirim',
-    'Siap Dikirim'        => 'Selesai',
-    'Siap Diambil'        => 'Selesai',
-];
-
-$filterOptions = ['Semua', 'Menunggu Konfirmasi', 'Siap Dikirim', 'Siap Diambil', 'Selesai'];
+$filterOptions = array_merge(['Semua'], array_values($orderStatusLabels));
 @endphp
 
 @section('content')
@@ -263,71 +257,77 @@ $filterOptions = ['Semua', 'Menunggu Konfirmasi', 'Siap Dikirim', 'Siap Diambil'
                 <tbody>
                     @forelse($orders as $i => $order)
                     @php
-                        $ds = $deliveryStyle[$order->delivery] ?? ['bg'=>'rgba(255,255,255,0.05)','color'=>'#fff'];
+                        $ds = $deliveryStyle[$order->shipping_method] ?? ['bg'=>'rgba(255,255,255,0.05)','color'=>'#fff','label'=>$order->shipping_method];
                         $os = $orderStatusStyle[$order->status] ?? ['bg'=>'rgba(255,255,255,0.05)','color'=>'#fff'];
-                        $isDone = $order->status === 'Selesai';
+                        $isDone = $order->status === 'delivered';
+                        $isCancelled = $order->status === 'cancelled';
+                        $nextCode = match ($order->status) {
+                            'paid'       => 'processing',
+                            'processing' => $order->shipping_method === 'biteship' ? 'shipped' : 'delivered',
+                            'shipped'    => 'delivered',
+                            default      => null,
+                        };
                     @endphp
                     <tr style="{{ $i < $orders->count()-1 ? 'border-bottom:1px solid rgba(255,255,255,0.04)' : '' }}"
                         onmouseover="this.style.background='rgba(124,58,237,0.05)'"
                         onmouseout="this.style.background='transparent'">
                         <td class="px-5 py-4 whitespace-nowrap">
-                            <span class="font-mono font-semibold" style="color:#a78bfa;">{{ $order->order_code }}</span>
+                            <span class="font-mono font-semibold" style="color:#a78bfa;">{{ $order->order_number }}</span>
                             <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.3);">{{ $order->created_at->format('d M Y') }}</p>
                         </td>
                         <td class="px-5 py-4">
-                            <p class="font-semibold text-white">{{ $order->item?->name ?? '-' }}</p>
-                            <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.38);">{{ rupiah3($order->price) }}</p>
+                            <p class="font-semibold text-white">{{ $order->preloved_item_names ?: '-' }}</p>
+                            <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.38);">{{ rupiah3($order->preloved_subtotal) }}</p>
                         </td>
                         <td class="px-5 py-4">
-                            <p class="font-semibold text-white">{{ $order->buyer_name }}</p>
-                            <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.38);">{{ $order->buyer_wa }}</p>
+                            <p class="font-semibold text-white">{{ $order->customer_name }}</p>
+                            <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.38);">{{ $order->customer_phone }}</p>
                         </td>
                         <td class="px-5 py-4">
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold"
                                   style="background:{{ $ds['bg'] }};border:1px solid {{ $ds['color'] }}44;color:{{ $ds['color'] }};">
-                                {{ $order->delivery }}
+                                {{ $ds['label'] }}
                             </span>
                         </td>
                         <td class="px-5 py-4" style="max-width:200px;">
-                            <p class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.55);">{{ $order->address }}</p>
+                            <p class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.55);">{{ $order->shipping_address['full'] ?? '-' }}</p>
                         </td>
                         <td class="px-5 py-4">
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap"
                                   style="background:{{ $os['bg'] }};color:{{ $os['color'] }};">
                                 <span class="w-1.5 h-1.5 rounded-full" style="background:{{ $os['color'] }};"></span>
-                                {{ $order->status }}
+                                {{ $orderStatusLabels[$order->status] ?? $order->status }}
                             </span>
                         </td>
                         <td class="px-5 py-4">
                             <div class="flex items-center gap-1.5">
-                                @if(!$isDone && isset($nextStatus[$order->status]))
+                                @if($nextCode && !$isCancelled)
                                 <form method="POST" action="{{ route('admin.preloved.advance-order', $order) }}">
                                     @csrf
                                     <button type="submit"
                                             class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105"
                                             style="background:rgba(124,58,237,0.14);border:1px solid rgba(124,58,237,0.3);color:#c4b5fd;">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                                        <span class="hidden xl:inline">
-                                            {{ $nextStatus[$order->status] === 'Selesai' ? 'Selesai' : 'Proses Kirim' }}
-                                        </span>
+                                        <span class="hidden xl:inline">{{ $orderStatusLabels[$nextCode] ?? 'Lanjutkan' }}</span>
                                     </button>
                                 </form>
                                 @endif
-                                @if($order->delivery === 'Ekspedisi Biteship' && !$isDone)
-                                <button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105"
+                                @if($order->shipping_method === 'biteship' && !$isDone && !$isCancelled)
+                                <button type="button" onclick="showResiToast(@js($order->biteship_tracking_id))"
+                                        class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105"
                                         style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.28);color:#38bdf8;">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17H7l-4-4V5a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2z"/></svg>
                                     <span class="hidden xl:inline">Resi</span>
                                 </button>
                                 @endif
-                                @if(!$isDone)
-                                <button onclick="showWaToast('{{ $order->buyer_name }}')"
+                                @if(!$isDone && !$isCancelled)
+                                <button onclick="showWaToast('{{ $order->customer_name }}')"
                                         class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105"
                                         style="background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.25);color:#34d399;">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                                 </button>
                                 @else
-                                <span class="text-[11px]" style="color:rgba(255,255,255,0.28);">✓ Selesai</span>
+                                <span class="text-[11px]" style="color:rgba(255,255,255,0.28);">✓ {{ $orderStatusLabels[$order->status] ?? $order->status }}</span>
                                 @endif
                             </div>
                         </td>
@@ -474,6 +474,19 @@ $filterOptions = ['Semua', 'Menunggu Konfirmasi', 'Siap Dikirim', 'Siap Diambil'
     </div>
 </div>
 
+{{-- Resi Toast --}}
+<div id="resi-toast" class="fixed bottom-6 right-6 z-50 hidden items-center gap-3 px-4 py-3 rounded-2xl"
+     style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.35);backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+    <span class="text-xl">📦</span>
+    <div>
+        <p class="text-xs font-bold text-white">Nomor Resi</p>
+        <p id="resi-toast-number" class="text-[11px] font-mono" style="color:#38bdf8;"></p>
+    </div>
+    <button onclick="copyResiNumber()" title="Salin" style="color:rgba(255,255,255,0.5);">📋</button>
+    <button onclick="document.getElementById('resi-toast').classList.add('hidden');document.getElementById('resi-toast').classList.remove('flex');"
+            style="color:rgba(255,255,255,0.35);">✕</button>
+</div>
+
 {{-- WA Toast --}}
 <div id="wa-toast" class="fixed bottom-6 right-6 z-50 hidden items-center gap-3 px-4 py-3 rounded-2xl"
      style="background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.35);backdrop-filter:blur(12px);">
@@ -551,6 +564,20 @@ function closeItemModal() {
     document.getElementById('modal-submit-label').textContent = 'Tambah ke Katalog';
     itemImagePicker.reset(0);
     selectCondition(90);
+}
+
+let currentResiNumber = '';
+function showResiToast(trackingId) {
+    currentResiNumber = trackingId || '';
+    const t = document.getElementById('resi-toast');
+    document.getElementById('resi-toast-number').textContent = currentResiNumber || 'Belum tersedia (resi belum dibuat Biteship)';
+    t.classList.remove('hidden');
+    t.classList.add('flex');
+}
+
+function copyResiNumber() {
+    if (!currentResiNumber) return;
+    navigator.clipboard.writeText(currentResiNumber);
 }
 
 function showWaToast(name) {

@@ -1,321 +1,129 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Pembayaran Berhasil')
+@section('title', 'Status Pembayaran')
+
+@php
+    if (! function_exists('rupiah')) {
+        function rupiah($n) { return 'Rp ' . number_format($n, 0, ',', '.'); }
+    }
+    $isPaid    = $order->payment_status === 'PAID';
+    $isPending = in_array($order->payment_status, ['UNPAID', 'pending']);
+    $isFailed  = in_array($order->payment_status, ['EXPIRED', 'FAILED', 'REFUND']);
+@endphp
 
 @section('content')
-<style>
-    .success-page {
-        min-height: calc(100vh - 80px);
-        display: flex;
-        justify-content: center;
-        padding: 0 20px 72px;
-        color: #fff;
-    }
+<div class="py-6 pb-24 flex flex-col items-center text-center max-w-xl mx-auto">
 
-    .success-shell {
-        width: 100%;
-        max-width: 620px;
-        background: #120a24;
-        border-left: 1px solid rgba(139,92,246,0.16);
-        border-right: 1px solid rgba(139,92,246,0.16);
-        border-bottom: 1px solid rgba(139,92,246,0.16);
-        border-radius: 0 0 28px 28px;
-        padding: 34px 28px 36px;
-        box-shadow: 0 28px 80px rgba(18,10,36,0.62);
-    }
-
-    .success-hero {
-        text-align: center;
-        padding: 0 16px 28px;
-    }
-
-    .success-icon {
-        width: 110px;
-        height: 110px;
-        margin: 0 auto 32px;
-        border: 4px solid rgba(45,212,191,0.42);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #34d399;
-        background: rgba(20,184,166,0.10);
-        box-shadow: 0 0 56px rgba(45,212,191,0.16);
-        animation: popIn 0.45s cubic-bezier(.34,1.56,.64,1);
-    }
-
-    .success-icon svg {
-        width: 58px;
-        height: 58px;
-        stroke-width: 2.6;
-    }
-
-    @keyframes popIn {
-        from { transform: scale(.86); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
-    }
-
-    .success-title {
-        margin: 0 0 12px;
-        font-size: 28px;
-        line-height: 1.15;
-        font-weight: 800;
-        color: #fff;
-    }
-
-    .success-subtitle {
-        margin: 0 0 12px;
-        font-size: 16px;
-        color: rgba(255,255,255,0.48);
-    }
-
-    .order-id {
-        margin: 0;
-        font-size: 14px;
-        font-weight: 700;
-        color: #a78bfa;
-        letter-spacing: .04em;
-    }
-
-    .notif-box {
-        display: flex;
-        gap: 16px;
-        padding: 24px;
-        margin-bottom: 26px;
-        background: linear-gradient(135deg, rgba(20,184,166,0.12), rgba(14,116,144,0.10));
-        border: 1px solid rgba(16,185,129,0.45);
-        border-radius: 18px;
-        text-align: left;
-    }
-
-    .notif-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 15px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        background: rgba(16,185,129,0.20);
-        color: #34d399;
-    }
-
-    .notif-icon svg {
-        width: 24px;
-        height: 24px;
-    }
-
-    .notif-title {
-        margin-bottom: 8px;
-        font-size: 17px;
-        font-weight: 800;
-        color: #fff;
-    }
-
-    .notif-desc {
-        max-width: 470px;
-        margin: 0;
-        color: rgba(255,255,255,0.58);
-        font-size: 14px;
-        line-height: 1.7;
-    }
-
-    .notif-desc strong { color: #fff; }
-
-    .notif-link {
-        margin-top: 14px;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        color: #34d399;
-        font-size: 14px;
-        font-weight: 800;
-        text-decoration: none;
-    }
-
-    .notif-link svg {
-        width: 17px;
-        height: 17px;
-    }
-
-    .summary-box {
-        padding: 22px 24px;
-        margin-bottom: 36px;
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.10);
-        border-radius: 18px;
-        text-align: left;
-    }
-
-    .summary-box h4 {
-        margin: 0 0 18px;
-        font-size: 16px;
-        font-weight: 800;
-        color: #fff;
-    }
-
-    .summary-line {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 18px;
-        padding: 10px 0;
-        font-size: 14px;
-    }
-
-    .summary-line .label {
-        color: rgba(255,255,255,0.50);
-    }
-
-    .summary-line .value {
-        color: #fff;
-        font-weight: 800;
-        white-space: nowrap;
-    }
-
-    .summary-total {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 18px;
-        margin-top: 8px;
-        padding-top: 14px;
-        border-top: 1px solid rgba(255,255,255,0.10);
-        font-size: 16px;
-        font-weight: 800;
-    }
-
-    .summary-total .value {
-        font-size: 20px;
-        color: #a78bfa;
-        white-space: nowrap;
-    }
-
-    .btn-view-orders {
-        width: 100%;
-        min-height: 58px;
-        border: none;
-        border-radius: 16px;
-        background: linear-gradient(135deg, #7c3aed, #6366f1);
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        font-size: 16px;
-        font-weight: 800;
-        text-decoration: none;
-        box-shadow: 0 18px 48px rgba(124,58,237,0.38);
-        transition: opacity .2s, transform .2s;
-    }
-
-    .btn-view-orders:hover {
-        opacity: .92;
-        transform: translateY(-1px);
-        color: #fff;
-    }
-
-    .btn-view-orders svg {
-        width: 20px;
-        height: 20px;
-    }
-
-    @media (max-width: 640px) {
-        .success-page {
-            padding: 0 0 80px;
-        }
-
-        .success-shell {
-            border-radius: 0 0 22px 22px;
-            padding: 28px 18px 28px;
-        }
-
-        .success-icon {
-            width: 92px;
-            height: 92px;
-            margin-bottom: 26px;
-        }
-
-        .success-title {
-            font-size: 24px;
-        }
-
-        .notif-box {
-            padding: 18px;
-            gap: 12px;
-        }
-
-        .notif-icon {
-            width: 42px;
-            height: 42px;
-        }
-
-        .summary-box {
-            padding: 18px;
-        }
-    }
-</style>
-
-<div class="success-page">
-    <div class="success-shell">
-        <div class="success-hero">
-            <div class="success-icon">
-                <x-lucide-check />
-            </div>
-
-            <h1 class="success-title">Pembayaran Berhasil!</h1>
-            <p class="success-subtitle">Pesananmu telah dikonfirmasi</p>
-            <p class="order-id">#{{ $orderId }}</p>
+    {{-- Ikon status --}}
+    @if ($isPaid)
+        <div class="w-24 h-24 rounded-full flex items-center justify-center mb-6 mt-4"
+             style="background:rgba(52,211,153,0.15);border:3px solid rgba(52,211,153,0.4);box-shadow:0 0 40px rgba(52,211,153,0.2);">
+            <x-lucide-check class="w-12 h-12" style="color:#34d399;" />
         </div>
-
-        <div class="notif-box">
-            <div class="notif-icon">
-                <x-lucide-message-circle />
-            </div>
-            <div>
-                <div class="notif-title">Notifikasi Tracking via WhatsApp</div>
-                <p class="notif-desc">
-                    Pesanan Anda sedang diproses. Status pelacakan (tracking) dan resi pengiriman instant dari Biteship akan dikirimkan secara otomatis melalui <strong>WhatsApp Anda.</strong>
-                </p>
-                @if(($order['shipping']['method'] ?? 'pickup') === 'pickup')
-                    <a href="#" class="notif-link">
-                        <x-lucide-store />
-                        Siapkan pesananmu untuk dijemput di Gudang RUTIP
-                    </a>
-                @else
-                    <a href="#" class="notif-link">
-                        <x-lucide-package-check />
-                        Lacak pesananmu via Biteship
-                    </a>
-                @endif
-            </div>
+        <h1 class="text-2xl font-extrabold text-white font-display mb-2">Pembayaran Berhasil!</h1>
+        <p class="text-sm mb-2" style="color:rgba(255,255,255,0.5);">Pesananmu telah dikonfirmasi</p>
+    @elseif ($isFailed)
+        <div class="w-24 h-24 rounded-full flex items-center justify-center mb-6 mt-4"
+             style="background:rgba(239,68,68,0.15);border:3px solid rgba(239,68,68,0.4);box-shadow:0 0 40px rgba(239,68,68,0.2);">
+            <x-lucide-x class="w-12 h-12" style="color:#f87171;" />
         </div>
-
-        <div class="summary-box">
-            <h4>Ringkasan Pesanan</h4>
-
-            @foreach($order['cart'] as $item)
-                <div class="summary-line">
-                    <span class="label">{{ $item['name'] }} x {{ $item['qty'] }}</span>
-                    <span class="value">Rp {{ number_format($item['subtotal'], 0, ',', '.') }}</span>
-                </div>
-            @endforeach
-
-            <div class="summary-line">
-                <span class="label">Biaya Layanan dan Platform</span>
-                <span class="value">Rp {{ number_format($order['service_fee'], 0, ',', '.') }}</span>
-            </div>
-
-            <div class="summary-total">
-                <span>Total Dibayar</span>
-                <span class="value">Rp {{ number_format($order['total'], 0, ',', '.') }}</span>
-            </div>
+        <h1 class="text-2xl font-extrabold text-white font-display mb-2">Pembayaran Gagal</h1>
+        <p class="text-sm mb-2" style="color:rgba(255,255,255,0.5);">Pembayaran dibatalkan atau kedaluwarsa</p>
+    @else
+        <div class="w-24 h-24 rounded-full flex items-center justify-center mb-6 mt-4"
+             style="background:rgba(251,191,36,0.15);border:3px solid rgba(251,191,36,0.4);box-shadow:0 0 40px rgba(251,191,36,0.2);">
+            <x-lucide-clock class="w-12 h-12" style="color:#fbbf24;" />
         </div>
+        <h1 class="text-2xl font-extrabold text-white font-display mb-2">Menunggu Pembayaran</h1>
+        <p class="text-sm mb-2" style="color:rgba(255,255,255,0.5);">Selesaikan pembayaranmu untuk melanjutkan</p>
+    @endif
 
-        <a href="#" class="btn-view-orders">
-            <x-lucide-package />
-            Lihat Pesanan Saya
+    <p class="text-xs font-mono mb-8" style="color:rgba(167,139,250,0.7);">#{{ $order->order_number }}</p>
+
+    {{-- Tombol lanjut bayar — redirect ke halaman checkout Tripay --}}
+    @if ($isPending && $order->tripay_checkout_url)
+        <a href="{{ $order->tripay_checkout_url }}"
+           class="w-full py-4 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02] mb-4"
+           style="background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 6px 20px rgba(124,58,237,0.4);">
+            <x-lucide-credit-card class="w-4 h-4" /> Lanjutkan Pembayaran
         </a>
+        @if ($order->tripay_pay_code)
+            <p class="text-xs mb-6" style="color:rgba(255,255,255,0.45);">Kode pembayaran: <span class="font-mono font-bold text-white">{{ $order->tripay_pay_code }}</span></p>
+        @endif
+    @endif
+
+    {{-- Banner WhatsApp tracking (hanya saat sudah lunas) --}}
+    @if ($isPaid)
+        <div class="w-full rounded-2xl p-5 mb-6 text-left"
+             style="background:linear-gradient(135deg,rgba(37,211,102,0.15),rgba(18,140,78,0.1));border:1px solid rgba(37,211,102,0.3);">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-xl" style="background:rgba(37,211,102,0.2);">💬</div>
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-white mb-1">Notifikasi Tracking via WhatsApp</p>
+                    <p class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.6);">
+                        Pesanan Anda sedang diproses. Status pelacakan dan resi pengiriman instan dari Biteship akan dikirimkan otomatis melalui <span class="font-semibold text-white">WhatsApp Anda</span>.
+                    </p>
+                    @if (($order->shipping_method ?? 'pickup') === 'pickup')
+                        <div class="mt-2 flex items-center gap-1.5">
+                            <x-lucide-store class="w-3.5 h-3.5 shrink-0" style="color:#34d399;" />
+                            <p class="text-xs font-semibold" style="color:#34d399;">Siapkan pesananmu untuk dijemput di Gudang RUTIP</p>
+                        </div>
+                    @else
+                        <div class="mt-2 flex items-center gap-1.5">
+                            <x-lucide-package-check class="w-3.5 h-3.5 shrink-0" style="color:#34d399;" />
+                            <p class="text-xs font-semibold" style="color:#34d399;">{{ $order->biteship_tracking_id ? 'Lacak pesananmu: ' . $order->biteship_tracking_id : 'Pesananmu sedang dibooking ke kurir Biteship' }}</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Ringkasan pesanan --}}
+    <div class="w-full rounded-2xl p-4 mb-8 text-left" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
+        <p class="text-xs font-bold text-white mb-3">Ringkasan Pesanan</p>
+        @foreach ($order->items as $i => $item)
+            @php $itemType = $item['type'] ?? 'preloved'; @endphp
+            <div class="flex items-center gap-3 py-1.5"
+                 style="{{ $i < count($order->items) - 1 ? 'border-bottom:1px solid rgba(255,255,255,0.05);' : '' }}">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden shrink-0" style="background:rgba(255,255,255,0.06);">
+                    @if (!empty($item['image']))
+                        @if ($itemType === 'packing')
+                            <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ $item['name'] }}" class="w-full h-full object-cover">
+                        @else
+                            <img src="{{ Storage::url($item['image']) }}" alt="{{ $item['name'] }}" class="w-full h-full object-cover">
+                        @endif
+                    @else
+                        <x-lucide-image class="w-4 h-4" style="color:#a78bfa;" />
+                    @endif
+                </div>
+                <span class="flex-1 text-xs" style="color:rgba(255,255,255,0.55);">{{ $item['name'] }} × {{ $item['qty'] }}</span>
+                <span class="text-xs font-semibold text-white shrink-0">{{ rupiah($item['price'] * $item['qty']) }}</span>
+            </div>
+        @endforeach
+        <div class="flex justify-between items-center py-1.5" style="border-bottom:1px solid rgba(255,255,255,0.05);">
+            <span class="text-xs" style="color:rgba(255,255,255,0.55);">Biaya Layanan dan Platform</span>
+            <span class="text-xs font-semibold text-white">{{ rupiah($order->service_fee) }}</span>
+        </div>
+        @if ($order->shipping_cost > 0)
+            <div class="flex justify-between items-center py-1.5">
+                <span class="text-xs" style="color:rgba(255,255,255,0.55);">Biaya Pengiriman</span>
+                <span class="text-xs font-semibold text-white">{{ rupiah($order->shipping_cost) }}</span>
+            </div>
+        @endif
+        <div class="flex justify-between items-center pt-2 mt-1" style="border-top:1px solid rgba(255,255,255,0.1);">
+            <span class="text-xs font-bold text-white">Total {{ $isPaid ? 'Dibayar' : 'Tagihan' }}</span>
+            <span class="text-sm font-extrabold font-display" style="color:#a78bfa;">{{ rupiah($order->total) }}</span>
+        </div>
     </div>
+
+    {{-- Aksi --}}
+    <a href="{{ route('preloved.index') }}"
+       class="w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+       style="{{ $isPaid
+            ? 'background:linear-gradient(135deg,#7c3aed,#6366f1);color:white;box-shadow:0 6px 20px rgba(124,58,237,0.4);'
+            : 'border:1.5px solid rgba(124,58,237,0.4);color:#a78bfa;' }}">
+        <x-lucide-package class="w-4 h-4" /> {{ $isPaid ? 'Belanja Lagi' : 'Kembali ke Toko' }}
+    </a>
 </div>
 @endsection

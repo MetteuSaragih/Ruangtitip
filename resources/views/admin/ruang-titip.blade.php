@@ -84,8 +84,8 @@ $orderTabCfg = [
                 </div>
                 <div>
                     <p class="text-xs font-medium mb-1" style="color:rgba(255,255,255,0.42);">Pendapatan Penitipan (Bulan ini)</p>
-                    <p class="text-2xl font-extrabold text-white font-display">Rp 8.250.000</p>
-                    <span class="inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-full" style="background:rgba(52,211,153,0.12);color:#34d399;">+9% bulan lalu</span>
+                    <p class="text-2xl font-extrabold text-white font-display">{{ rupiah2($pendapatanBulanIni) }}</p>
+                    <span class="inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-full" style="background:{{ $pendapatanGrowth >= 0 ? 'rgba(52,211,153,0.12)' : 'rgba(239,68,68,0.12)' }};color:{{ $pendapatanGrowth >= 0 ? '#34d399' : '#f87171' }};">{{ $pendapatanGrowth >= 0 ? '+' : '' }}{{ $pendapatanGrowth }}% bulan lalu</span>
                 </div>
             </div>
             <div class="rounded-2xl p-5 flex flex-col gap-3" style="background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.08);">
@@ -180,7 +180,8 @@ $orderTabCfg = [
                                 <td class="px-5 py-4">
                                     <div class="flex items-center gap-1.5 flex-nowrap">
                                         {{-- Upload bukti --}}
-                                        <button title="{{ $row['hasProof'] ? 'Lihat Bukti' : 'Upload Bukti Visual' }}"
+                                        <button type="button" title="{{ $row['hasProof'] ? 'Lihat Bukti' : 'Upload Bukti Visual' }}"
+                                                onclick="openProofModal({{ $row['orderId'] }}, {{ $row['hasProof'] ? 'true' : 'false' }}, @js($row['proofUrl']))"
                                                 class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105"
                                                 style="background:{{ $row['hasProof'] ? 'rgba(52,211,153,0.12)' : 'rgba(124,58,237,0.13)' }};border:1px solid {{ $row['hasProof'] ? 'rgba(52,211,153,0.3)' : 'rgba(124,58,237,0.25)' }};color:{{ $row['hasProof'] ? '#34d399' : '#a78bfa' }};">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -193,7 +194,9 @@ $orderTabCfg = [
                                             <span class="hidden xl:inline">{{ $row['hasProof'] ? 'Lihat' : 'Upload' }}</span>
                                         </button>
                                         {{-- Update status --}}
-                                        <button {{ !$row['hasProof'] ? 'disabled' : '' }}
+                                        <button type="button" {{ !$row['hasProof'] ? 'disabled' : '' }}
+                                                onclick="openStatusModal({{ $row['orderId'] }}, '{{ $row['statusKey'] }}')"
+                                                title="{{ !$row['hasProof'] ? 'Upload bukti terlebih dahulu' : 'Perbarui status' }}"
                                                 class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
                                                 style="background:{{ $row['hasProof'] ? 'rgba(99,102,241,0.14)' : 'rgba(255,255,255,0.04)' }};border:1px solid {{ $row['hasProof'] ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.07)' }};color:{{ $row['hasProof'] ? '#818cf8' : 'rgba(255,255,255,0.2)' }};cursor:{{ $row['hasProof'] ? 'pointer' : 'not-allowed' }};">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -201,7 +204,8 @@ $orderTabCfg = [
                                         </button>
                                         {{-- Resi (keluar + biteship) --}}
                                         @if($isKeluar && $row['returnMode'] === 'Ekspedisi Biteship')
-                                        <button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105"
+                                        <button type="button" onclick="showResiToast(@js($row['trackingId']))"
+                                                class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105"
                                                 style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.28);color:#38bdf8;">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17H7l-4-4V5a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2z"/></svg>
                                             <span class="hidden xl:inline">Resi</span>
@@ -501,6 +505,83 @@ $orderTabCfg = [
     </div>
 </div>
 
+{{-- ══ UPLOAD BUKTI MODAL ══ --}}
+<div id="proof-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-6"
+     style="background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);"
+     onclick="if(event.target===this) closeProofModal()">
+    <div class="w-full max-w-md rounded-3xl overflow-hidden"
+         style="background:rgba(12,6,24,0.99);border:1px solid rgba(139,92,246,0.25);box-shadow:0 24px 80px rgba(0,0,0,0.75);">
+        <div class="px-7 py-5 flex items-center justify-between" style="border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(124,58,237,0.06);">
+            <div>
+                <h2 id="proof-modal-title" class="text-base font-extrabold text-white font-display">Upload Bukti Penitipan</h2>
+                <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.38);">Foto kondisi barang saat diterima di gudang</p>
+            </div>
+            <button onclick="closeProofModal()" class="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-white/10 transition-colors" style="color:rgba(255,255,255,0.4);">✕</button>
+        </div>
+        <form id="proof-form" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div class="p-7 space-y-3">
+                <div id="proof-existing" class="hidden rounded-2xl overflow-hidden" style="border:1px solid rgba(255,255,255,0.1);">
+                    <img id="proof-existing-img" src="" alt="Bukti" class="w-full h-44 object-cover">
+                </div>
+                <label class="block text-xs font-semibold mb-1.5" style="color:rgba(255,255,255,0.55);">Foto Bukti Baru</label>
+                <input type="file" name="proof_photo" accept="image/*" required
+                       class="w-full text-sm text-white rounded-xl px-3 py-2.5"
+                       style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);">
+            </div>
+            <div class="px-7 py-5 flex gap-3" style="border-top:1px solid rgba(255,255,255,0.07);">
+                <button type="button" onclick="closeProofModal()" class="flex-1 py-3.5 rounded-2xl text-sm font-semibold transition-all hover:bg-white/5" style="border:1.5px solid rgba(255,255,255,0.14);color:rgba(255,255,255,0.7);">Batal</button>
+                <button type="submit" class="flex-[2] py-3.5 rounded-2xl text-sm font-bold text-white transition-all hover:scale-[1.01]" style="background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 6px 20px rgba(124,58,237,0.4);">Unggah</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- ══ STATUS MODAL ══ --}}
+<div id="status-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-6"
+     style="background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);"
+     onclick="if(event.target===this) closeStatusModal()">
+    <div class="w-full max-w-md rounded-3xl overflow-hidden"
+         style="background:rgba(12,6,24,0.99);border:1px solid rgba(139,92,246,0.25);box-shadow:0 24px 80px rgba(0,0,0,0.75);">
+        <div class="px-7 py-5 flex items-center justify-between" style="border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(124,58,237,0.06);">
+            <div>
+                <h2 class="text-base font-extrabold text-white font-display">Perbarui Status Pesanan</h2>
+                <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.38);">Ubah fase penitipan barang pelanggan</p>
+            </div>
+            <button onclick="closeStatusModal()" class="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-white/10 transition-colors" style="color:rgba(255,255,255,0.4);">✕</button>
+        </div>
+        <form id="status-form" method="POST">
+            @csrf
+            <div class="p-7 space-y-2">
+                @foreach (\App\Models\TitipanOrder::FLOW as $key => $meta)
+                <label class="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);">
+                    <input type="radio" name="status" value="{{ $key }}" class="accent-violet-500 w-4 h-4">
+                    <span class="w-2 h-2 rounded-full" style="background:{{ $meta['color'] }};"></span>
+                    <span class="text-sm font-medium text-white">{{ $meta['label'] }}</span>
+                </label>
+                @endforeach
+            </div>
+            <div class="px-7 py-5 flex gap-3" style="border-top:1px solid rgba(255,255,255,0.07);">
+                <button type="button" onclick="closeStatusModal()" class="flex-1 py-3.5 rounded-2xl text-sm font-semibold transition-all hover:bg-white/5" style="border:1.5px solid rgba(255,255,255,0.14);color:rgba(255,255,255,0.7);">Batal</button>
+                <button type="submit" class="flex-[2] py-3.5 rounded-2xl text-sm font-bold text-white transition-all hover:scale-[1.01]" style="background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 6px 20px rgba(124,58,237,0.4);">Simpan Status</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- Resi Toast --}}
+<div id="resi-toast" class="fixed bottom-6 right-6 z-50 hidden items-center gap-3 px-4 py-3 rounded-2xl"
+     style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.35);backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+    <span class="text-xl">📦</span>
+    <div>
+        <p class="text-xs font-bold text-white">Nomor Resi</p>
+        <p id="resi-toast-number" class="text-[11px] font-mono" style="color:#38bdf8;"></p>
+    </div>
+    <button onclick="copyResiNumber()" title="Salin" style="color:rgba(255,255,255,0.5);">📋</button>
+    <button onclick="document.getElementById('resi-toast').classList.add('hidden');document.getElementById('resi-toast').classList.remove('flex');"
+            style="color:rgba(255,255,255,0.35);">✕</button>
+</div>
+
 {{-- WA Toast --}}
 <div id="wa-toast" class="fixed bottom-6 right-6 z-50 hidden items-center gap-3 px-4 py-3 rounded-2xl"
      style="background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.35);backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,0.4);">
@@ -719,6 +800,64 @@ function toggleRoomActive(id, btn) {
         btn.style.color = isActive ? '#34d399' : 'rgba(255,255,255,0.35)';
         btn.dataset.active = isActive ? '1' : '0';
     });
+}
+
+/* ── Upload Bukti modal ── */
+function openProofModal(orderId, hasProof, proofUrl) {
+    const modal = document.getElementById('proof-modal');
+    const form = document.getElementById('proof-form');
+    const existing = document.getElementById('proof-existing');
+    const existingImg = document.getElementById('proof-existing-img');
+    document.getElementById('proof-modal-title').textContent = hasProof ? 'Perbarui Bukti Penitipan' : 'Upload Bukti Penitipan';
+    form.action = '/admin/ruang-titip/orders/' + orderId + '/proof';
+    form.reset();
+    if (hasProof && proofUrl) {
+        existingImg.src = proofUrl;
+        existing.classList.remove('hidden');
+    } else {
+        existing.classList.add('hidden');
+    }
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeProofModal() {
+    const modal = document.getElementById('proof-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+/* ── Update Status modal ── */
+function openStatusModal(orderId, currentStatus) {
+    const modal = document.getElementById('status-modal');
+    const form = document.getElementById('status-form');
+    form.action = '/admin/ruang-titip/orders/' + orderId + '/status';
+    form.querySelectorAll('input[name="status"]').forEach(input => {
+        input.checked = input.value === currentStatus;
+    });
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeStatusModal() {
+    const modal = document.getElementById('status-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+/* ── Resi toast ── */
+let currentResiNumber = '';
+function showResiToast(trackingId) {
+    currentResiNumber = trackingId || '';
+    const t = document.getElementById('resi-toast');
+    document.getElementById('resi-toast-number').textContent = currentResiNumber || 'Belum tersedia (resi belum dibuat Biteship)';
+    t.classList.remove('hidden');
+    t.classList.add('flex');
+}
+
+function copyResiNumber() {
+    if (!currentResiNumber) return;
+    navigator.clipboard.writeText(currentResiNumber);
 }
 
 /* ── Init ── */

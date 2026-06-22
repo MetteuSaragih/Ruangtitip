@@ -14,7 +14,12 @@
       "Bash(rm -f /tmp/detail_full.txt /tmp/detail.html)",
       "Bash(grep -n 'condition_label\\\\|item\\\\['\\\\''\\\\|$item\\\\[' resources/views/checkout/shipping.blade.php resources/views/checkout/payment.blade.php resources/views/checkout/address.blade.php)",
       "Bash(php -l app/Http/Controllers/CartController.php)",
-      "Bash(php -l app/Http/Controllers/CheckoutController.php)"
+      "Bash(php -l app/Http/Controllers/CheckoutController.php)",
+      "Bash(ngrok config *)",
+      "PowerShell(ngrok config add-authtoken 3FQwtBWGD627qfb8hXmhgtWYOnN_3E2DELc5K3MkKvjYqrvTj)",
+      "PowerShell(Get-ChildItem -Path \"$env:LOCALAPPDATA\\\\Microsoft\\\\WinGet\\\\Packages\\\\Ngrok.Ngrok_Microsoft.Winget.Source_8wekyb3d8bbwe\" -Recurse -Filter \"ngrok.exe\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" https://stalemate-exclaim-recopy.ngrok-free.dev/)",
+      "Bash(curl -s -X POST https://stalemate-exclaim-recopy.ngrok-free.dev/tripay/callback -H \"Content-Type: application/json\" -d '{\"test\":\"ping\"}')"
     ],
     "additionalDirectories": [
       "\\tmp"

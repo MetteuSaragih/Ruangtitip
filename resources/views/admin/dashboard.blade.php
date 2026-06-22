@@ -25,7 +25,7 @@
                     </svg>
                 </div>
                 <span class="text-xs font-semibold px-2 py-0.5 rounded-full"
-                      style="background:rgba(52,211,153,0.12);color:#34d399;">+12% bulan lalu</span>
+                      style="background:{{ $pendapatanGrowth >= 0 ? 'rgba(52,211,153,0.12)' : 'rgba(239,68,68,0.12)' }};color:{{ $pendapatanGrowth >= 0 ? '#34d399' : '#f87171' }};">{{ $pendapatanGrowth >= 0 ? '+' : '' }}{{ $pendapatanGrowth }}% bulan lalu</span>
             </div>
             <div>
                 <p class="text-xs font-medium mb-1" style="color:rgba(255,255,255,0.45);">Pendapatan (Bulan Ini)</p>

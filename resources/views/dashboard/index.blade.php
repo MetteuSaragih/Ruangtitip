@@ -89,6 +89,11 @@
         <h2 class="text-base font-bold text-white">Ruang Titip</h2>
         <a href="{{ route('ruang-titip.index') }}" class="flex items-center gap-1 text-xs font-semibold" style="color:#a78bfa;">Lihat Semua <x-lucide-chevron-right class="w-3.5 h-3.5" /></a>
     </div>
+    @if ($storages->isEmpty())
+        <div class="rounded-2xl p-6 text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
+            <p class="text-xs" style="color:rgba(255,255,255,0.45);">Belum ada gudang yang tersedia saat ini.</p>
+        </div>
+    @else
     <div class="flex gap-4 overflow-x-auto pb-2 lg:overflow-visible lg:grid lg:grid-cols-3 lg:pb-0 no-scrollbar">
         @foreach ($storages as $s)
             <div class="rounded-2xl overflow-hidden shrink-0 w-72 lg:w-auto transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);">
@@ -128,6 +133,7 @@
             </div>
         @endforeach
     </div>
+    @endif
 </section>
 
 {{-- ─── TOKO PACKING ─── --}}
@@ -136,6 +142,11 @@
         <h2 class="text-base font-bold text-white">Toko Packing</h2>
         <a href="#" class="flex items-center gap-1 text-xs font-semibold" style="color:#a78bfa;">Lihat Semua <x-lucide-chevron-right class="w-3.5 h-3.5" /></a>
     </div>
+    @if ($packing->isEmpty())
+        <div class="rounded-2xl p-6 text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
+            <p class="text-xs" style="color:rgba(255,255,255,0.45);">Belum ada produk di Toko Packing saat ini.</p>
+        </div>
+    @else
     <div class="flex gap-4 overflow-x-auto pb-2 lg:overflow-visible lg:grid lg:grid-cols-4 lg:pb-0 no-scrollbar">
         @foreach ($packing as $p)
             <div class="rounded-2xl overflow-hidden shrink-0 w-44 lg:w-auto transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);">
@@ -158,6 +169,7 @@
             </div>
         @endforeach
     </div>
+    @endif
 </section>
 
 {{-- ─── TOKO PRELOVED ─── --}}
@@ -175,8 +187,13 @@
                 <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.45);">Gratis listing · Bayar saat terjual</p>
             </div>
         </div>
-        <a href="#" class="shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-bold" style="border:1.5px solid rgba(124,58,237,0.4);color:#a78bfa;background:rgba(124,58,237,0.08);">Pelajari <x-lucide-arrow-right class="w-3 h-3" /></a>
+        <a href="{{ route('preloved.cara-jual') }}" class="shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-bold" style="border:1.5px solid rgba(124,58,237,0.4);color:#a78bfa;background:rgba(124,58,237,0.08);">Pelajari <x-lucide-arrow-right class="w-3 h-3" /></a>
     </div>
+    @if ($preloved->isEmpty())
+        <div class="rounded-2xl p-6 text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
+            <p class="text-xs" style="color:rgba(255,255,255,0.45);">Belum ada produk preloved yang tersedia saat ini.</p>
+        </div>
+    @else
     <div class="flex gap-4 overflow-x-auto pb-2 lg:overflow-visible lg:grid lg:grid-cols-4 lg:pb-0 no-scrollbar">
         @foreach ($preloved as $p)
             <div class="rounded-2xl overflow-hidden shrink-0 w-44 lg:w-auto transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);">
@@ -196,6 +213,7 @@
             </div>
         @endforeach
     </div>
+    @endif
 </section>
 
 {{-- ─── TESTIMONI ─── --}}

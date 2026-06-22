@@ -10,6 +10,12 @@
         <p class="text-xs mt-1" style="color:rgba(255,255,255,0.4);">Pilih gudang untuk menitipkan barangmu</p>
     </div>
 
+    @if ($storages->isEmpty())
+        <div class="rounded-2xl p-10 text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
+            <x-lucide-warehouse class="w-10 h-10 mx-auto mb-3" style="color:rgba(167,139,250,0.5);" />
+            <p class="text-sm" style="color:rgba(255,255,255,0.5);">Belum ada gudang yang tersedia saat ini.</p>
+        </div>
+    @else
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         @foreach ($storages as $s)
             @php
@@ -67,5 +73,6 @@
             </div>
         @endforeach
     </div>
+    @endif
 </div>
 @endsection

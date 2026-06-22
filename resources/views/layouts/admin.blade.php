@@ -58,13 +58,9 @@
        style="background:rgba(10,4,26,0.97);border-right:1px solid rgba(255,255,255,0.06);">
 
     {{-- Logo --}}
-    <div class="px-5 py-5 flex items-center gap-3" style="border-bottom:1px solid rgba(255,255,255,0.06);">
-        <div class="w-8 h-8 rounded-xl flex items-center justify-center font-extrabold text-white text-sm"
-             style="background:linear-gradient(135deg,#7c3aed,#6366f1);">R</div>
-        <div>
-            <p class="text-sm font-extrabold text-white font-display leading-none">RUTIP</p>
-            <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.35);">ADMIN PANEL</p>
-        </div>
+    <div class="px-5 py-5" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+        <img src="{{ asset('images/logo-rutip-putih.png') }}" alt="RUTIP" class="h-11 w-auto mb-1">
+        <p class="text-[10px]" style="color:rgba(255,255,255,0.35);">ADMIN PANEL</p>
     </div>
 
     {{-- Nav --}}

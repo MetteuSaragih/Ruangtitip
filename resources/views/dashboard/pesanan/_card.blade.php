@@ -16,7 +16,13 @@
 
     <div class="flex items-start justify-between gap-3 mb-3">
         <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0" style="background:rgba(124,58,237,0.15);">📦</div>
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden shrink-0" style="background:rgba(124,58,237,0.15);">
+                @if ($order->storage && $order->storage->primary_photo)
+                    <img src="{{ asset('storage/'.$order->storage->primary_photo) }}" alt="{{ $order->storage->name }}" class="w-full h-full object-cover">
+                @else
+                    <x-lucide-package class="w-4 h-4" style="color:#a78bfa;" />
+                @endif
+            </div>
             <div class="min-w-0">
                 <p class="text-sm font-bold text-white truncate">{{ $order->storage->name ?? 'Penitipan Barang' }}</p>
                 <p class="text-[11px]" style="color:rgba(255,255,255,0.4);">#{{ $order->code() }} · {{ $order->created_at->format('d M Y') }}</p>

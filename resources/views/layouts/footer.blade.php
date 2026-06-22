@@ -118,11 +118,8 @@
     <div class="rutip-footer-inner">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
             <div>
-                <a href="{{ $homeHref }}" class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">
-                        <x-lucide-package class="w-4 h-4 text-white" />
-                    </div>
-                    <span class="text-xl font-extrabold text-white font-display">RUTIP</span>
+                <a href="{{ $homeHref }}" class="flex items-center">
+                    <img src="{{ asset('images/logo-rutip-putih.png') }}" alt="RUTIP" class="h-12 w-auto">
                 </a>
                 <p class="footer-brand-desc">Solusi titip barang terpercaya untuk mahasiswa Universitas Brawijaya. Aman, hemat, dan mudah.</p>
                 <div class="footer-social">
