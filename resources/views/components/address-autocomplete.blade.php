@@ -14,7 +14,7 @@
               style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">{{ $oldAddress }}</textarea>
     <div id="{{ $uid }}_results" class="absolute left-0 right-0 mt-1 rounded-xl overflow-hidden z-20 hidden"
          style="background:#1c1530;border:1.5px solid rgba(255,255,255,0.12);max-height:220px;overflow-y:auto;"></div>
-    <p class="text-[10px] mt-1.5" style="color:rgba(255,255,255,0.35);">Pilih saran yang muncul supaya lokasi terdeteksi otomatis, atau lanjut ketik manual.</p>
+    <p class="text-[10px] mt-1.5" style="color:rgba(255,255,255,0.35);">Pilih kecamatan/kota dulu supaya pencarian jalan lebih akurat. Lalu pilih saran yang muncul supaya lokasi terdeteksi otomatis.</p>
 
     <input type="hidden" name="{{ $fieldName('address') }}" id="{{ $uid }}_address" value="{{ $oldAddress }}">
     <input type="hidden" name="{{ $fieldName('latitude') }}" id="{{ $uid }}_lat" value="{{ $oldLat }}">
@@ -29,6 +29,14 @@
     const latField = document.getElementById('{{ $uid }}_lat');
     const lngField = document.getElementById('{{ $uid }}_lng');
     let timer = null;
+
+    // Kalau ada <x-biteship-area-search> di form yang sama, pakai kecamatan/kota
+    // yang sudah dipilih sebagai konteks supaya hasil pencarian jalan lebih relevan
+    // (mirip Gojek: pilih kecamatan dulu, baru cari nama jalan).
+    function areaContext() {
+        const areaField = document.querySelector('[data-biteship-area-search] input[name="area_name"], [data-biteship-area-search] input[name$="[area_name]"]');
+        return areaField && areaField.value ? areaField.value : '';
+    }
 
     function render(items) {
         if (!items.length) {
@@ -65,7 +73,9 @@
             return;
         }
         timer = setTimeout(() => {
-            fetch(`{{ route('api.address.suggest') }}?q=` + encodeURIComponent(q))
+            const area = areaContext();
+            const scopedQuery = area && !q.toLowerCase().includes(area.toLowerCase()) ? `${q}, ${area}` : q;
+            fetch(`{{ route('api.address.suggest') }}?q=` + encodeURIComponent(scopedQuery))
                 .then(r => r.json())
                 .then(data => render(data.results || []))
                 .catch(() => render([]));
