@@ -44,13 +44,17 @@
             </div>
 
             @if ($s['logistic'] === 'rutip')
-                {{-- Rincian Anjem RuTip: jarak + packing --}}
+                {{-- Rincian Anjem RuTip: jarak + per-kardus jemput + packing --}}
                 <div class="flex items-start justify-between gap-2">
-                    <span class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.5);">Antar-Jemput RuTip ({{ $calc['km'] }} km)</span>
+                    <span class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.5);">Ongkos Jemput ({{ $calc['km'] }} km × Rp4.000)</span>
                     <span class="text-xs font-semibold text-white shrink-0">{{ rp($calc['kmCost']) }}</span>
                 </div>
                 <div class="flex items-start justify-between gap-2">
-                    <span class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.5);">Jasa Packing ({{ $calc['totalItems'] }} × Rp15.000)</span>
+                    <span class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.5);">Penjemputan Kardus ({{ $calc['totalItems'] }} × Rp2.000)</span>
+                    <span class="text-xs font-semibold text-white shrink-0">{{ rp($calc['pickupBoxCost']) }}</span>
+                </div>
+                <div class="flex items-start justify-between gap-2">
+                    <span class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.5);">Jasa Packing ({{ $calc['totalItems'] }} × Rp3.000)</span>
                     <span class="text-xs font-semibold text-white shrink-0">{{ rp($calc['packingCost']) }}</span>
                 </div>
                 <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-[10px]" style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);color:#fbbf24;">

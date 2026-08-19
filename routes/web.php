@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\RuangTitipController as AdminRuangTitipController;
 use App\Http\Controllers\Admin\TokoPackingController;
 use App\Http\Controllers\Admin\TokoPrelovedController;
+use App\Http\Controllers\Api\AddressSearchController;
 use App\Http\Controllers\Api\BiteshipAreaController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\OtpController;
@@ -67,6 +68,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/profil/avatar', [ProfileController::class, 'uploadAvatar'])->name('profile.avatar');
     Route::post('/profil/lewati-banner', [ProfileController::class, 'dismissCompleteBanner'])->name('profile.dismiss-banner');
     Route::post('/profil/alamat', [ProfileController::class, 'storeAddress'])->name('profile.address.store');
+    Route::put('/profil/alamat/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
     Route::delete('/profil/alamat/{id}', [ProfileController::class, 'destroyAddress'])->name('profile.address.destroy');
     Route::post('/profil/alamat/{id}/primary', [ProfileController::class, 'setPrimaryAddress'])->name('profile.address.primary');
 
@@ -74,6 +76,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/pesanan/{order}', [PesananController::class, 'show'])->name('pesanan.detail');
 
     Route::get('/api/biteship/areas', [BiteshipAreaController::class, 'search'])->name('api.biteship.areas');
+    Route::get('/api/address/suggest', [AddressSearchController::class, 'search'])->name('api.address.suggest');
     Route::get('/api/tripay/channels', [\App\Http\Controllers\Api\TripayChannelController::class, 'index'])->name('api.tripay.channels');
 
     Route::prefix('dashboard/packing')->name('packing.')->group(function () {

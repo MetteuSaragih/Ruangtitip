@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Courier;
 use App\Models\ItemSize;
 use App\Models\StorageRoom;
 use App\Models\TitipanOrder;
@@ -40,7 +39,9 @@ class RuangTitipController extends Controller
 {
     private const PLATFORM_FEE          = 1000;   // biaya layanan jika logistik tidak pakai Biteship
     private const PLATFORM_FEE_BITESHIP = 2000;   // biaya layanan jika logistik pakai Biteship
-    private const PACKING_PER_BOX  = 15000;  // jasa packing+anjem per kardus (dok. Th.1)
+    private const PICKUP_PER_KM  = 4000;   // biaya antar-jemput per km
+    private const PICKUP_PER_BOX = 2000;   // biaya antar-jemput per kardus
+    private const PACKING_PER_BOX = 3000;  // jasa packing per kardus
     private const DEFAULT_KM       = 5;      // fallback kalau koordinat alamat/gudang tidak tersedia
 
     public function __construct(private DistanceService $distance)
@@ -81,21 +82,21 @@ class RuangTitipController extends Controller
             }
         }
 
-        $logistic    = $s['logistic'] ?? 'self';
-        $courierCost = 0;
-        $packingCost = 0;
-        $kmCost      = 0;
-        $km          = self::DEFAULT_KM;
+        $logistic     = $s['logistic'] ?? 'self';
+        $courierCost  = 0;
+        $packingCost  = 0;
+        $kmCost       = 0;
+        $pickupBoxCost = 0;
+        $km           = self::DEFAULT_KM;
 
         if ($logistic === 'rutip') {
             $km = $this->resolveKm($s);
 
-            // Total Anjem = (harga/km × jarak) + (jasa packing/kardus × jumlah item)
-            $courier = Courier::where('code', 'rutip_fleet')->first();
-            $perKm   = $courier->price_per_km ?? 10000;
-            $kmCost      = $perKm * $km;
-            $packingCost = self::PACKING_PER_BOX * $totalItems;
-            $courierCost = $kmCost + $packingCost;
+            // Total Anjem = (harga/km × jarak) + (harga/kardus × jumlah item) + (jasa packing/kardus × jumlah item)
+            $kmCost        = self::PICKUP_PER_KM * $km;
+            $pickupBoxCost = self::PICKUP_PER_BOX * $totalItems;
+            $packingCost   = self::PACKING_PER_BOX * $totalItems;
+            $courierCost   = $kmCost + $pickupBoxCost + $packingCost;
         } elseif ($logistic === 'instant' && !empty($s['courier_code'])) {
             $courierCost = (int) ($s['courier_cost'] ?? 0);
         }
@@ -110,6 +111,7 @@ class RuangTitipController extends Controller
             'courierCost'   => $courierCost,
             'packingCost'   => $packingCost,
             'kmCost'        => $kmCost,
+            'pickupBoxCost' => $pickupBoxCost,
             'km'            => $km,
             'platform_fee'  => $platformFee,
             'total'         => $total,
@@ -149,22 +151,6 @@ class RuangTitipController extends Controller
         $geo = $this->distance->geocode($address);
 
         return $geo ? ['lat' => $geo['lat'], 'lng' => $geo['lng']] : null;
-    }
-
-    /** Geocode alamat (kalau koordinatnya belum ada) lalu simpan ke record UserAddress. */
-    private function ensureAddressCoords(UserAddress $addr): UserAddress
-    {
-        if ($addr->latitude && $addr->longitude) {
-            return $addr;
-        }
-
-        $query = trim($addr->address . ', ' . ($addr->area_name ?? '') . ', Indonesia');
-        $geo = $this->distance->geocode($query);
-        if ($geo) {
-            $addr->update(['latitude' => $geo['lat'], 'longitude' => $geo['lng']]);
-        }
-
-        return $addr;
     }
 
     /* ═══ SCREEN 1 — Daftar gudang ═══ */
@@ -318,7 +304,7 @@ class RuangTitipController extends Controller
             return back()->withErrors(['address' => 'Alamat ini belum punya kecamatan tersimpan, pilih/tambah alamat baru dengan kecamatan.']);
         }
 
-        $addr = $this->ensureAddressCoords($addr);
+        $addr = $this->distance->ensureAddressCoords($addr);
 
         $this->setState($r, [
             'address_id' => $addr->id,
@@ -434,7 +420,7 @@ class RuangTitipController extends Controller
         $storage = StorageRoom::find($s['storage_id'] ?? null);
         $courier = ($s['logistic'] ?? null) === 'instant' && !empty($s['courier_code'])
             ? (object) ['name' => $s['courier_name'] ?? $s['courier_code'], 'service' => $s['courier_service_code'] ?? '']
-            : (($s['logistic'] ?? null) === 'rutip' ? Courier::where('code', 'rutip_fleet')->first() : null);
+            : null;
 
         return view('dashboard.ruang-titip.checkout', compact('s', 'calc', 'storage', 'courier'));
     }

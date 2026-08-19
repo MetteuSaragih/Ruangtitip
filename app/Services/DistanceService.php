@@ -2,12 +2,74 @@
 
 namespace App\Services;
 
+use App\Models\UserAddress;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class DistanceService
 {
+    /**
+     * Cari beberapa kandidat alamat (buat dropdown autocomplete) lewat Nominatim.
+     * Return: [['label' => display_name, 'lat' => ..., 'lng' => ...], ...]
+     */
+    public function suggest(string $query, int $limit = 5): array
+    {
+        $query = trim($query);
+        if (mb_strlen($query) < 4) {
+            return [];
+        }
+
+        $cacheKey = 'geosuggest:' . md5(mb_strtolower($query)) . ':' . $limit;
+
+        return Cache::remember($cacheKey, now()->addDays(7), function () use ($query, $limit) {
+            try {
+                $response = Http::withHeaders(['User-Agent' => 'RuTip-Platform/1.0'])
+                    ->timeout(6)
+                    ->get('https://nominatim.openstreetmap.org/search', [
+                        'q' => $query,
+                        'format' => 'json',
+                        'limit' => $limit,
+                        'countrycodes' => 'id',
+                    ]);
+
+                if (! $response->successful()) {
+                    return [];
+                }
+
+                return collect($response->json())
+                    ->filter(fn ($item) => isset($item['display_name'], $item['lat'], $item['lon']))
+                    ->map(fn ($item) => [
+                        'label' => $item['display_name'],
+                        'lat' => (float) $item['lat'],
+                        'lng' => (float) $item['lon'],
+                    ])
+                    ->values()
+                    ->all();
+            } catch (\Throwable $e) {
+                Log::warning('Geocoding suggest gagal', ['query' => $query, 'error' => $e->getMessage()]);
+
+                return [];
+            }
+        });
+    }
+
+    /** Isi lat/lng UserAddress kalau belum ada, dengan geocode dari teks alamat + kecamatan. */
+    public function ensureAddressCoords(UserAddress $addr): UserAddress
+    {
+        if ($addr->latitude && $addr->longitude) {
+            return $addr;
+        }
+
+        $query = trim($addr->address . ', ' . ($addr->area_name ?? '') . ', Indonesia');
+        $geo = $this->geocode($query);
+        if ($geo) {
+            $addr->update(['latitude' => $geo['lat'], 'longitude' => $geo['lng']]);
+        }
+
+        return $addr;
+    }
+
     /**
      * Konversi teks alamat jadi koordinat [lat, lng] pakai Nominatim (OpenStreetMap).
      * Gratis, tanpa API key. Hasil di-cache lama karena teks alamat yang sama

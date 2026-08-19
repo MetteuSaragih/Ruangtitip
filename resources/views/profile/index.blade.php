@@ -13,8 +13,10 @@
         whatsapp: {{ json_encode($user->phone) }},
         redirectAfter: {{ json_encode($redirectAfter ?? null) }},
         showAddForm: false,
+        formMode: 'add',
+        editingId: null,
         newLabel: '',
-        newAddr: '',
+        formError: '',
         saved: false,
         saving: false,
         wpFocused: false,
@@ -42,22 +44,84 @@
                 }
             });
         },
-        addAddress() {
-            if(!this.newAddr.trim()) return;
-            const tempLabel = this.newLabel || 'Alamat Baru';
-            const tempAddr = this.newAddr;
-            this.newLabel = ''; this.newAddr = ''; this.showAddForm = false;
-            fetch('{{ route('profile.address.store') }}', {
-                method: 'POST',
+        openAddForm() {
+            this.formMode = 'add';
+            this.editingId = null;
+            this.newLabel = '';
+            this.formError = '';
+            this.showAddForm = true;
+            this.$nextTick(() => this.fillAddressForm({ areaId: '', areaName: '', postalCode: '', address: '', latitude: '', longitude: '' }));
+        },
+        editAddress(addr) {
+            this.formMode = 'edit';
+            this.editingId = addr.id;
+            this.newLabel = addr.label;
+            this.formError = '';
+            this.showAddForm = true;
+            this.$nextTick(() => this.fillAddressForm(addr));
+        },
+        fillAddressForm(addr) {
+            const areaWrap = document.querySelector('[data-biteship-area-search]');
+            const addrWrap = document.querySelector('[data-address-autocomplete]');
+            if (areaWrap) {
+                areaWrap.querySelector('input[type=text]').value = addr.areaName || '';
+                areaWrap.querySelector('input[name=area_id]').value = addr.areaId || '';
+                areaWrap.querySelector('input[name=area_name]').value = addr.areaName || '';
+                areaWrap.querySelector('input[name=postal_code]').value = addr.postalCode || '';
+            }
+            if (addrWrap) {
+                addrWrap.querySelector('textarea').value = addr.address || '';
+                addrWrap.querySelector('input[name=address]').value = addr.address || '';
+                addrWrap.querySelector('input[name=latitude]').value = addr.latitude || '';
+                addrWrap.querySelector('input[name=longitude]').value = addr.longitude || '';
+            }
+        },
+        cancelAddressForm() {
+            this.showAddForm = false;
+            this.formMode = 'add';
+            this.editingId = null;
+            this.newLabel = '';
+            this.formError = '';
+            this.fillAddressForm({ areaId: '', areaName: '', postalCode: '', address: '', latitude: '', longitude: '' });
+        },
+        saveAddressForm() {
+            const areaWrap = document.querySelector('[data-biteship-area-search]');
+            const addrWrap = document.querySelector('[data-address-autocomplete]');
+            const payload = {
+                label: this.newLabel || 'Alamat',
+                address: addrWrap.querySelector('input[name=address]').value.trim(),
+                area_id: areaWrap.querySelector('input[name=area_id]').value,
+                area_name: areaWrap.querySelector('input[name=area_name]').value,
+                postal_code: areaWrap.querySelector('input[name=postal_code]').value,
+                latitude: addrWrap.querySelector('input[name=latitude]').value || null,
+                longitude: addrWrap.querySelector('input[name=longitude]').value || null,
+            };
+            if (!payload.address) { this.formError = 'Alamat lengkap wajib diisi.'; return; }
+            if (!payload.area_id) { this.formError = 'Pilih kecamatan/kota dari daftar saran.'; return; }
+            this.formError = '';
+
+            const isEdit = this.formMode === 'edit';
+            const url = isEdit ? `{{ url('/profil/alamat') }}/${this.editingId}` : '{{ route('profile.address.store') }}';
+
+            fetch(url, {
+                method: isEdit ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                body: JSON.stringify({ label: tempLabel, address: tempAddr }),
+                body: JSON.stringify(payload),
             })
             .then(r => r.json())
             .then(data => {
-                if (data.success) {
-                    this.addresses.push({ id: data.id, label: data.label, address: data.address, isPrimary: data.isPrimary });
+                if (!data.success) { this.formError = data.message || 'Gagal menyimpan alamat.'; return; }
+                const entry = { id: data.id, label: data.label, address: data.address, areaId: data.areaId, areaName: data.areaName, postalCode: data.postalCode, latitude: data.latitude, longitude: data.longitude, isPrimary: data.isPrimary };
+                if (isEdit) {
+                    const idx = this.addresses.findIndex(a => a.id === this.editingId);
+                    if (idx !== -1) entry.isPrimary = this.addresses[idx].isPrimary;
+                    if (idx !== -1) this.addresses[idx] = entry;
+                } else {
+                    this.addresses.push(entry);
                 }
-            });
+                this.cancelAddressForm();
+            })
+            .catch(() => { this.formError = 'Gagal menyimpan alamat.'; });
         },
         saveChanges() {
             if (this.saving) return;
@@ -232,7 +296,7 @@
                     <div class="mb-6">
                         <div class="flex items-center justify-between mb-3">
                             <h2 class="text-sm font-bold text-white">Daftar Alamat</h2>
-                            <button @click="showAddForm = !showAddForm" class="flex items-center gap-1.5 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors">
+                            <button @click="showAddForm && formMode === 'add' ? cancelAddressForm() : openAddForm()" class="flex items-center gap-1.5 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
                                 Tambah Alamat
                             </button>
@@ -258,9 +322,14 @@
                                                 <p class="text-xs mt-0.5 leading-relaxed text-white/50" x-text="addr.address"></p>
                                             </div>
                                         </div>
-                                        <button @click="deleteAddress(addr.id)" class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 hover:bg-red-500/20 text-white/30 hover:text-red-400 transition-all">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                        </button>
+                                        <div class="flex items-center gap-1 shrink-0">
+                                            <button @click="editAddress(addr)" class="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-violet-500/20 text-white/30 hover:text-violet-300 transition-all">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                            </button>
+                                            <button @click="deleteAddress(addr.id)" class="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-500/20 text-white/30 hover:text-red-400 transition-all">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            </button>
+                                        </div>
                                     </div>
                                     
                                     <button x-show="!addr.isPrimary" @click="setPrimary(addr.id)" class="flex items-center gap-1.5 text-[11px] font-semibold text-white/40 hover:text-violet-300 transition-colors mt-1">
@@ -277,21 +346,29 @@
                             </template>
                         </div>
 
-                        <!-- Slide Add Address Inline Box -->
+                        <!-- Slide Add/Edit Address Inline Box -->
                         <div x-show="showAddForm" x-collapse class="overflow-hidden">
                             <div class="mt-3 rounded-2xl p-4 bg-violet-600/8 border border-violet-500/20 space-y-3">
-                                <p class="text-xs font-bold text-white mb-1">Tambah Alamat Baru</p>
+                                <p class="text-xs font-bold text-white mb-1" x-text="formMode === 'edit' ? 'Edit Alamat' : 'Tambah Alamat Baru'"></p>
+
+                                <template x-if="formError">
+                                    <p class="text-[11px] px-3 py-2 rounded-lg" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#fca5a5;" x-text="formError"></p>
+                                </template>
+
                                 <div>
                                     <label class="block text-[10px] font-semibold mb-1.5 text-white/50">Label (opsional)</label>
                                     <input type="text" x-model="newLabel" placeholder="Contoh: Kos, Kantor, Rumah..." class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-white/6 border border-white/10 text-white outline-none">
                                 </div>
-                                <div>
-                                    <label class="block text-[10px] font-semibold mb-1.5 text-white/50">Alamat Lengkap <span class="text-red-400">*</span></label>
-                                    <textarea x-model="newAddr" placeholder="Contoh: Jl. Veteran No. 10, Kec. Lowokwaru, Malang" rows="2" class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-white/6 border border-white/10 text-white outline-none resize-none"></textarea>
-                                </div>
+
+                                <x-biteship-area-search />
+
+                                <x-address-autocomplete />
+
                                 <div class="flex gap-2 pt-1">
-                                    <button @click="addAddress" :disabled="!newAddr.trim()" class="flex-1 py-2.5 rounded-xl text-xs font-bold text-white disabled:opacity-40 transition-all hover:scale-105 duration-150" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Simpan Alamat</button>
-                                    <button @click="showAddForm = false; newLabel = ''; newAddr = '';" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-transparent border border-white/15 text-white/60 hover:bg-white/8 transition-all">Batal</button>
+                                    <button @click="saveAddressForm" class="flex-1 py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:scale-105 duration-150" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">
+                                        <span x-text="formMode === 'edit' ? 'Simpan Perubahan' : 'Simpan Alamat'"></span>
+                                    </button>
+                                    <button @click="cancelAddressForm" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-transparent border border-white/15 text-white/60 hover:bg-white/8 transition-all">Batal</button>
                                 </div>
                             </div>
                         </div>
