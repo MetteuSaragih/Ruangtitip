@@ -8,6 +8,8 @@ use App\Models\PackingOrder;
 use App\Models\StorageRoom;
 use App\Models\TitipanOrder;
 use Carbon\CarbonPeriod;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AdminDashboardController extends Controller
 {
@@ -73,6 +75,18 @@ class AdminDashboardController extends Controller
             'trenPesanan',
             'tugasPrioritas'
         ));
+    }
+
+    public function profile()
+    {
+        return view('admin.profile', ['user' => Auth::user()]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $data = $request->validate(['name' => 'required|string|max:255']);
+        Auth::user()->update(['name' => $data['name']]);
+        return back()->with('success', 'Profil berhasil disimpan!');
     }
 
     private function pendapatanDalamRentang($from, $to, $prelovedOrders): int

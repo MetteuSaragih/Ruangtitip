@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Masuk') — RUTIP</title>
+    <title>@yield('title', 'Masuk') - RUTIP</title>
+    <meta name="description" content="Masuk ke akun RUTIP - Layanan penitipan barang untuk mahasiswa.">
+    <meta property="og:title" content="@yield('title', 'Masuk') - RUTIP">
+    <meta property="og:image" content="{{ asset('images/logo-rutip-putih.png') }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="RUTIP">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])

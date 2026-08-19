@@ -1,39 +1,61 @@
-{{-- ==========================================================================
-     Trust Section
-     "Barangmu aman di tangan kami." — 4 trust point cards + guarantee badge
-     ========================================================================== --}}
+{{-- Trust / Security Badge Section --}}
 <section class="py-24 relative overflow-hidden" style="background: linear-gradient(180deg, #0f0720 0%, #130829 100%);">
     <div class="absolute top-0 inset-x-0 h-px" style="background: linear-gradient(90deg, transparent, rgba(139,92,246,0.3), transparent);"></div>
     <div class="absolute bottom-0 right-0 w-80 h-80 opacity-10 blur-3xl pointer-events-none rounded-full" style="background: radial-gradient(circle, #7c3aed, transparent);"></div>
 
     <div class="max-w-6xl mx-auto px-6 relative z-10">
-        {{-- Header — centered --}}
+        {{-- Header --}}
         <div class="text-center max-w-lg mx-auto mb-12 reveal">
             <span class="inline-block px-3 py-1.5 rounded-full text-xs font-semibold border mb-5"
                   style="background: rgba(139,92,246,0.15); border-color: rgba(139,92,246,0.3); color: #c4b5fd;">
-                Keamanan
+                Keamanan Barang
             </span>
             <h2 class="text-3xl lg:text-4xl font-extrabold text-white font-[var(--font-display)]">
-                Barangmu aman di tangan kami.
+                Barangmu kami jaga seperti milik kami sendiri.
             </h2>
-            <p class="mt-3 text-sm leading-relaxed" style="color: rgba(255,255,255,0.42);">
-                Sistem keamanan berlapis agar setiap barang yang dititipkan benar-benar terjaga.
-            </p>
         </div>
 
         {{-- Trust point cards --}}
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
             @php
                 $trustPoints = [
-                    ['icon' => 'camera',          'title' => 'CCTV 24 Jam',          'desc' => 'Setiap sudut gudang dipantau kamera keamanan aktif sepanjang waktu.', 'accent' => '#a78bfa', 'iconBg' => 'rgba(167,139,250,0.18)', 'border' => 'rgba(167,139,250,0.25)'],
-                    ['icon' => 'image',           'title' => 'Foto Bukti Tersegel',  'desc' => 'Foto kondisi dan stiker segel RUTIP dikirim ke akunmu setelah barang masuk.', 'accent' => '#818cf8', 'iconBg' => 'rgba(129,140,248,0.18)', 'border' => 'rgba(129,140,248,0.25)'],
-                    ['icon' => 'shield-check',    'title' => 'Jaminan Ganti Rugi',   'desc' => 'Jika ada kerusakan akibat kelalaian kami, kamu berhak mendapat ganti rugi penuh.', 'accent' => '#34d399', 'iconBg' => 'rgba(52,211,153,0.18)', 'border' => 'rgba(52,211,153,0.25)'],
-                    ['icon' => 'message-circle',  'title' => 'Notifikasi Real-time', 'desc' => 'Update status barang — masuk, tersegel, siap diambil — langsung ke WhatsApp kamu.', 'accent' => '#7c3aed', 'iconBg' => 'rgba(124,58,237,0.18)', 'border' => 'rgba(124,58,237,0.25)'],
+                    [
+                        'icon'      => 'camera',
+                        'title'     => 'CCTV dan Monitoring',
+                        'desc'      => 'Area penyimpanan dipantau untuk menjaga keamanan barang titipan.',
+                        'accent'    => '#a78bfa',
+                        'iconBg'    => 'rgba(167,139,250,0.18)',
+                        'border'    => 'rgba(167,139,250,0.25)',
+                    ],
+                    [
+                        'icon'      => 'image',
+                        'title'     => 'Dokumentasi Barang',
+                        'desc'      => 'Setiap barang didokumentasikan saat diterima sebagai bukti kondisi awal.',
+                        'accent'    => '#818cf8',
+                        'iconBg'    => 'rgba(129,140,248,0.18)',
+                        'border'    => 'rgba(129,140,248,0.25)',
+                    ],
+                    [
+                        'icon'      => 'lock',
+                        'title'     => 'Segel Keamanan',
+                        'desc'      => 'Barang diberi segel khusus untuk menjaga integritas selama masa penyimpanan.',
+                        'accent'    => '#34d399',
+                        'iconBg'    => 'rgba(52,211,153,0.18)',
+                        'border'    => 'rgba(52,211,153,0.25)',
+                    ],
+                    [
+                        'icon'      => 'shield-check',
+                        'title'     => 'Perlindungan Barang',
+                        'desc'      => 'Tersedia mekanisme perlindungan dan ganti rugi sesuai syarat dan ketentuan layanan.',
+                        'accent'    => '#7c3aed',
+                        'iconBg'    => 'rgba(124,58,237,0.18)',
+                        'border'    => 'rgba(124,58,237,0.25)',
+                    ],
                 ];
             @endphp
 
             @foreach ($trustPoints as $i => $p)
-                <div class="reveal group rounded-2xl p-5 hover:-translate-y-1 transition-all duration-300"
+                <div class="reveal rt-tilt group rounded-2xl p-5"
                      style="background: rgba(255,255,255,0.04); backdrop-filter: blur(12px); border: 1px solid {{ $p['border'] }}; transition-delay: {{ $i * 100 }}ms;">
                     <div class="flex items-start gap-4">
                         <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style="background: {{ $p['iconBg'] }};">

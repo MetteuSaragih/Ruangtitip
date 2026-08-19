@@ -8,6 +8,32 @@
 
 @section('content')
 
+@if ((empty($user->name) || empty($user->phone)) && ! session('profile_banner_dismissed'))
+<div id="profile-complete-banner" class="flex items-center justify-between gap-4 px-5 py-4 rounded-2xl mb-6 flex-wrap"
+     style="background:linear-gradient(135deg,rgba(251,191,36,0.15),rgba(245,158,11,0.08));border:1px solid rgba(251,191,36,0.3);">
+    <div class="flex items-center gap-3">
+        <span class="text-2xl">📝</span>
+        <div>
+            <p class="text-xs font-bold text-white">Lengkapi profil kamu</p>
+            <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.5);">Isi nama & nomor WhatsApp agar admin bisa menghubungimu soal pesananmu.</p>
+        </div>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+        <a href="{{ route('profile.index') }}" class="px-3 py-2 rounded-xl text-[11px] font-bold text-white" style="background:#f59e0b;">Lengkapi Sekarang</a>
+        <button type="button" onclick="dismissProfileBanner()" class="px-3 py-2 rounded-xl text-[11px] font-semibold" style="color:rgba(255,255,255,0.45);">Lewati</button>
+    </div>
+</div>
+<script>
+function dismissProfileBanner() {
+    document.getElementById('profile-complete-banner')?.remove();
+    fetch('{{ route('profile.dismiss-banner') }}', {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+    });
+}
+</script>
+@endif
+
 {{-- ─── HERO BANNER ─── --}}
 <section class="pt-4 lg:pt-6 mb-8">
     <div class="relative overflow-hidden rounded-2xl lg:rounded-3xl"
@@ -34,11 +60,11 @@
                     Hemat biaya kos hingga jutaan rupiah dengan menitipkan barangmu di gudang RUTIP yang aman dan terpercaya.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                    <a href="#" class="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105"
+                    <a href="{{ route('ruang-titip.index') }}" class="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105"
                        style="background:linear-gradient(135deg,#ea580c,#fb923c);color:#fff;box-shadow:0 6px 24px rgba(234,88,12,0.45);">
                         Titip Barang Sekarang <x-lucide-arrow-right class="w-4 h-4" />
                     </a>
-                    <a href="#" class="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all hover:bg-white/10"
+                    <a href="{{ route('pesanan.index') }}" class="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all hover:bg-white/10"
                        style="color:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.2);">
                         Lihat Pesanan Aktif
                     </a>
@@ -90,13 +116,20 @@
         <a href="{{ route('ruang-titip.index') }}" class="flex items-center gap-1 text-xs font-semibold" style="color:#a78bfa;">Lihat Semua <x-lucide-chevron-right class="w-3.5 h-3.5" /></a>
     </div>
     @if ($storages->isEmpty())
-        <div class="rounded-2xl p-6 text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-            <p class="text-xs" style="color:rgba(255,255,255,0.45);">Belum ada gudang yang tersedia saat ini.</p>
+        <div class="rounded-2xl py-10 flex flex-col items-center text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
+            <div class="relative inline-flex mb-4">
+                <div class="absolute inset-0 rounded-2xl blur-xl opacity-25" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);"></div>
+                <div class="relative w-14 h-14 rounded-2xl flex items-center justify-center" style="background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);">
+                    <svg class="w-7 h-7" fill="none" stroke="#a78bfa" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 4l9 5.5V20H3V9.5z"/><path d="M9 20v-5h6v5"/></svg>
+                </div>
+            </div>
+            <p class="text-xs font-semibold text-white mb-0.5">Belum ada gudang tersedia</p>
+            <p class="text-[11px]" style="color:rgba(255,255,255,0.35);">Gudang akan segera hadir di kotamu</p>
         </div>
     @else
     <div class="flex gap-4 overflow-x-auto pb-2 lg:overflow-visible lg:grid lg:grid-cols-3 lg:pb-0 no-scrollbar">
         @foreach ($storages as $s)
-            <div class="rounded-2xl overflow-hidden shrink-0 w-72 lg:w-auto transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);">
+            <div class="rounded-2xl overflow-hidden shrink-0 w-72 lg:w-auto transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
                 <div class="h-32 flex items-center justify-center relative" style="background:linear-gradient(135deg,#7c3aed20,#7c3aed08);">
                     @if($s->primary_photo)
                         <img src="{{ asset('storage/'.$s->primary_photo) }}" alt="{{ $s->name }}" class="w-full h-full object-cover">
@@ -113,7 +146,7 @@
                     <div class="mb-3">
                         <div class="flex justify-between mb-1.5">
                             <span class="text-[10px]" style="color:rgba(255,255,255,0.4);">Kapasitas terisi</span>
-                            <span class="text-[10px] font-bold" style="color:{{ $s->capacity_pct >= 80 ? '#7c3aed' : '#34d399' }};">{{ $s->capacity_pct }}%</span>
+                            <span class="text-[10px] font-bold" style="color:{{ $s->capacity_pct >= 80 ? '#fb923c' : '#34d399' }};">{{ $s->capacity_pct }}%</span>
                         </div>
                         <div class="h-1.5 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.07);">
                             <div class="h-full rounded-full" style="width:{{ $s->capacity_pct }}%;background:linear-gradient(90deg,#7c3aed,#7c3aed99);"></div>
@@ -128,7 +161,7 @@
                         <p class="text-sm font-bold" style="color:#7c3aed;">{{ rupiah($s->min_price) }}</p>
                         <p class="text-[10px]" style="color:rgba(255,255,255,0.3);">mulai dari / hari</p>
                     </div>
-                    <a href="{{ route('ruang-titip.detail', $s) }}" class="block text-center w-full py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-[1.02]" style="border:1.5px solid #7c3aed;color:#7c3aed;background:#7c3aed10;">Lihat</a>
+                    <a href="{{ route('ruang-titip.detail', $s) }}" class="block text-center w-full py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-[1.02]" style="border:1.5px solid rgba(124,58,237,0.5);color:#a78bfa;background:rgba(124,58,237,0.08);">Lihat</a>
                 </div>
             </div>
         @endforeach
@@ -140,16 +173,23 @@
 <section class="mb-10">
     <div class="flex items-center justify-between mb-5">
         <h2 class="text-base font-bold text-white">Toko Packing</h2>
-        <a href="#" class="flex items-center gap-1 text-xs font-semibold" style="color:#a78bfa;">Lihat Semua <x-lucide-chevron-right class="w-3.5 h-3.5" /></a>
+        <a href="{{ route('packing.index') }}" class="flex items-center gap-1 text-xs font-semibold" style="color:#a78bfa;">Lihat Semua <x-lucide-chevron-right class="w-3.5 h-3.5" /></a>
     </div>
     @if ($packing->isEmpty())
-        <div class="rounded-2xl p-6 text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-            <p class="text-xs" style="color:rgba(255,255,255,0.45);">Belum ada produk di Toko Packing saat ini.</p>
+        <div class="rounded-2xl py-10 flex flex-col items-center text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
+            <div class="relative inline-flex mb-4">
+                <div class="absolute inset-0 rounded-2xl blur-xl opacity-25" style="background:linear-gradient(135deg,#f97316,#fb923c);"></div>
+                <div class="relative w-14 h-14 rounded-2xl flex items-center justify-center" style="background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);">
+                    <svg class="w-7 h-7" fill="none" stroke="#fb923c" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8L12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>
+                </div>
+            </div>
+            <p class="text-xs font-semibold text-white mb-0.5">Belum ada produk packing</p>
+            <p class="text-[11px]" style="color:rgba(255,255,255,0.35);">Produk akan segera tersedia</p>
         </div>
     @else
     <div class="flex gap-4 overflow-x-auto pb-2 lg:overflow-visible lg:grid lg:grid-cols-4 lg:pb-0 no-scrollbar">
         @foreach ($packing as $p)
-            <div class="rounded-2xl overflow-hidden shrink-0 w-44 lg:w-auto transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);">
+            <div class="rounded-2xl overflow-hidden shrink-0 w-44 lg:w-auto transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
                 <div class="h-24 flex items-center justify-center text-4xl" style="background:#7c3aed12;">
                     @if($p->primary_image)
                         <img src="{{ asset('storage/'.$p->primary_image) }}" alt="{{ $p->name }}" class="w-full h-full object-cover">
@@ -176,7 +216,7 @@
 <section class="mb-10">
     <div class="flex items-center justify-between mb-5">
         <h2 class="text-base font-bold text-white">Toko Preloved</h2>
-        <a href="#" class="flex items-center gap-1 text-xs font-semibold" style="color:#a78bfa;">Lihat Semua <x-lucide-chevron-right class="w-3.5 h-3.5" /></a>
+        <a href="{{ route('preloved.index') }}" class="flex items-center gap-1 text-xs font-semibold" style="color:#a78bfa;">Lihat Semua <x-lucide-chevron-right class="w-3.5 h-3.5" /></a>
     </div>
     <div class="flex items-center justify-between px-5 py-4 rounded-2xl mb-5"
          style="background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(99,102,241,0.1));border:1px solid rgba(124,58,237,0.3);">
@@ -190,13 +230,20 @@
         <a href="{{ route('preloved.cara-jual') }}" class="shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-bold" style="border:1.5px solid rgba(124,58,237,0.4);color:#a78bfa;background:rgba(124,58,237,0.08);">Pelajari <x-lucide-arrow-right class="w-3 h-3" /></a>
     </div>
     @if ($preloved->isEmpty())
-        <div class="rounded-2xl p-6 text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-            <p class="text-xs" style="color:rgba(255,255,255,0.45);">Belum ada produk preloved yang tersedia saat ini.</p>
+        <div class="rounded-2xl py-10 flex flex-col items-center text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
+            <div class="relative inline-flex mb-4">
+                <div class="absolute inset-0 rounded-2xl blur-xl opacity-25" style="background:linear-gradient(135deg,#059669,#34d399);"></div>
+                <div class="relative w-14 h-14 rounded-2xl flex items-center justify-center" style="background:rgba(5,150,105,0.15);border:1px solid rgba(5,150,105,0.3);">
+                    <svg class="w-7 h-7" fill="none" stroke="#34d399" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                </div>
+            </div>
+            <p class="text-xs font-semibold text-white mb-0.5">Belum ada produk preloved</p>
+            <p class="text-[11px]" style="color:rgba(255,255,255,0.35);">Produk akan segera tersedia</p>
         </div>
     @else
     <div class="flex gap-4 overflow-x-auto pb-2 lg:overflow-visible lg:grid lg:grid-cols-4 lg:pb-0 no-scrollbar">
         @foreach ($preloved as $p)
-            <div class="rounded-2xl overflow-hidden shrink-0 w-44 lg:w-auto transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);">
+            <div class="rounded-2xl overflow-hidden shrink-0 w-44 lg:w-auto transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
                 <div class="h-24 flex items-center justify-center text-4xl" style="background:rgba(255,255,255,0.04);">
                     @if($p->primary_photo)
                         <img src="{{ asset('storage/'.$p->primary_photo) }}" alt="{{ $p->name }}" class="w-full h-full object-cover">
@@ -208,7 +255,7 @@
                     <span class="inline-block text-[9px] font-bold px-2 py-0.5 rounded-full mb-2" style="background:rgba(52,211,153,0.12);color:#34d399;">{{ $p->condition }}%</span>
                     <p class="text-xs font-bold text-white mb-0.5">{{ $p->name }}</p>
                     <p class="text-xs font-bold mb-3" style="color:#a78bfa;">{{ rupiah($p->price) }}</p>
-                    <a href="{{ route('preloved.show', $p->id) }}" class="block text-center w-full py-2 rounded-xl text-[10px] font-bold text-white" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);">Beli</a>
+                    <a href="{{ route('preloved.show', $p->id) }}" class="block text-center w-full py-2 rounded-xl text-[10px] font-bold text-white" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Beli</a>
                 </div>
             </div>
         @endforeach

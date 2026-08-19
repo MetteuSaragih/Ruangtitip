@@ -75,7 +75,7 @@
 
             {{-- Subtitle --}}
             <p class="text-lg lg:text-xl max-w-2xl mb-12 leading-relaxed" style="color: rgba(255,255,255,0.5);">
-                Layanan penitipan barang untuk mahasiswa — aman, terjangkau, dan ada antar-jemput langsung ke kos kamu.
+                Layanan penitipan barang untuk mahasiswa, aman, terjangkau, dan ada antar-jemput langsung ke kos kamu.
             </p>
 
             {{-- Buttons --}}

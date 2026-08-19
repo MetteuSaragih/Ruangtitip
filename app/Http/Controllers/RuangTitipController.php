@@ -8,6 +8,7 @@ use App\Models\StorageRoom;
 use App\Models\TitipanOrder;
 use App\Models\UserAddress;
 use App\Services\BiteshipService;
+use App\Services\DistanceService;
 use App\Services\TripayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,15 +31,21 @@ use Illuminate\Support\Facades\Auth;
 |
 | Tahap "Packing" terpisah DIHAPUS (sudah include di logistik rutip).
 |
-| [DUMMY] Jarak km masih tetap (DEFAULT_KM). Nanti dihitung otomatis
-| dari alamat customer ke lokasi gudang.
+| Jarak km untuk kurir RuTip dihitung otomatis dari koordinat alamat
+| customer (hasil geocoding saat alamat disimpan) ke koordinat gudang,
+| lihat DistanceService. DEFAULT_KM cuma fallback kalau geocoding gagal.
 */
 
 class RuangTitipController extends Controller
 {
-    private const PLATFORM_FEE     = 1000;   // biaya layanan penitipan (dok. Th.1)
+    private const PLATFORM_FEE          = 1000;   // biaya layanan jika logistik tidak pakai Biteship
+    private const PLATFORM_FEE_BITESHIP = 2000;   // biaya layanan jika logistik pakai Biteship
     private const PACKING_PER_BOX  = 15000;  // jasa packing+anjem per kardus (dok. Th.1)
-    private const DEFAULT_KM       = 5;      // [DUMMY] estimasi jarak penjemputan
+    private const DEFAULT_KM       = 5;      // fallback kalau koordinat alamat/gudang tidak tersedia
+
+    public function __construct(private DistanceService $distance)
+    {
+    }
 
     /* ─── Helper session ─── */
     private function state(Request $r): array
@@ -81,6 +88,8 @@ class RuangTitipController extends Controller
         $km          = self::DEFAULT_KM;
 
         if ($logistic === 'rutip') {
+            $km = $this->resolveKm($s);
+
             // Total Anjem = (harga/km × jarak) + (jasa packing/kardus × jumlah item)
             $courier = Courier::where('code', 'rutip_fleet')->first();
             $perKm   = $courier->price_per_km ?? 10000;
@@ -91,7 +100,8 @@ class RuangTitipController extends Controller
             $courierCost = (int) ($s['courier_cost'] ?? 0);
         }
 
-        $total = $itemSubtotal + $courierCost + self::PLATFORM_FEE;
+        $platformFee = $logistic === 'instant' ? self::PLATFORM_FEE_BITESHIP : self::PLATFORM_FEE;
+        $total = $itemSubtotal + $courierCost + $platformFee;
 
         return [
             'months'        => $months,
@@ -101,9 +111,60 @@ class RuangTitipController extends Controller
             'packingCost'   => $packingCost,
             'kmCost'        => $kmCost,
             'km'            => $km,
-            'platform_fee'  => self::PLATFORM_FEE,
+            'platform_fee'  => $platformFee,
             'total'         => $total,
         ];
+    }
+
+    /** Jarak (km, dibulatkan ke atas, minimal 1) dari alamat customer ke gudang RuTip. */
+    private function resolveKm(array $s): int
+    {
+        $lat = $s['address_lat'] ?? null;
+        $lng = $s['address_lng'] ?? null;
+        $warehouse = $this->warehouseCoords();
+
+        if (! $lat || ! $lng || ! $warehouse) {
+            return self::DEFAULT_KM;
+        }
+
+        $km = $this->distance->distanceKm((float) $lat, (float) $lng, $warehouse['lat'], $warehouse['lng']);
+
+        return max(1, (int) ceil($km));
+    }
+
+    /** Koordinat gudang RuTip: pakai config manual kalau ada, kalau tidak geocode dari alamatnya. */
+    private function warehouseCoords(): ?array
+    {
+        $lat = config('biteship.warehouse.latitude');
+        $lng = config('biteship.warehouse.longitude');
+        if ($lat && $lng) {
+            return ['lat' => (float) $lat, 'lng' => (float) $lng];
+        }
+
+        $address = config('biteship.warehouse.address');
+        if (! $address) {
+            return null;
+        }
+
+        $geo = $this->distance->geocode($address);
+
+        return $geo ? ['lat' => $geo['lat'], 'lng' => $geo['lng']] : null;
+    }
+
+    /** Geocode alamat (kalau koordinatnya belum ada) lalu simpan ke record UserAddress. */
+    private function ensureAddressCoords(UserAddress $addr): UserAddress
+    {
+        if ($addr->latitude && $addr->longitude) {
+            return $addr;
+        }
+
+        $query = trim($addr->address . ', ' . ($addr->area_name ?? '') . ', Indonesia');
+        $geo = $this->distance->geocode($query);
+        if ($geo) {
+            $addr->update(['latitude' => $geo['lat'], 'longitude' => $geo['lng']]);
+        }
+
+        return $addr;
     }
 
     /* ═══ SCREEN 1 — Daftar gudang ═══ */
@@ -257,12 +318,16 @@ class RuangTitipController extends Controller
             return back()->withErrors(['address' => 'Alamat ini belum punya kecamatan tersimpan, pilih/tambah alamat baru dengan kecamatan.']);
         }
 
+        $addr = $this->ensureAddressCoords($addr);
+
         $this->setState($r, [
             'address_id' => $addr->id,
             'address' => $addr->address,
             'note' => $addr->note,
             'address_area_id' => $addr->area_id,
             'address_postal_code' => $addr->postal_code,
+            'address_lat' => $addr->latitude,
+            'address_lng' => $addr->longitude,
         ]);
 
         // instant -> pilih kurir; rutip -> langsung checkout

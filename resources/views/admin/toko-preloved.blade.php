@@ -5,6 +5,17 @@
 @php
 function rupiah3($n) { return 'Rp ' . number_format($n, 0, ',', '.'); }
 
+if (! function_exists('rt_wa_number')) {
+    function rt_wa_number($phone) {
+        if (! $phone) return null;
+        $digits = preg_replace('/\D/', '', $phone);
+        if (! $digits) return null;
+        if (str_starts_with($digits, '0')) return '62' . substr($digits, 1);
+        if (str_starts_with($digits, '62')) return $digits;
+        return '62' . $digits;
+    }
+}
+
 $statusStyle = [
     'Tersedia' => ['bg'=>'rgba(52,211,153,0.12)',  'color'=>'#34d399', 'dot'=>'#34d399'],
     'Terjual'  => ['bg'=>'rgba(99,102,241,0.15)',  'color'=>'#818cf8', 'dot'=>'#6366f1'],
@@ -206,13 +217,18 @@ $filterOptions = array_merge(['Semua'], array_values($orderStatusLabels));
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="py-20 text-center">
-                            <div class="flex flex-col items-center gap-3">
-                                <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);">
-                                    <svg class="w-6 h-6" style="color:rgba(167,139,250,0.4)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                        <td colspan="6" class="py-16 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="relative inline-flex mx-auto mb-5">
+                                    <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#059669,#34d399);"></div>
+                                    <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(5,150,105,0.2),rgba(52,211,153,0.1));border:1px solid rgba(5,150,105,0.35);">
+                                        <svg class="w-9 h-9" fill="none" stroke="#34d399" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
+                                        </svg>
+                                    </div>
                                 </div>
-                                <p class="text-sm font-semibold" style="color:rgba(255,255,255,0.4);">Belum ada barang</p>
-                                <p class="text-xs" style="color:rgba(255,255,255,0.25);">Klik "Tambah Barang" untuk menambahkan barang preloved pertama</p>
+                                <p class="text-sm font-bold text-white mb-1">Belum ada barang</p>
+                                <p class="text-xs" style="color:rgba(255,255,255,0.38);">Klik "Tambah Barang" untuk mulai</p>
                             </div>
                         </td>
                     </tr>
@@ -267,6 +283,12 @@ $filterOptions = array_merge(['Semua'], array_values($orderStatusLabels));
                             'shipped'    => 'delivered',
                             default      => null,
                         };
+                        $waNumber = rt_wa_number($order->customer_phone);
+                        $waTemplates = [
+                            ['key' => 'diproses', 'label' => 'Pesanan Sedang Diproses', 'text' => "Halo {$order->customer_name}, pesananmu (kode {$order->order_number}) sedang kami proses. Mohon ditunggu ya! 📦"],
+                            ['key' => 'dikirim', 'label' => 'Pesanan Sudah Dikirim', 'text' => "Halo {$order->customer_name}, pesananmu (kode {$order->order_number}) sudah dikirim. Terima kasih telah berbelanja di RUTIP Preloved! 🚚"],
+                            ['key' => 'selesai', 'label' => 'Pesanan Sudah Diterima/Selesai', 'text' => "Halo {$order->customer_name}, terima kasih! Pesananmu (kode {$order->order_number}) sudah selesai. Semoga puas dengan barangnya ya 🙏"],
+                        ];
                     @endphp
                     <tr style="{{ $i < $orders->count()-1 ? 'border-bottom:1px solid rgba(255,255,255,0.04)' : '' }}"
                         onmouseover="this.style.background='rgba(124,58,237,0.05)'"
@@ -321,8 +343,10 @@ $filterOptions = array_merge(['Semua'], array_values($orderStatusLabels));
                                 </button>
                                 @endif
                                 @if(!$isDone && !$isCancelled)
-                                <button onclick="showWaToast('{{ $order->customer_name }}')"
-                                        class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105"
+                                <button type="button" {{ $waNumber ? '' : 'disabled' }}
+                                        title="{{ $waNumber ? 'Kirim pesan WhatsApp ke '.$order->customer_name : 'Nomor WA pelanggan belum diisi' }}"
+                                        onclick="openWaModal(@js($waNumber), @js($waTemplates), @js('Kirim ke '.$order->customer_name.' ('.($order->customer_phone ?: '-').')'))"
+                                        class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105 disabled:opacity-30 disabled:cursor-not-allowed"
                                         style="background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.25);color:#34d399;">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                                 </button>
@@ -334,8 +358,19 @@ $filterOptions = array_merge(['Semua'], array_values($orderStatusLabels));
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="py-20 text-center">
-                            <p class="text-sm font-semibold" style="color:rgba(255,255,255,0.4);">Belum ada pesanan</p>
+                        <td colspan="7" class="py-16 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="relative inline-flex mx-auto mb-5">
+                                    <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#0d9488,#2dd4bf);"></div>
+                                    <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(13,148,136,0.2),rgba(45,212,191,0.1));border:1px solid rgba(13,148,136,0.35);">
+                                        <svg class="w-9 h-9" fill="none" stroke="#2dd4bf" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <p class="text-sm font-bold text-white mb-1">Belum ada pesanan</p>
+                                <p class="text-xs" style="color:rgba(255,255,255,0.38);">Transaksi pelanggan akan muncul di sini</p>
+                            </div>
                         </td>
                     </tr>
                     @endforelse
@@ -383,14 +418,18 @@ $filterOptions = array_merge(['Semua'], array_values($orderStatusLabels));
                         </div>
                         <div>
                             <p class="text-sm font-medium text-white">Klik untuk pilih / tambah foto</p>
-                            <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.3);">Bisa diklik berkali-kali · JPG / PNG · Maks 5 MB</p>
+                            <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.3);">JPG / PNG · Maks 5 MB per foto</p>
+                            <div class="mt-1.5 flex items-center gap-1.5 text-[10px] font-semibold px-2 py-1 rounded-lg w-fit mx-auto" style="background:rgba(124,58,237,0.15);color:#c4b5fd;">
+                                <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+                                Rasio 1:1 &bull; Min. 500×500 px
+                            </div>
                         </div>
                         <input id="item-images-input" type="file" name="images[]" accept="image/*" multiple class="sr-only"
                                data-existing-count="0">
                     </label>
                     <div id="item-images-preview" class="rt-img-pick-grid hidden"></div>
                     <p id="photo-preview-label" class="text-[10px] mt-1.5" style="color:rgba(255,255,255,0.35);"></p>
-                    <p class="text-[10px] mt-1" style="color:rgba(255,255,255,0.35);">Maksimal 10 foto asli per produk.</p>
+                    <p class="text-[10px] mt-1" style="color:rgba(255,255,255,0.35);">Wajib minimal 1 foto, maksimal 10 foto asli per produk.</p>
                     @error('images')
                         <p class="text-[10px] mt-1.5 text-red-400">{{ $message }}</p>
                     @enderror
@@ -487,17 +526,7 @@ $filterOptions = array_merge(['Semua'], array_values($orderStatusLabels));
             style="color:rgba(255,255,255,0.35);">✕</button>
 </div>
 
-{{-- WA Toast --}}
-<div id="wa-toast" class="fixed bottom-6 right-6 z-50 hidden items-center gap-3 px-4 py-3 rounded-2xl"
-     style="background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.35);backdrop-filter:blur(12px);">
-    <span class="text-xl">💬</span>
-    <div>
-        <p class="text-xs font-bold text-white">Notifikasi WA Terkirim</p>
-        <p id="wa-toast-name" class="text-[10px]" style="color:rgba(255,255,255,0.5);"></p>
-    </div>
-    <button onclick="document.getElementById('wa-toast').classList.add('hidden');document.getElementById('wa-toast').classList.remove('flex');"
-            style="color:rgba(255,255,255,0.35);">✕</button>
-</div>
+<x-admin-wa-modal />
 
 @push('scripts')
 <script>
@@ -578,14 +607,6 @@ function showResiToast(trackingId) {
 function copyResiNumber() {
     if (!currentResiNumber) return;
     navigator.clipboard.writeText(currentResiNumber);
-}
-
-function showWaToast(name) {
-    const t = document.getElementById('wa-toast');
-    document.getElementById('wa-toast-name').textContent = 'ke ' + name;
-    t.classList.remove('hidden');
-    t.classList.add('flex');
-    setTimeout(() => { t.classList.add('hidden'); t.classList.remove('flex'); }, 3500);
 }
 
 // Init condition selection

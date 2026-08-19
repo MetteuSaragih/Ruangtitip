@@ -2,46 +2,39 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PackingOrder;
 use App\Models\TitipanOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
-/*
-|--------------------------------------------------------------------------
-| PesananController — halaman "Pesanan Saya"
-|--------------------------------------------------------------------------
-| Dua tab:
-|   - berlangsung : semua pesanan dgn status != 'selesai'
-|   - selesai     : status == 'selesai'
-|
-| Saat ini hanya pesanan Penitipan (titipan_orders) yang punya data.
-| Toko Packing & Preloved disiapkan strukturnya, ditampilkan kosong dulu.
-*/
 
 class PesananController extends Controller
 {
     public function index(Request $r)
     {
-        $tab = $r->query('tab', 'berlangsung'); // berlangsung | selesai
+        $tab = $r->query('tab', 'berlangsung');
         if (!in_array($tab, ['berlangsung', 'selesai'], true)) {
             $tab = 'berlangsung';
         }
 
-        $base = TitipanOrder::with('storage')
-            ->where('user_id', Auth::id())
-            ->latest();
+        $uid = Auth::id();
+
+        $titipanBase = TitipanOrder::with('storage')->where('user_id', $uid)->latest();
+        $packingBase = PackingOrder::where('user_id', $uid)->latest();
 
         if ($tab === 'selesai') {
-            $orders = (clone $base)->where('status', 'selesai')->get();
+            $orders        = (clone $titipanBase)->where('status', 'selesai')->get();
+            $packingOrders = (clone $packingBase)->where('status', 'selesai')->get();
         } else {
-            $orders = (clone $base)->where('status', '!=', 'selesai')->get();
+            $orders        = (clone $titipanBase)->where('status', '!=', 'selesai')->get();
+            $packingOrders = (clone $packingBase)->where('status', '!=', 'selesai')->get();
         }
 
-        // hitung jumlah untuk badge tab
-        $countBerlangsung = TitipanOrder::where('user_id', Auth::id())->where('status', '!=', 'selesai')->count();
-        $countSelesai     = TitipanOrder::where('user_id', Auth::id())->where('status', 'selesai')->count();
+        $countBerlangsung = TitipanOrder::where('user_id', $uid)->where('status', '!=', 'selesai')->count()
+                          + PackingOrder::where('user_id', $uid)->where('status', '!=', 'selesai')->count();
+        $countSelesai     = TitipanOrder::where('user_id', $uid)->where('status', 'selesai')->count()
+                          + PackingOrder::where('user_id', $uid)->where('status', 'selesai')->count();
 
-        return view('dashboard.pesanan.index', compact('orders', 'tab', 'countBerlangsung', 'countSelesai'));
+        return view('dashboard.pesanan.index', compact('orders', 'packingOrders', 'tab', 'countBerlangsung', 'countSelesai'));
     }
 
     public function show(TitipanOrder $order)

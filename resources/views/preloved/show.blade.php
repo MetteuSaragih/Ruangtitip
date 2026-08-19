@@ -1,6 +1,6 @@
 @extends('layouts.dashboard')
 
-@section('title', $product['name'] . ' — Toko Preloved')
+@section('title', $product['name'] . ' - Toko Preloved')
 
 @php
     if (! function_exists('rupiah')) {
@@ -34,20 +34,26 @@
     </a>
 
     {{-- Galeri --}}
-    <div class="relative rounded-2xl overflow-hidden mb-5 flex items-center justify-center rt-carousel"
-         style="height:220px;background:rgba(124,58,237,0.1);">
+    @php $lbSrcsStr = json_encode(array_values(array_map(fn($img) => Storage::url($img), $images))); @endphp
+    <div class="relative rounded-2xl mb-3 rt-carousel"
+         style="aspect-ratio:1/1;background:rgba(124,58,237,0.1);cursor:zoom-in;overflow:hidden;">
         @forelse ($images as $i => $img)
-            <img src="{{ Storage::url($img) }}" alt="{{ $product['name'] }}" class="rt-slide {{ $i === 0 ? 'active' : '' }}">
+            <img src="{{ Storage::url($img) }}" alt="{{ $product['name'] }}"
+                 class="rt-slide {{ $i === 0 ? 'active' : '' }}"
+                 onclick="rtLbOpen({{ $lbSrcsStr }}, {{ $i }})"
+                 style="cursor:zoom-in;">
         @empty
-            <x-lucide-image class="w-20 h-20" style="color:#a78bfa;" />
+            <div class="absolute inset-0 flex items-center justify-center">
+                <x-lucide-image class="w-20 h-20" style="color:#a78bfa;" />
+            </div>
         @endforelse
         @if ($disc)
             <div class="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
                  style="background:#ef4444;color:white;z-index:2;">
-                <x-lucide-tag class="w-3 h-3" /> -{{ $disc }}%
+                -{{ $disc }}%
             </div>
         @endif
-        <button type="button" id="btnWish" onclick="toggleWishlist()"
+        <button type="button" id="btnWish" onclick="event.stopPropagation();toggleWishlist()"
                 class="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all"
                 style="background:rgba(0,0,0,0.4);color:rgba(255,255,255,0.6);z-index:2;">
             <x-lucide-heart class="w-4 h-4" id="wishIcon" />
@@ -59,13 +65,41 @@
             <button type="button" class="rt-carousel-btn rt-next" onclick="event.preventDefault();event.stopPropagation();rtCarouselNav(this,1)">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
             </button>
-            <div class="rt-carousel-dots">
+            <div class="rt-carousel-dots" style="bottom:10px;">
                 @foreach ($images as $i => $img)
                     <span class="{{ $i === 0 ? 'active' : '' }}"></span>
                 @endforeach
             </div>
         @endif
+        {{-- zoom hint --}}
+        <div class="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-medium pointer-events-none"
+             style="background:rgba(0,0,0,0.45);color:rgba(255,255,255,0.6);">
+            <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            Klik untuk perbesar
+        </div>
     </div>
+
+    {{-- Thumbnail strip --}}
+    @if (count($images) > 1)
+    <div class="rt-thumb-strip mb-4" id="plThumbStrip">
+        @foreach ($images as $i => $img)
+            <button type="button" class="{{ $i === 0 ? 'active' : '' }}"
+                    onclick="rtGalleryThumb(this, {{ $i }})">
+                <img src="{{ Storage::url($img) }}" alt="">
+            </button>
+        @endforeach
+    </div>
+    <script>
+    function rtGalleryThumb(btn, idx) {
+        const carousel = btn.closest('.max-w-xl').querySelector('.rt-carousel');
+        if (!carousel) return;
+        const slides = carousel.querySelectorAll('.rt-slide');
+        slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+        carousel.querySelectorAll('.rt-carousel-dots span').forEach((d, i) => d.classList.toggle('active', i === idx));
+        btn.closest('#plThumbStrip').querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === idx));
+    }
+    </script>
+    @endif
 
     {{-- Badges --}}
     <div class="flex items-center gap-2 mb-2">

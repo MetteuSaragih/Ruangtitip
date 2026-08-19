@@ -11,7 +11,7 @@
     @endphp
     @include('dashboard.ruang-titip._progress', ['step' => 4])
     <h1 class="text-xl font-extrabold text-white font-display mb-1">Checkout</h1>
-    <p class="text-xs mb-6" style="color:rgba(255,255,255,0.4);">Langkah 4 dari 4 — Review &amp; selesaikan pesanan</p>
+    <p class="text-xs mb-6" style="color:rgba(255,255,255,0.4);">Langkah 4 dari 4 - Review &amp; selesaikan pesanan</p>
 
     @if ($errors->any())
         <div class="rounded-xl px-4 py-2.5 mb-4 text-sm" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;">{{ $errors->first() }}</div>
@@ -54,7 +54,7 @@
                     <span class="text-xs font-semibold text-white shrink-0">{{ rp($calc['packingCost']) }}</span>
                 </div>
                 <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-[10px]" style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);color:#fbbf24;">
-                    <x-lucide-info class="w-3 h-3 shrink-0" /> Jarak {{ $calc['km'] }} km masih dummy — nanti dihitung otomatis dari alamatmu ke gudang.
+                    <x-lucide-info class="w-3 h-3 shrink-0" /> Estimasi jarak {{ $calc['km'] }} km dari alamatmu ke gudang.
                 </div>
             @elseif ($s['logistic'] === 'instant' && $courier)
                 <div class="flex items-start justify-between gap-2">
@@ -86,7 +86,7 @@
         <label class="flex items-start gap-3 px-4 py-3.5 rounded-xl mb-4 cursor-pointer" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
             <input type="checkbox" name="agree" value="1" class="mt-0.5 accent-violet-500 w-4 h-4 shrink-0">
             <span class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.55);">
-                Saya menyetujui <span class="font-semibold underline" style="color:#a78bfa;">Syarat &amp; Ketentuan</span> Garansi Batas Tetap dan <span class="font-semibold underline" style="color:#a78bfa;">Kebijakan Privasi</span> RUTIP.
+                Saya menyetujui <a href="{{ route('legal.terms') }}" target="_blank" class="font-semibold underline" style="color:#a78bfa;">Syarat &amp; Ketentuan</a> Garansi Batas Tetap dan <a href="{{ route('legal.privacy') }}" target="_blank" class="font-semibold underline" style="color:#a78bfa;">Kebijakan Privasi</a> RUTIP.
             </span>
         </label>
 

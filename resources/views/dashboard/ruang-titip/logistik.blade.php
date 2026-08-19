@@ -5,7 +5,7 @@
 <div class="max-w-xl mx-auto pt-6 pb-8">
     @include('dashboard.ruang-titip._progress', ['step' => 2])
     <h1 class="text-xl font-extrabold text-white font-display mb-1">Opsi Logistik</h1>
-    <p class="text-xs mb-6" style="color:rgba(255,255,255,0.4);">Langkah 2 dari 4 — Pilih cara barang sampai ke gudang</p>
+    <p class="text-xs mb-6" style="color:rgba(255,255,255,0.4);">Langkah 2 dari 4 - Pilih cara barang sampai ke gudang</p>
 
     <form method="POST" action="{{ route('ruang-titip.logistik.store') }}">
         @csrf
@@ -15,7 +15,7 @@
                 $opts = [
                     ['id'=>'self','label'=>'Antar Sendiri','icon'=>'🚶','desc'=>'Kamu antar barang langsung ke Ruang Titip, tanpa biaya logistik.','note'=>'→ Langsung ke Checkout','color'=>'#34d399','badge'=>'Rp0'],
                     ['id'=>'rutip','label'=>'Packing + Anjem RuTip','icon'=>'🚚','desc'=>'Tim kami jemput & packing barangmu. Biaya = jarak (per km) + jasa packing per kardus.','note'=>'→ Input Alamat → Checkout','color'=>'#a78bfa','badge'=>'Terpopuler'],
-                    ['id'=>'instant','label'=>'Instant Shipper','icon'=>'🏍️','desc'=>'Dijemput kurir instan (Gojek/Grab) dari alamatmu.','note'=>'→ Input Alamat → Pilih Kurir → Checkout','color'=>'#7c3aed','badge'=>null],
+                    ['id'=>'instant','label'=>'Kurir Biteship','icon'=>'🏍️','desc'=>'Dijemput kurir instan (Gojek/Grab) dari alamatmu.','note'=>'→ Input Alamat → Pilih Kurir → Checkout','color'=>'#7c3aed','badge'=>null],
                 ];
             @endphp
             @foreach ($opts as $o)
@@ -38,7 +38,9 @@
 
         <div class="flex gap-3">
             <a href="{{ route('ruang-titip.detail-item') }}" class="flex items-center justify-center gap-1.5 py-3.5 px-4 rounded-xl font-semibold text-sm hover:bg-white/5 shrink-0" style="border:1.5px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.65);"><x-lucide-chevron-left class="w-4 h-4" /> Kembali</a>
-            <button type="submit" id="nextBtn" disabled class="flex-1 py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-40" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Lanjutkan <x-lucide-arrow-right class="w-4 h-4" /></button>
+            <button type="submit" id="nextBtn" disabled
+                    onclick="if(!this.disabled){this.disabled=true;this.innerHTML='<svg class=\'w-4 h-4 animate-spin\' fill=\'none\' viewBox=\'0 0 24 24\'><circle class=\'opacity-25\' cx=\'12\' cy=\'12\' r=\'10\' stroke=\'currentColor\' stroke-width=\'4\'></circle><path class=\'opacity-75\' fill=\'currentColor\' d=\'M4 12a8 8 0 018-8v8z\'></path></svg> Memproses...';this.closest('form').submit();}"
+                    class="flex-1 py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-40" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Lanjutkan <x-lucide-arrow-right class="w-4 h-4" /></button>
         </div>
     </form>
 </div>

@@ -117,7 +117,10 @@ class OtpController extends Controller
         $request->session()->regenerate();
         $request->session()->forget(['otp_email', 'otp_last_sent']);
 
-        // ─── PENAMBAHAN CEK ROLE DI SINI ───
+        $firstName = $user->name ? explode(' ', trim($user->name))[0] : explode('@', $email)[0];
+        $request->session()->flash('welcome_name', $firstName);
+        $request->session()->flash('welcome_type', $user->wasRecentlyCreated ? 'new' : 'returning');
+
         if ($user->role === 'admin') {
             return redirect()->route('admin.dashboard');
         }

@@ -29,17 +29,35 @@
     </div>
 
     {{-- ── Daftar pesanan ── --}}
-    @if ($orders->count())
+    @php $hasAny = $orders->count() > 0 || $packingOrders->count() > 0; @endphp
+    @if ($hasAny)
         <div class="space-y-3">
             @foreach ($orders as $order)
                 @include('dashboard.pesanan._card', ['order' => $order])
+            @endforeach
+            @foreach ($packingOrders as $order)
+                @include('dashboard.pesanan._card_packing', ['order' => $order])
             @endforeach
         </div>
     @else
         {{-- Empty state --}}
         <div class="flex flex-col items-center text-center py-16">
-            <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-3xl" style="background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);">
-                {{ $tab === 'selesai' ? '✅' : '📭' }}
+            <div class="relative inline-flex mx-auto mb-5">
+                @if($tab === 'selesai')
+                    <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#059669,#34d399);"></div>
+                    <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(5,150,105,0.2),rgba(52,211,153,0.1));border:1px solid rgba(5,150,105,0.35);">
+                        <svg class="w-9 h-9" fill="none" stroke="#34d399" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                    </div>
+                @else
+                    <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#4f46e5,#818cf8);"></div>
+                    <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(79,70,229,0.2),rgba(129,140,248,0.1));border:1px solid rgba(79,70,229,0.35);">
+                        <svg class="w-9 h-9" fill="none" stroke="#818cf8" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                    </div>
+                @endif
             </div>
             <p class="text-sm font-bold text-white mb-1">
                 {{ $tab === 'selesai' ? 'Belum ada pesanan selesai' : 'Belum ada pesanan aktif' }}

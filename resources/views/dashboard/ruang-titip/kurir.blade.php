@@ -8,7 +8,7 @@
 <div class="max-w-xl mx-auto pt-6 pb-8">
     @include('dashboard.ruang-titip._progress', ['step' => 3])
     <h1 class="text-xl font-extrabold text-white font-display mb-1">Pilih Kurir Instan</h1>
-    <p class="text-xs mb-5" style="color:rgba(255,255,255,0.4);">Langkah 3 dari 4 — Dari alamatmu ke gudang RUTIP</p>
+    <p class="text-xs mb-5" style="color:rgba(255,255,255,0.4);">Langkah 3 dari 4 - Dari alamatmu ke gudang RUTIP</p>
 
     <div class="flex items-start gap-2.5 px-4 py-3 rounded-xl mb-5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
         <x-lucide-map-pin class="w-4 h-4 shrink-0 mt-0.5" style="color:#a78bfa;" />

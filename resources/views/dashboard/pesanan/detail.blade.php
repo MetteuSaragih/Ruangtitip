@@ -9,8 +9,8 @@
     $logisticLabel = [
         'self'    => 'Antar Sendiri',
         'rutip'   => 'Packing + Anjem RuTip',
-        'instant' => 'Instant Shipper',
-    ][$order->logistic] ?? '—';
+        'instant' => 'Kurir Biteship',
+    ][$order->logistic] ?? '-';
 @endphp
 
 @section('content')
@@ -80,7 +80,7 @@
     <div class="rounded-2xl p-5 mb-4" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
         <p class="text-xs font-bold text-white mb-3">Detail Penitipan</p>
         <div class="space-y-2.5 text-xs">
-            <div class="flex justify-between gap-2"><span style="color:rgba(255,255,255,0.45);">Gudang</span><span class="text-white font-medium text-right">{{ $order->storage->name ?? '—' }}</span></div>
+            <div class="flex justify-between gap-2"><span style="color:rgba(255,255,255,0.45);">Gudang</span><span class="text-white font-medium text-right">{{ $order->storage->name ?? '-' }}</span></div>
             <div class="flex justify-between gap-2"><span style="color:rgba(255,255,255,0.45);">Jenis Barang</span><span class="text-white font-medium capitalize">{{ $order->item_type }}</span></div>
             <div class="flex justify-between gap-2"><span style="color:rgba(255,255,255,0.45);">Jumlah Item</span><span class="text-white font-medium">{{ $order->totalItems() }} item</span></div>
             @if ($order->date_start && $order->date_end)
@@ -125,7 +125,7 @@
     @endif
 
     {{-- Bantuan via WhatsApp (sesuai dokumen) --}}
-    <a href="https://wa.me/6281234567890?text=Halo%20RUTIP,%20saya%20mau%20tanya%20pesanan%20{{ $order->code() }}"
+    <a href="https://wa.me/6285121091134?text=Halo%20RUTIP,%20saya%20mau%20tanya%20pesanan%20{{ $order->code() }}"
        target="_blank" rel="noopener noreferrer"
        class="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-bold transition-all hover:scale-[1.02]"
        style="border:1.5px solid rgba(37,211,102,0.4);color:#25d366;background:rgba(37,211,102,0.06);">

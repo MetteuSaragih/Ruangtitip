@@ -196,7 +196,7 @@ class PackingController extends Controller
             return redirect()->route('packing.logistics');
         }
 
-        [$subtotal, $shipping, $total, $courier] = $this->calcTotals($checkout);
+        [$subtotal, $shipping, $platformFee, $total, $courier] = $this->calcTotals($checkout);
 
         return view('packing.payment', [
             'items' => $checkout['items'],
@@ -204,6 +204,7 @@ class PackingController extends Controller
             'courier' => $courier,
             'subtotal' => $subtotal,
             'shipping' => $shipping,
+            'platformFee' => $platformFee,
             'total' => $total,
         ]);
     }
@@ -221,7 +222,7 @@ class PackingController extends Controller
             return redirect()->route('packing.index');
         }
 
-        [$subtotal, $shipping, $total] = $this->calcTotals($checkout);
+        [$subtotal, $shipping, $platformFee, $total] = $this->calcTotals($checkout);
 
         $order = PackingOrder::create([
             'order_code' => 'TP-' . now()->year . '-' . random_int(10000, 99999),
@@ -229,6 +230,7 @@ class PackingController extends Controller
             'items' => $checkout['items'],
             'subtotal' => $subtotal,
             'shipping_cost' => $shipping,
+            'platform_fee' => $platformFee,
             'total' => $total,
             'logistic' => $checkout['logistic'],
             'courier' => $checkout['courier'] ?? null,
@@ -253,6 +255,7 @@ class PackingController extends Controller
         if ($shipping > 0) {
             $orderItems[] = ['name' => 'Biaya Pengiriman', 'price' => (int) $shipping, 'quantity' => 1];
         }
+        $orderItems[] = ['name' => 'Biaya Layanan Platform', 'price' => (int) $platformFee, 'quantity' => 1];
 
         try {
             $tripay = app(TripayService::class);
@@ -346,6 +349,14 @@ class PackingController extends Controller
             $courier = ['code' => $checkout['courier'], 'name' => $checkout['courier_name'] ?? $checkout['courier']];
         }
 
-        return [$subtotal, $shipping, $subtotal + $shipping, $courier];
+        $platformFee = $this->serviceFeeFor($checkout['logistic'] ?? null);
+
+        return [$subtotal, $shipping, $platformFee, $subtotal + $shipping + $platformFee, $courier];
+    }
+
+    /** Biaya layanan platform: Rp 2.000 jika pengiriman pakai Biteship, Rp 1.000 jika tidak. */
+    private function serviceFeeFor(?string $logistic): int
+    {
+        return $logistic === 'biteship' ? 2000 : 1000;
     }
 }

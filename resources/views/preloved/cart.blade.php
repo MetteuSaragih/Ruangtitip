@@ -1,4 +1,4 @@
-@extends('layouts.dashboard')
+﻿@extends('layouts.dashboard')
 
 @section('title', 'Keranjang')
 
@@ -9,7 +9,7 @@
 @endphp
 
 @section('content')
-<div class="pt-2 pb-10 max-w-xl mx-auto">
+<div class="pt-6 pb-10 max-w-xl mx-auto">
 
     <div class="mb-5">
         <h1 class="text-xl font-extrabold text-white font-display">Keranjang</h1>
@@ -17,16 +17,24 @@
     </div>
 
     @if ($errors->any())
-        <div class="rounded-xl px-4 py-2.5 mb-4 text-sm" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;">
+        <div class="flex items-center gap-3 rounded-xl px-4 py-3 mb-4 text-sm" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             {{ $errors->first() }}
         </div>
     @endif
 
     @if (empty($cart))
-        <div class="rounded-2xl p-10 text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-            <p class="text-3xl mb-2">🛒</p>
-            <p class="text-sm font-semibold text-white">Keranjangmu masih kosong</p>
-            <p class="text-xs mt-1 mb-5" style="color:rgba(255,255,255,0.4);">Yuk, jelajahi produk packing dan preloved pilihan</p>
+        <div class="rounded-2xl py-16 flex flex-col items-center text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
+            <div class="relative inline-flex mx-auto mb-5">
+                <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#0284c7,#38bdf8);"></div>
+                <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(2,132,199,0.2),rgba(56,189,248,0.1));border:1px solid rgba(2,132,199,0.35);">
+                    <svg class="w-9 h-9" fill="none" stroke="#38bdf8" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 001.95-1.57L23 6H6"/>
+                    </svg>
+                </div>
+            </div>
+            <p class="text-sm font-bold text-white mb-1">Keranjangmu masih kosong</p>
+            <p class="text-xs mt-1 mb-6" style="color:rgba(255,255,255,0.4);">Yuk, jelajahi produk packing dan preloved pilihan</p>
             <div class="flex items-center justify-center gap-3">
                 <a href="{{ route('preloved.index') }}" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Toko Preloved</a>
                 <a href="{{ route('packing.index') }}" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all hover:bg-violet-900/20" style="border:1.5px solid rgba(124,58,237,0.4);color:#a78bfa;">Toko Packing</a>
@@ -75,7 +83,7 @@
                             @endif
                             <p class="text-sm font-bold mb-2" style="color:#a78bfa;" data-price="{{ $item['price'] }}">{{ rupiah($item['price']) }}</p>
                             <div class="flex items-center gap-2.5">
-                                <button type="button" class="w-7 h-7 rounded-lg flex items-center justify-center text-sm" style="background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.1);" onclick="cartChangeQty('{{ $key }}', -1)">−</button>
+                                <button type="button" class="w-7 h-7 rounded-lg flex items-center justify-center text-sm" style="background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.1);" onclick="cartChangeQty(‘{{ $key }}’, -1)">&minus;</button>
                                 <span class="qty-num text-xs font-bold text-white min-w-[18px] text-center">{{ $item['qty'] }}</span>
                                 <button type="button" class="w-7 h-7 rounded-lg flex items-center justify-center text-sm" style="background:rgba(124,58,237,0.2);color:#a78bfa;border:1px solid rgba(124,58,237,0.35);" onclick="cartChangeQty('{{ $key }}', 1)">+</button>
                             </div>
@@ -97,7 +105,8 @@
                     <span class="text-lg font-extrabold font-display" id="summaryTotal" style="color:#a78bfa;">{{ rupiah(array_sum(array_column($cart, 'subtotal'))) }}</span>
                 </div>
                 <button type="submit" id="btnCheckout"
-                        class="w-full mt-4 py-3.5 rounded-2xl font-bold text-sm text-white transition-all hover:scale-[1.02] disabled:opacity-40"
+                        onclick="if(!this.disabled){this.disabled=true;this.innerHTML='<svg class=\'w-4 h-4 animate-spin inline\' fill=\'none\' viewBox=\'0 0 24 24\'><circle class=\'opacity-25\' cx=\'12\' cy=\'12\' r=\'10\' stroke=\'currentColor\' stroke-width=\'4\'></circle><path class=\'opacity-75\' fill=\'currentColor\' d=\'M4 12a8 8 0 018-8v8z\'></path></svg> Memproses...';}"
+                        class="w-full mt-4 py-3.5 rounded-2xl font-bold text-sm text-white transition-all hover:scale-[1.02] disabled:opacity-40 flex items-center justify-center gap-2"
                         style="background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 6px 20px rgba(124,58,237,0.4);">
                     Checkout
                 </button>

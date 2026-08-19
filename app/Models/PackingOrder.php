@@ -11,7 +11,7 @@ class PackingOrder extends Model
     use HasFactory;
 
     protected $fillable = [
-        'order_code', 'user_id', 'items', 'subtotal', 'shipping_cost',
+        'order_code', 'user_id', 'items', 'subtotal', 'shipping_cost', 'platform_fee',
         'total', 'logistic', 'courier', 'address', 'payment_method', 'status',
         'payment_status',
         'tripay_reference', 'tripay_checkout_url', 'tripay_pay_code', 'tripay_payment_method',
@@ -24,6 +24,7 @@ class PackingOrder extends Model
         'items'         => 'array',
         'subtotal'      => 'integer',
         'shipping_cost' => 'integer',
+        'platform_fee'  => 'integer',
         'total'         => 'integer',
     ];
 

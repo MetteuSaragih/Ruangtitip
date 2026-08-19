@@ -148,9 +148,18 @@
                         @empty
                             <tr>
                                 <td colspan="7" class="py-16 text-center">
-                                    <x-lucide-users class="w-10 h-10 mx-auto mb-3" style="color:rgba(255,255,255,0.2);" />
-                                    <p class="text-sm font-semibold text-white">Belum ada pengguna</p>
-                                    <p class="text-xs mt-1" style="color:rgba(255,255,255,0.35);">Data pengguna akan muncul setelah pelanggan masuk ke aplikasi.</p>
+                                    <div class="flex flex-col items-center">
+                                        <div class="relative inline-flex mx-auto mb-5">
+                                            <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#0284c7,#38bdf8);"></div>
+                                            <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(2,132,199,0.2),rgba(56,189,248,0.1));border:1px solid rgba(2,132,199,0.35);">
+                                                <svg class="w-9 h-9" fill="none" stroke="#38bdf8" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <p class="text-sm font-bold text-white mb-1">Belum ada pengguna</p>
+                                        <p class="text-xs" style="color:rgba(255,255,255,0.38);">Data pengguna muncul setelah pelanggan login</p>
+                                    </div>
                                 </td>
                             </tr>
                         @endforelse
@@ -181,18 +190,33 @@
                         <span class="px-2.5 py-1 rounded-full text-[11px] font-bold" style="background:rgba(124,58,237,0.16);color:#c4b5fd;">Admin</span>
                     </div>
                 @empty
-                    <div class="py-16 text-center">
-                        <x-lucide-shield class="w-10 h-10 mx-auto mb-3" style="color:rgba(255,255,255,0.2);" />
-                        <p class="text-sm font-semibold text-white">Belum ada staf admin</p>
+                    <div class="py-16 flex flex-col items-center text-center">
+                        <div class="relative inline-flex mx-auto mb-5">
+                            <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#7c3aed,#c4b5fd);"></div>
+                            <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(196,181,253,0.1));border:1px solid rgba(124,58,237,0.35);">
+                                <svg class="w-9 h-9" fill="none" stroke="#c4b5fd" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-sm font-bold text-white mb-1">Belum ada staf admin</p>
+                        <p class="text-xs" style="color:rgba(255,255,255,0.38);">Tambahkan akun admin untuk mengelola platform</p>
                     </div>
                 @endforelse
             </div>
         </div>
     @else
-        <div class="rounded-2xl py-20 text-center" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
-            <x-lucide-star class="w-10 h-10 mx-auto mb-3" style="color:rgba(255,255,255,0.2);" />
-            <p class="text-sm font-semibold text-white">Belum ada ulasan untuk dimoderasi</p>
-            <p class="text-xs mt-1" style="color:rgba(255,255,255,0.35);">Ulasan pelanggan akan tampil di sini setelah fitur review aktif.</p>
+        <div class="rounded-2xl py-16 flex flex-col items-center text-center" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
+            <div class="relative inline-flex mx-auto mb-5">
+                <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#b45309,#fbbf24);"></div>
+                <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(180,83,9,0.2),rgba(251,191,36,0.1));border:1px solid rgba(180,83,9,0.35);">
+                    <svg class="w-9 h-9" fill="none" stroke="#fbbf24" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                </div>
+            </div>
+            <p class="text-sm font-bold text-white mb-1">Belum ada ulasan</p>
+            <p class="text-xs" style="color:rgba(255,255,255,0.38);">Ulasan pelanggan akan tampil setelah fitur review aktif</p>
         </div>
     @endif
 </div>

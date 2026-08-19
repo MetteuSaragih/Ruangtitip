@@ -1,6 +1,6 @@
 {{-- ==========================================================================
      Testimoni Section
-     "Kata mereka yang sudah nitip." — paginated testimonial carousel
+     "Kata mereka yang sudah nitip." - paginated testimonial carousel
      (carousel logic handled in app.js via #testimoni-carousel)
      ========================================================================== --}}
 <section id="testimoni" class="py-24 relative overflow-hidden" style="background: linear-gradient(180deg, #130829 0%, #100720 100%);">

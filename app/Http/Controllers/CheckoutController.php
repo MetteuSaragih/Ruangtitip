@@ -197,7 +197,7 @@ class CheckoutController extends Controller
         }
 
         $subtotal = array_sum(array_column($cart, 'subtotal'));
-        $serviceFee = 1000;
+        $serviceFee = $this->serviceFeeFor($shipping['method'] ?? 'pickup');
         $shippingCost = $shipping['cost'] ?? 0;
         $total = $subtotal + $serviceFee + $shippingCost;
 
@@ -222,7 +222,7 @@ class CheckoutController extends Controller
         }
 
         $subtotal = array_sum(array_column($cart, 'subtotal'));
-        $serviceFee = 1000;
+        $serviceFee = $this->serviceFeeFor($shipping['method'] ?? 'pickup');
         $shippingCost = $shipping['cost'] ?? 0;
         $total = $subtotal + $serviceFee + $shippingCost;
 
@@ -314,6 +314,12 @@ class CheckoutController extends Controller
     private function checkoutCart(): array
     {
         return session('checkout_cart', []);
+    }
+
+    /** Biaya layanan platform: Rp 2.000 jika pengiriman pakai Biteship, Rp 1.000 jika tidak. */
+    private function serviceFeeFor(string $shippingMethod): int
+    {
+        return $shippingMethod === 'biteship' ? 2000 : 1000;
     }
 
     private function cartToItems(array $cart): array

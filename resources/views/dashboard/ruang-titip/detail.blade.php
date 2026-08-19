@@ -12,7 +12,7 @@
     @php
         $images = !empty($storage->photos) ? $storage->photos : ($storage->primary_photo ? [$storage->primary_photo] : []);
     @endphp
-    <div class="relative rounded-2xl overflow-hidden mb-5 flex items-center justify-center rt-carousel" style="background:rgba(124,58,237,0.1);height:220px;">
+    <div class="relative rounded-2xl mb-5 rt-carousel" style="background:rgba(124,58,237,0.1);height:220px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
         @forelse ($images as $i => $img)
             <img src="{{ asset('storage/'.$img) }}" alt="{{ $storage->name }}" class="rt-slide {{ $i === 0 ? 'active' : '' }}">
         @empty
@@ -50,7 +50,7 @@
                 <p class="text-xs font-semibold text-white">{{ rp($storage->min_price) }}/hari</p>
             </div>
             <div class="rounded-xl p-3" style="background:rgba(255,255,255,0.04);">
-                <p class="text-[10px] mb-0.5" style="color:rgba(255,255,255,0.35);">Rating</p>
+                <p class="text-[10px] mb-0.5" style="color:rgba(255,255,255,0.35);">Lokasi</p>
                 <p class="text-xs font-semibold text-white">{{ $storage->location ?: '-' }}</p>
             </div>
         </div>
@@ -58,7 +58,7 @@
         <div class="rounded-xl p-3" style="background:rgba(255,255,255,0.04);">
             <div class="flex justify-between mb-1.5">
                 <span class="text-[10px]" style="color:rgba(255,255,255,0.4);">Kapasitas terisi</span>
-                <span class="text-[10px] font-bold" style="color:{{ $storage->capacity_pct >= 80 ? '#7c3aed' : '#34d399' }};">{{ $storage->capacity_pct }}%</span>
+                <span class="text-[10px] font-bold" style="color:{{ $storage->capacity_pct >= 80 ? '#fb923c' : '#34d399' }};">{{ $storage->capacity_pct }}%</span>
             </div>
             <div class="h-2 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.07);">
                 <div class="h-full rounded-full" style="width:{{ $storage->capacity_pct }}%;background:linear-gradient(90deg,#7c3aed,#7c3aed99);"></div>

@@ -5,7 +5,7 @@
 <div class="max-w-xl mx-auto pt-6 pb-8">
     @include('dashboard.ruang-titip._progress', ['step' => 3])
     <h1 class="text-xl font-extrabold text-white font-display mb-1">Alamat Penjemputan</h1>
-    <p class="text-xs mb-5" style="color:rgba(255,255,255,0.4);">Langkah 3 dari 4 — Pilih alamat tersimpan atau tambah baru</p>
+    <p class="text-xs mb-5" style="color:rgba(255,255,255,0.4);">Langkah 3 dari 4 - Pilih alamat tersimpan atau tambah baru</p>
 
     @if ($errors->any())
         <div class="rounded-xl px-4 py-2.5 mb-4 text-sm" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;">{{ $errors->first() }}</div>

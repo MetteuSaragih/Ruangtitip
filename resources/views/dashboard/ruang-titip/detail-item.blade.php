@@ -12,7 +12,7 @@
 <div class="max-w-xl mx-auto pt-6 pb-8">
     @include('dashboard.ruang-titip._progress', ['step' => 1])
     <h1 class="text-xl font-extrabold text-white font-display mb-1">Detail Penitipan Barang</h1>
-    <p class="text-xs mb-5" style="color:rgba(255,255,255,0.4);">Langkah 1 dari 4 — Pilih barang dan rentang waktu penitipan</p>
+    <p class="text-xs mb-5" style="color:rgba(255,255,255,0.4);">Langkah 1 dari 4 - Pilih barang dan rentang waktu penitipan</p>
 
     @if ($errors->any())
         <div class="rounded-xl px-4 py-2.5 mb-4 text-sm" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;">{{ $errors->first() }}</div>
@@ -63,27 +63,39 @@
                 <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.38);">Harga berbeda untuk tiap ukuran (per bulan)</p>
             </div>
             @foreach (['kardus' => $kardus, 'koper' => $koper, 'dimensi' => $dimensi] as $type => $sizes)
-                <div class="size-group p-3 grid grid-cols-1 sm:grid-cols-2 gap-2" data-group="{{ $type }}" style="{{ $type === 'kardus' ? '' : 'display:none;' }}">
+                <div class="size-group grid grid-cols-1 sm:grid-cols-2 gap-3 p-4" data-group="{{ $type }}" style="{{ $type === 'kardus' ? '' : 'display:none;' }}">
                     @foreach ($sizes as $sz)
                         @php
                             $qty = (int) ($selectedItems[$sz->code] ?? 0);
                             $typeLabel = ['kardus' => 'Kardus', 'koper' => 'Koper', 'dimensi' => 'Dimensi Lain'][$type];
                         @endphp
-                        <div class="size-row flex items-center justify-between p-3.5 rounded-xl"
+                        <div class="size-row rounded-2xl"
                              data-price="{{ $sz->price }}"
                              data-type-label="{{ $typeLabel }}"
                              data-label="{{ $sz->label }}"
-                             style="background:{{ $qty > 0 ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.04)' }};border:1.5px solid {{ $qty > 0 ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.08)' }};">
-                            <div class="min-w-0 flex-1">
+                             style="background:{{ $qty > 0 ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.04)' }};border:1.5px solid {{ $qty > 0 ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.08)' }};padding:14px 16px;">
+                            {{-- Label + harga --}}
+                            <div style="margin-bottom:12px;">
                                 <p class="text-sm font-bold text-white">{{ $sz->label }}</p>
-                                <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.4);">{{ $sz->dims }}</p>
-                                <p class="text-xs font-bold mt-0.5" style="color:#a78bfa;">{{ rp($sz->price) }}<span class="text-[10px] font-normal" style="color:rgba(255,255,255,0.35);">/bln</span></p>
+                                @if ($sz->dims && $sz->dims !== '-')
+                                    <p class="text-[10px] mt-1" style="color:rgba(255,255,255,0.4);">{{ $sz->dims }}</p>
+                                @endif
+                                <p class="text-sm font-extrabold" style="color:#a78bfa;margin-top:4px;">{{ rp($sz->price) }}<span class="font-normal text-[10px]" style="color:rgba(255,255,255,0.35);">/bln</span></p>
                             </div>
-                            <div class="flex items-center gap-2 shrink-0">
-                                <button type="button" onclick="changeQty(this,-1)" class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.7);"><x-lucide-minus class="w-3 h-3" /></button>
-                                <span class="qty w-5 text-center text-sm font-bold text-white">{{ $qty }}</span>
+                            {{-- Qty controls --}}
+                            <div class="flex items-center gap-3">
+                                <button type="button" onclick="changeQty(this,-1)"
+                                        class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                                        style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.1);">
+                                    <x-lucide-minus class="w-3.5 h-3.5" />
+                                </button>
+                                <span class="qty flex-1 text-center text-sm font-bold text-white">{{ $qty }}</span>
                                 <input type="hidden" name="items[{{ $sz->code }}]" value="{{ $qty }}" class="qty-input">
-                                <button type="button" onclick="changeQty(this,1)" class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:rgba(124,58,237,0.25);color:#a78bfa;border:1px solid rgba(124,58,237,0.4);"><x-lucide-plus class="w-3 h-3" /></button>
+                                <button type="button" onclick="changeQty(this,1)"
+                                        class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                                        style="background:rgba(124,58,237,0.25);color:#a78bfa;border:1px solid rgba(124,58,237,0.4);">
+                                    <x-lucide-plus class="w-3.5 h-3.5" />
+                                </button>
                             </div>
                         </div>
                     @endforeach

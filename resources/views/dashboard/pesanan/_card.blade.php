@@ -7,8 +7,8 @@
     $logisticLabel = [
         'self'    => 'Antar Sendiri',
         'rutip'   => 'Packing + Anjem RuTip',
-        'instant' => 'Instant Shipper',
-    ][$order->logistic] ?? '—';
+        'instant' => 'Kurir Biteship',
+    ][$order->logistic] ?? '-';
 @endphp
 <a href="{{ route('pesanan.detail', $order) }}"
    class="block rounded-2xl p-4 transition-all hover:-translate-y-0.5"

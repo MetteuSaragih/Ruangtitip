@@ -1,49 +1,112 @@
-{{-- PENTING: Ganti 'layouts.app' dengan nama file layout utama Anda. --}}
-{{-- Misalnya jika file layout Anda bernama 'dashboard.blade.php', ubah menjadi @extends('dashboard') --}}
 @extends('layouts.dashboard')
 
 @section('title', 'Profil Saya')
 
 @section('content')
     <!-- Alpine.js untuk interaksi tab & form -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 
-    <!-- HANYA ISI KONTEN (Tanpa HTML, Head, Body, atau Navbar) -->
-    <div class="max-w-xl mx-auto pb-12" x-data="{ 
+    <div class="max-w-xl mx-auto pt-4 pb-12 px-4 sm:px-0" x-data="{
         screen: '{{ $currentTab ?? 'profil' }}',
         addresses: {{ json_encode($addresses ?? []) }},
-        whatsapp: '812-3456-7890',
+        name: {{ json_encode($user->name) }},
+        whatsapp: {{ json_encode($user->phone) }},
+        redirectAfter: {{ json_encode($redirectAfter ?? null) }},
         showAddForm: false,
         newLabel: '',
         newAddr: '',
         saved: false,
+        saving: false,
         wpFocused: false,
 
         setPrimary(id) {
             this.addresses.forEach(a => a.isPrimary = (a.id === id));
+            fetch(`{{ url('/profil/alamat') }}/${id}/primary`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            });
         },
         deleteAddress(id) {
-            this.addresses = this.addresses.filter(a => a.id !== id);
+            const wasPrimary = this.addresses.find(a => a.id === id)?.isPrimary;
+            fetch(`{{ url('/profil/alamat') }}/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    this.addresses = this.addresses.filter(a => a.id !== id);
+                    if (wasPrimary && this.addresses.length > 0) {
+                        this.addresses[this.addresses.length - 1].isPrimary = true;
+                    }
+                }
+            });
         },
         addAddress() {
             if(!this.newAddr.trim()) return;
-            this.addresses.push({
-                id: Date.now(),
-                label: this.newLabel || 'Alamat Baru',
-                address: this.newAddr,
-                isPrimary: false
-            });
+            const tempLabel = this.newLabel || 'Alamat Baru';
+            const tempAddr = this.newAddr;
             this.newLabel = ''; this.newAddr = ''; this.showAddForm = false;
+            fetch('{{ route('profile.address.store') }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ label: tempLabel, address: tempAddr }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    this.addresses.push({ id: data.id, label: data.label, address: data.address, isPrimary: data.isPrimary });
+                }
+            });
         },
         saveChanges() {
-            this.saved = true;
-            setTimeout(() => this.saved = false, 2500);
+            if (this.saving) return;
+            this.saving = true;
+            fetch('{{ route('profile.update') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ name: this.name, whatsapp: this.whatsapp }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                this.saving = false;
+                if (data.success) {
+                    this.saved = true;
+                    document.getElementById('avatarInitials')?.replaceChildren(document.createTextNode((this.name || 'U').trim().split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() || '').join('')));
+                    if (this.redirectAfter && this.name.trim() && this.whatsapp && this.whatsapp.trim()) {
+                        window.location.href = this.redirectAfter;
+                        return;
+                    }
+                    setTimeout(() => this.saved = false, 2500);
+                }
+            })
+            .catch(() => { this.saving = false; });
         }
     }">
         
-        <!-- Base Container -->
-        <div class="rounded-3xl overflow-hidden mt-4 bg-[#0f0720]" style="box-shadow: 0 12px 48px rgba(0,0,0,0.65), 0 0 0 1px rgba(139,92,246,0.14);">
-            
+        {{-- ─── Error / Info Banner ─── --}}
+        @if (session('error'))
+        <div class="flex items-start gap-3 px-4 py-3.5 rounded-2xl mb-4"
+             style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);">
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style="background:rgba(239,68,68,0.12);">
+                <svg class="w-4 h-4" fill="none" stroke="#f87171" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs font-bold mb-0.5" style="color:#fca5a5;">Profil Belum Lengkap</p>
+                <p class="text-xs leading-relaxed" style="color:rgba(252,165,165,0.75);">{{ session('error') }}</p>
+            </div>
+        </div>
+        @endif
+
+        {{-- ─── Main Card ─── --}}
+        <div class="rounded-3xl overflow-hidden bg-[#0f0720]" style="box-shadow: 0 12px 48px rgba(0,0,0,0.65), 0 0 0 1px rgba(139,92,246,0.14);">
+
             <!-- Segmented Control Tab Navigation -->
             <div class="px-6 pt-6 pb-0">
                 <div class="flex gap-1 p-1 rounded-2xl bg-white/5 border border-white/8">
@@ -65,31 +128,84 @@
                 
                 <!-- ══ TAB: PROFIL ══ -->
                 <div x-show="screen === 'profil'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-x-4" x-transition:enter-end="opacity-100 translate-x-0" style="display: none;">
-                    <h1 class="text-xl font-extrabold text-white mb-6">Profil Saya</h1>
+                    <h1 class="text-xl font-extrabold text-white font-display mb-6">Profil Saya</h1>
 
                     <!-- Avatar Section -->
                     <div class="flex flex-col items-center mb-8">
-                        <div class="relative group">
-                            <div class="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-extrabold text-white bg-gradient-to-br from-violet-600 to-violet-700 shadow-xl shadow-violet-600/45">
-                                AR
+                        {{-- Hidden file input --}}
+                        <input type="file" id="avatarFileInput" accept="image/jpeg,image/jpg,image/png,image/webp"
+                               class="hidden" onchange="handleAvatarChange(this)">
+
+                        <div class="relative group cursor-pointer" onclick="document.getElementById('avatarFileInput').click()">
+                            {{-- Avatar image or initials --}}
+                            <div class="w-24 h-24 rounded-full overflow-hidden relative shadow-xl"
+                                 style="box-shadow:0 0 0 3px rgba(124,58,237,0.4),0 8px 32px rgba(124,58,237,0.25);">
+                                @if ($user->avatar)
+                                    <img id="avatarImg"
+                                         src="{{ Storage::url($user->avatar) }}"
+                                         alt="Foto Profil"
+                                         class="w-full h-full object-cover">
+                                @else
+                                    <div id="avatarImg" class="w-full h-full" style="display:none;"></div>
+                                @endif
+                                <div id="avatarInitials"
+                                     class="w-full h-full flex items-center justify-center text-3xl font-extrabold text-white bg-gradient-to-br from-violet-600 to-violet-700"
+                                     style="{{ $user->avatar ? 'display:none;' : '' }}">
+                                    {{ $user->initials }}
+                                </div>
+
+                                {{-- Overlay on hover --}}
+                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                     style="background:rgba(0,0,0,0.55);">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                        <circle cx="12" cy="13" r="3"/>
+                                    </svg>
+                                </div>
                             </div>
-                            <button class="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-violet-600 to-indigo-500 border-2 border-[#0c0618] shadow-md hover:scale-110 transition-all">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><circle cx="12" cy="13" r="3" /></svg>
-                            </button>
+
+                            {{-- Camera badge --}}
+                            <div class="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center border-2 pointer-events-none"
+                                 style="background:linear-gradient(135deg,#7c3aed,#6366f1);border-color:#0c0618;">
+                                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                    <circle cx="12" cy="13" r="3"/>
+                                </svg>
+                            </div>
                         </div>
-                        <button class="mt-3 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors">Ubah Foto Profil</button>
+
+                        <button type="button" onclick="document.getElementById('avatarFileInput').click()"
+                                class="mt-3 text-xs font-semibold transition-colors" style="color:#a78bfa;">
+                            Ubah Foto Profil
+                        </button>
+                        <p id="avatarStatus" class="mt-1 text-[10px]" style="color:rgba(255,255,255,0.3);min-height:14px;"></p>
                     </div>
 
                     <!-- Input Fields -->
                     <div class="space-y-4 mb-6">
+                        <!-- Nama -->
+                        <div>
+                            <label class="block text-xs font-bold mb-2 text-white/55">Nama Pengguna</label>
+                            <div class="relative">
+                                <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                </div>
+                                <input type="text" x-model="name" placeholder="Nama lengkap kamu" maxlength="255"
+                                       class="w-full pl-10 pr-4 py-3.5 rounded-xl text-sm text-white bg-white/6 border outline-none transition-all duration-200"
+                                       style="border-color:rgba(255,255,255,0.1);"
+                                       onfocus="this.style.borderColor='rgba(124,58,237,0.55)';this.style.boxShadow='0 0 0 3px rgba(124,58,237,0.1)';"
+                                       onblur="this.style.borderColor='rgba(255,255,255,0.1)';this.style.boxShadow='none';">
+                            </div>
+                        </div>
+
                         <!-- Email Read Only -->
                         <div>
-                            <label class="block text-xs font-bold mb-2 text-white/55">Username (Email)</label>
+                            <label class="block text-xs font-bold mb-2 text-white/55">Email</label>
                             <div class="relative">
                                 <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                                 </div>
-                                <input type="email" value="ahmadrizki@student.ub.ac.id" readonly disabled class="w-full pl-10 pr-24 py-3.5 rounded-xl text-sm bg-white/3 border border-white/7 text-white/35 cursor-not-allowed outline-none">
+                                <input type="email" value="{{ $user->email }}" readonly disabled class="w-full pl-10 pr-24 py-3.5 rounded-xl text-sm bg-white/3 border border-white/7 text-white/35 cursor-not-allowed outline-none">
                                 <div class="absolute right-3.5 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded bg-white/7 text-[9px] font-semibold text-white/30">Read-only</div>
                             </div>
                             <p class="text-[10px] mt-1.5 text-white/30">Email tidak dapat diubah. Hubungi support jika ada masalah.</p>
@@ -174,15 +290,16 @@
                                     <textarea x-model="newAddr" placeholder="Contoh: Jl. Veteran No. 10, Kec. Lowokwaru, Malang" rows="2" class="w-full px-3.5 py-2.5 rounded-xl text-sm bg-white/6 border border-white/10 text-white outline-none resize-none"></textarea>
                                 </div>
                                 <div class="flex gap-2 pt-1">
-                                    <button @click="addAddress" :disabled="!newAddr.trim()" class="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-500 disabled:opacity-40 transition-all hover:scale-105 duration-150">Simpan Alamat</button>
+                                    <button @click="addAddress" :disabled="!newAddr.trim()" class="flex-1 py-2.5 rounded-xl text-xs font-bold text-white disabled:opacity-40 transition-all hover:scale-105 duration-150" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Simpan Alamat</button>
                                     <button @click="showAddForm = false; newLabel = ''; newAddr = '';" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-transparent border border-white/15 text-white/60 hover:bg-white/8 transition-all">Batal</button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <button @click="saveChanges" class="w-full py-4 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-violet-600 to-indigo-500 flex items-center justify-center gap-2 transition-all active:scale-[0.98] hover:scale-[1.01]" style="box-shadow: 0 6px 20px rgba(124,58,237,0.4);">
-                        <span x-show="!saved">Simpan Perubahan</span>
+                    <button @click="saveChanges" :disabled="saving" class="w-full py-4 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] hover:scale-[1.01] disabled:opacity-60" style="background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 6px 20px rgba(124,58,237,0.4);">
+                        <span x-show="!saved && !saving">Simpan Perubahan</span>
+                        <span x-show="saving" x-cloak>Menyimpan...</span>
                         <span x-show="saved" class="flex items-center gap-1">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                             Perubahan Tersimpan!
@@ -190,9 +307,58 @@
                     </button>
                 </div>
 
+                <script>
+                function handleAvatarChange(input) {
+                    const file = input.files[0];
+                    if (!file) return;
+
+                    const status = document.getElementById('avatarStatus');
+                    const img    = document.getElementById('avatarImg');
+                    const inits  = document.getElementById('avatarInitials');
+
+                    // Show local preview immediately
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        img.src = e.target.result;
+                        img.style.display = 'block';
+                        if (inits) inits.style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+
+                    // Upload
+                    status.textContent = 'Mengunggah...';
+                    status.style.color = '#a78bfa';
+
+                    const form = new FormData();
+                    form.append('avatar', file);
+                    form.append('_token', '{{ csrf_token() }}');
+
+                    fetch('{{ route('profile.avatar') }}', { method: 'POST', body: form })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                img.src = data.avatar_url + '?t=' + Date.now();
+                                status.textContent = '✓ Foto berhasil diperbarui';
+                                status.style.color = '#34d399';
+                                setTimeout(() => { status.textContent = ''; }, 3000);
+                            } else {
+                                status.textContent = 'Gagal mengunggah foto';
+                                status.style.color = '#f87171';
+                            }
+                        })
+                        .catch(() => {
+                            status.textContent = 'Gagal mengunggah foto';
+                            status.style.color = '#f87171';
+                        });
+
+                    // Reset input so same file can be re-selected
+                    input.value = '';
+                }
+                </script>
+
                 <!-- ══ TAB: BANTUAN (FAQ) ══ -->
                 <div x-show="screen === 'bantuan'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0" style="display: none;">
-                    <h1 class="text-xl font-extrabold text-white mb-6">Bantuan</h1>
+                    <h1 class="text-xl font-extrabold text-white font-display mb-6">Bantuan</h1>
 
                     <!-- Accordion Section -->
                     <div class="mb-8">
@@ -208,7 +374,7 @@
                             @foreach([
                                 ['q' => 'Apa saja barang yang bisa dititipkan?', 'a' => 'Kardus, koper, elektronik, buku, dan barang rumah tangga. Tidak menerima: makanan mudah busuk, bahan kimia berbahaya, atau barang ilegal.'],
                                 ['q' => 'Bagaimana jika barang saya rusak atau hilang?', 'a' => 'RUTIP memberikan jaminan ganti rugi penuh untuk kerusakan akibat kelalaian kami. Setiap barang difoto dan disegel sebagai bukti kondisi awal.'],
-                                ['q' => 'Berapa lama minimal penitipan?', 'a' => 'Minimal 1 bulan. Tersedia paket 1, 3, dan 6 bulan — semakin lama, semakin hemat.'],
+                                ['q' => 'Berapa lama minimal penitipan?', 'a' => 'Minimal 1 bulan. Tersedia paket 1, 3, dan 6 bulan - semakin lama, semakin hemat.'],
                                 ['q' => 'Apakah ada layanan jemput ke kos?', 'a' => 'Ya! Tim RUTIP menjangkau seluruh Kota Malang. Pilih jadwal saat pesan, kami datang tepat waktu.'],
                                 ['q' => 'Bagaimana cara membayar?', 'a' => 'Transfer bank, QRIS, GoPay, OVO, dan Dana. Pembayaran di depan, bukti bayar langsung dikirim.'],
                                 ['q' => 'Bisakah saya memperpanjang durasi penitipan?', 'a' => 'Tentu! Kamu bisa perpanjang kapan saja melalui menu Pesanan Saya → Tambah Durasi Sewa sebelum masa titip habis.']
@@ -248,7 +414,7 @@
                                         <div class="flex items-center gap-1"><span class="text-sky-400">🕒</span> 24/7 Siap</div>
                                     </div>
 
-                                    <a href="https://wa.me/6281234567890?text=Halo%20RUTIP%2C%20saya%20butuh%20bantuan" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-emerald-500/40">
+                                    <a href="https://wa.me/6285121091134?text=Halo%20RUTIP%2C%20saya%20butuh%20bantuan" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-emerald-500/40">
                                         Hubungi Pusat Bantuan
                                         <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                                     </a>

@@ -94,6 +94,9 @@ class TokoPrelovedController extends Controller
             'images.*'  => 'image|max:5120',
         ]);
 
+        if ($this->uploadedImagesCount($request) < 1) {
+            return back()->withErrors(['images' => 'Wajib unggah minimal 1 foto barang.'])->withInput();
+        }
         if ($this->uploadedImagesCount($request) > 10) {
             return back()->withErrors(['images' => 'Maksimal 10 gambar untuk setiap produk preloved.'])->withInput();
         }
@@ -128,6 +131,9 @@ class TokoPrelovedController extends Controller
             'images.*'  => 'image|max:5120',
         ]);
 
+        if ($this->existingPhotosCount($item) + $this->uploadedImagesCount($request) < 1) {
+            return back()->withErrors(['images' => 'Barang wajib memiliki minimal 1 foto.'])->withInput();
+        }
         if ($this->existingPhotosCount($item) + $this->uploadedImagesCount($request) > 10) {
             return back()->withErrors(['images' => 'Maksimal 10 gambar untuk setiap produk preloved.'])->withInput();
         }

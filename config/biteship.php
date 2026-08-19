@@ -13,6 +13,10 @@ return [
         'address' => env('BITESHIP_WAREHOUSE_ADDRESS'),
         'postal_code' => env('BITESHIP_WAREHOUSE_POSTAL_CODE'),
         'area_id' => env('BITESHIP_WAREHOUSE_AREA_ID'),
+        // Opsional: isi manual kalau titik koordinat gudang sudah pasti.
+        // Kalau kosong, dihitung otomatis dari 'address' di atas (geocoding, di-cache).
+        'latitude' => env('BITESHIP_WAREHOUSE_LAT'),
+        'longitude' => env('BITESHIP_WAREHOUSE_LNG'),
     ],
 
     'regular_couriers' => array_filter(explode(',', env('BITESHIP_REGULAR_COURIERS', 'jne,jnt,sicepat,anteraja,ninja,idexpress,pos,lion'))),
