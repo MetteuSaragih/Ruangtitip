@@ -1,7 +1,11 @@
 @extends('layouts.ruang-titip')
 @section('title', $product['name'] . ' · Toko Preloved')
 
+<<<<<<< HEAD
 @php function rp($n){ return 'Rp'.number_format($n,0,',','.'); } @endphp
+=======
+@section('title', $product['name'] . ' - Toko Preloved')
+>>>>>>> hostinger/main
 
 @push('styles')
 <style>
@@ -61,6 +65,7 @@
     Kembali ke Toko Preloved
   </a>
 
+<<<<<<< HEAD
   <div class="detail">
     <div class="gallery">
       <div class="main" id="main">
@@ -83,6 +88,137 @@
           @foreach ($images as $i => $img)
             <button type="button" aria-current="{{ $i === 0 ? 'true' : 'false' }}" aria-label="Lihat foto {{ $i + 1 }}" data-i="{{ $i }}"><img src="{{ \Illuminate\Support\Facades\Storage::url($img) }}" alt=""></button>
           @endforeach
+=======
+    {{-- Kembali --}}
+    <a href="{{ route('preloved.index') }}"
+       class="flex items-center gap-1.5 text-sm mb-4 transition-colors hover:text-violet-300"
+       style="color:rgba(255,255,255,0.4);">
+        <x-lucide-chevron-left class="w-4 h-4" /> Kembali ke Toko Preloved
+    </a>
+
+    {{-- Galeri --}}
+    @php $lbSrcsStr = json_encode(array_values(array_map(fn($img) => Storage::url($img), $images))); @endphp
+    <div class="relative rounded-2xl mb-3 rt-carousel"
+         style="aspect-ratio:1/1;background:rgba(124,58,237,0.1);cursor:zoom-in;overflow:hidden;">
+        @forelse ($images as $i => $img)
+            <img src="{{ Storage::url($img) }}" alt="{{ $product['name'] }}"
+                 class="rt-slide {{ $i === 0 ? 'active' : '' }}"
+                 onclick="rtLbOpen({{ $lbSrcsStr }}, {{ $i }})"
+                 style="cursor:zoom-in;">
+        @empty
+            <div class="absolute inset-0 flex items-center justify-center">
+                <x-lucide-image class="w-20 h-20" style="color:#a78bfa;" />
+            </div>
+        @endforelse
+        @if ($disc)
+            <div class="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
+                 style="background:#ef4444;color:white;z-index:2;">
+                -{{ $disc }}%
+            </div>
+        @endif
+        <button type="button" id="btnWish" onclick="event.stopPropagation();toggleWishlist()"
+                class="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all"
+                style="background:rgba(0,0,0,0.4);color:rgba(255,255,255,0.6);z-index:2;">
+            <x-lucide-heart class="w-4 h-4" id="wishIcon" />
+        </button>
+        @if (count($images) > 1)
+            <button type="button" class="rt-carousel-btn rt-prev" onclick="event.preventDefault();event.stopPropagation();rtCarouselNav(this,-1)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <button type="button" class="rt-carousel-btn rt-next" onclick="event.preventDefault();event.stopPropagation();rtCarouselNav(this,1)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+            <div class="rt-carousel-dots" style="bottom:10px;">
+                @foreach ($images as $i => $img)
+                    <span class="{{ $i === 0 ? 'active' : '' }}"></span>
+                @endforeach
+            </div>
+        @endif
+        {{-- zoom hint --}}
+        <div class="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-medium pointer-events-none"
+             style="background:rgba(0,0,0,0.45);color:rgba(255,255,255,0.6);">
+            <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            Klik untuk perbesar
+        </div>
+    </div>
+
+    {{-- Thumbnail strip --}}
+    @if (count($images) > 1)
+    <div class="rt-thumb-strip mb-4" id="plThumbStrip">
+        @foreach ($images as $i => $img)
+            <button type="button" class="{{ $i === 0 ? 'active' : '' }}"
+                    onclick="rtGalleryThumb(this, {{ $i }})">
+                <img src="{{ Storage::url($img) }}" alt="">
+            </button>
+        @endforeach
+    </div>
+    <script>
+    function rtGalleryThumb(btn, idx) {
+        const carousel = btn.closest('.max-w-xl').querySelector('.rt-carousel');
+        if (!carousel) return;
+        const slides = carousel.querySelectorAll('.rt-slide');
+        slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+        carousel.querySelectorAll('.rt-carousel-dots span').forEach((d, i) => d.classList.toggle('active', i === idx));
+        btn.closest('#plThumbStrip').querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === idx));
+    }
+    </script>
+    @endif
+
+    {{-- Badges --}}
+    <div class="flex items-center gap-2 mb-2">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold" style="{{ $condStyle }}">{{ $product['condition_label'] ?? $cond }}</span>
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:rgba(99,102,241,0.2);color:#818cf8;">Stok: {{ $stock }}</span>
+    </div>
+
+    {{-- Judul --}}
+    <h1 class="text-xl font-extrabold text-white font-display leading-tight mb-2">{{ $product['name'] }}</h1>
+
+    {{-- Harga --}}
+    <div class="flex items-center gap-2 mb-4 flex-wrap">
+        @if ($origPrice && $origPrice > $price)
+            <span class="text-sm line-through" style="color:rgba(255,255,255,0.35);">{{ rupiah($origPrice) }}</span>
+        @endif
+        <span class="text-2xl font-extrabold font-display" style="color:#a78bfa;">{{ rupiah($price) }}</span>
+        @if ($disc)
+            <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background:rgba(239,68,68,0.15);color:#f87171;">-{{ $disc }}%</span>
+        @endif
+    </div>
+
+    {{-- Seller --}}
+    <div class="flex items-center gap-2 mb-4">
+        <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">{{ $sellerInitial }}</div>
+        <span class="text-sm" style="color:rgba(255,255,255,0.7);">{{ $product['seller_name'] ?? '-' }}</span>
+        <span class="flex items-center gap-1 text-sm font-semibold" style="color:#fbbf24;">⭐ {{ $product['seller_rating'] ?? '4.5' }}</span>
+    </div>
+
+    {{-- Deskripsi --}}
+    <div class="rounded-2xl p-4 mb-5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);">
+        <p class="text-xs font-bold text-white mb-2">Deskripsi &amp; Kondisi Barang</p>
+        <p class="text-sm leading-relaxed" style="color:rgba(255,255,255,0.58);">{{ $product['description'] ?? '-' }}</p>
+    </div>
+
+    {{-- Qty + subtotal --}}
+    <div class="rounded-2xl p-4 mb-24" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);">
+        <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-white">Jumlah</p>
+            <div class="flex items-center gap-3">
+                <button type="button" id="qtyMinus"
+                        class="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
+                        style="background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.7);">
+                    <x-lucide-minus class="w-4 h-4" />
+                </button>
+                <span class="w-8 text-center text-lg font-extrabold text-white font-display" id="qtyDisplay">1</span>
+                <button type="button" id="qtyPlus" {{ $stock <= 1 ? 'disabled' : '' }}
+                        class="w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90"
+                        style="background:rgba(124,58,237,0.2);color:#a78bfa;border:1px solid rgba(124,58,237,0.35);">
+                    <x-lucide-plus class="w-4 h-4" />
+                </button>
+            </div>
+        </div>
+        <div class="flex items-center justify-between mt-3 pt-3" style="border-top:1px solid rgba(255,255,255,0.07);">
+            <span class="text-xs" style="color:rgba(255,255,255,0.45);">Subtotal</span>
+            <span class="text-base font-extrabold font-display" style="color:#a78bfa;" id="subtotalDisplay">{{ rupiah($price) }}</span>
+>>>>>>> hostinger/main
         </div>
       @endif
     </div>

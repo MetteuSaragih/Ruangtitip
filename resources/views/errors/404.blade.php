@@ -6,7 +6,11 @@
 <title>404 - Halaman Tidak Ditemukan · RUTIP</title>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+<<<<<<< HEAD
   body{min-height:100vh;background:#080212;color:#fff;font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;position:relative;}
+=======
+  body{min-height:100vh;background:#080212;color:#fff;font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:40px 20px;}
+>>>>>>> hostinger/main
 
   .bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(139,92,246,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,.05) 1px,transparent 1px);background-size:40px 40px;}
   .bg-orb{position:fixed;border-radius:50%;filter:blur(90px);opacity:.15;}
@@ -38,7 +42,11 @@
     .btns{flex-direction:column;}
     .btn-primary,.btn-secondary{width:100%;justify-content:center;}
   }
+<<<<<<< HEAD
   @media(min-width:768px){body{padding:40px 24px;}}
+=======
+  @media(min-width:768px){body{padding:60px 24px;}}
+>>>>>>> hostinger/main
 
   /* Floating planet/astronaut */
   .illus{margin-bottom:0;position:relative;height:0;}
@@ -90,12 +98,15 @@
 <div class="p" style="width:2px;height:2px;background:#a78bfa;left:85%;animation-duration:8s;animation-delay:-1s;"></div>
 
 <div class="card">
+<<<<<<< HEAD
   <!-- Logo asli RUTIP -->
   <a href="/" style="display:inline-block;margin-bottom:32px;">
     <img src="/images/logo-rutip-putih.png" alt="RUTIP"
          style="height:48px;width:auto;filter:drop-shadow(0 4px 16px rgba(124,58,237,.3));">
   </a>
 
+=======
+>>>>>>> hostinger/main
   <!-- Glitch 404 -->
   <div class="glitch-wrap">
     <div class="num-404">404</div>

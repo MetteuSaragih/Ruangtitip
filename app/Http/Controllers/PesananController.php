@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+<<<<<<< HEAD
 use App\Models\Order;
+=======
+>>>>>>> hostinger/main
 use App\Models\PackingOrder;
 use App\Models\TitipanOrder;
 use Illuminate\Http\Request;
@@ -17,6 +20,7 @@ class PesananController extends Controller
             $tab = 'berlangsung';
         }
 
+<<<<<<< HEAD
         $type = $r->query('jenis', 'semua');
         if (!in_array($type, ['semua', 'titip', 'packing', 'preloved'], true)) {
             $type = 'semua';
@@ -75,6 +79,27 @@ class PesananController extends Controller
         return view('dashboard.pesanan.index', compact(
             'orders', 'packingOrders', 'genericOrders', 'tab', 'type', 'countBerlangsung', 'countSelesai', 'overview'
         ));
+=======
+        $uid = Auth::id();
+
+        $titipanBase = TitipanOrder::with('storage')->where('user_id', $uid)->latest();
+        $packingBase = PackingOrder::where('user_id', $uid)->latest();
+
+        if ($tab === 'selesai') {
+            $orders        = (clone $titipanBase)->where('status', 'selesai')->get();
+            $packingOrders = (clone $packingBase)->where('status', 'selesai')->get();
+        } else {
+            $orders        = (clone $titipanBase)->where('status', '!=', 'selesai')->get();
+            $packingOrders = (clone $packingBase)->where('status', '!=', 'selesai')->get();
+        }
+
+        $countBerlangsung = TitipanOrder::where('user_id', $uid)->where('status', '!=', 'selesai')->count()
+                          + PackingOrder::where('user_id', $uid)->where('status', '!=', 'selesai')->count();
+        $countSelesai     = TitipanOrder::where('user_id', $uid)->where('status', 'selesai')->count()
+                          + PackingOrder::where('user_id', $uid)->where('status', 'selesai')->count();
+
+        return view('dashboard.pesanan.index', compact('orders', 'packingOrders', 'tab', 'countBerlangsung', 'countSelesai'));
+>>>>>>> hostinger/main
     }
 
     public function show(TitipanOrder $order)

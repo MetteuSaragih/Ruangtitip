@@ -4,11 +4,18 @@
 @php function rp($n){ return 'Rp'.number_format($n,0,',','.'); } @endphp
 
 @section('content')
+<<<<<<< HEAD
 <main class="wrap">
   <a class="back-link" href="{{ route('ruang-titip.logistik') }}">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
     Kembali
   </a>
+=======
+<div class="max-w-xl mx-auto pt-6 pb-8">
+    @include('dashboard.ruang-titip._progress', ['step' => 3])
+    <h1 class="text-xl font-extrabold text-white font-display mb-1">Alamat Penjemputan</h1>
+    <p class="text-xs mb-5" style="color:rgba(255,255,255,0.4);">Langkah 3 dari 4 - Pilih alamat tersimpan atau tambah baru</p>
+>>>>>>> hostinger/main
 
   <div class="layout">
     <div>

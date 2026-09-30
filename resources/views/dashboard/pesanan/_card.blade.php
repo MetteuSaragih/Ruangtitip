@@ -13,11 +13,16 @@
         'self'    => 'Antar sendiri',
         'anjem'   => 'Packing + Anjem RuTip',
         'rutip'   => 'Packing + Anjem RuTip',
+<<<<<<< HEAD
         'kurir'   => 'Kurir instan',
         'instant' => 'Kurir instan',
     ][$order->logistic] ?? '-';
     $isDone = $order->isDone();
     $left = $order->date_end ? (int) ceil(now()->startOfDay()->diffInDays($order->date_end->copy()->startOfDay(), false)) : null;
+=======
+        'instant' => 'Kurir Biteship',
+    ][$order->logistic] ?? '-';
+>>>>>>> hostinger/main
 @endphp
 <article class="order {{ $order->status === 'menunggu_pembayaran' ? 'attn' : '' }}">
   <div class="o-head">

@@ -6,13 +6,21 @@
 <title>Terlalu Banyak Request - RUTIP</title>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+<<<<<<< HEAD
   body{min-height:100vh;background:#080212;color:#fff;font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;position:relative;}
+=======
+  body{min-height:100vh;background:#080212;color:#fff;font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:40px 20px;}
+>>>>>>> hostinger/main
   .bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(239,68,68,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(239,68,68,.04) 1px,transparent 1px);background-size:40px 40px;}
   .bg-orb-1{position:fixed;width:400px;height:400px;background:radial-gradient(circle,rgba(124,58,237,.18),transparent 70%);top:-80px;right:-60px;border-radius:50%;filter:blur(80px);}
   .bg-orb-2{position:fixed;width:350px;height:350px;background:radial-gradient(circle,rgba(239,68,68,.1),transparent 70%);bottom:-60px;left:-60px;border-radius:50%;filter:blur(80px);}
   .card{position:relative;z-index:10;text-align:center;max-width:440px;padding:0 20px;width:100%;}
   @media(max-width:480px){body{padding:24px 16px;}.btn{width:100%;justify-content:center;}}
+<<<<<<< HEAD
   @media(min-width:768px){body{padding:40px 24px;}}
+=======
+  @media(min-width:768px){body{padding:60px 24px;}}
+>>>>>>> hostinger/main
   /* Wave animation */
   .wave-illus{display:flex;align-items:flex-end;justify-content:center;gap:5px;height:80px;margin-bottom:28px;}
   .wave-bar{width:8px;border-radius:4px;background:linear-gradient(to top,#7c3aed,#ef4444);animation:wave 1s ease-in-out infinite;}
@@ -39,9 +47,12 @@
 <div class="bg-orb-1"></div>
 <div class="bg-orb-2"></div>
 <div class="card">
+<<<<<<< HEAD
   <a href="/" style="display:inline-block;margin-bottom:32px;">
     <img src="/images/logo-rutip-putih.png" alt="RUTIP" style="height:46px;width:auto;filter:drop-shadow(0 4px 16px rgba(124,58,237,.3));">
   </a>
+=======
+>>>>>>> hostinger/main
   <div class="wave-illus">
     <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
     <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
