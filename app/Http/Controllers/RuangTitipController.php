@@ -180,7 +180,8 @@ class RuangTitipController extends Controller
         $dimensi = $sizes->where('type', 'dimensi')->values();
         $s = $this->state($r);
         $selectedItems = $s['items'] ?? [];
-        return view('dashboard.ruang-titip.detail-item', compact('kardus', 'koper', 'dimensi', 's', 'selectedItems'));
+        $calc = $this->calc($s);
+        return view('dashboard.ruang-titip.detail-item', compact('kardus', 'koper', 'dimensi', 's', 'selectedItems', 'storage', 'calc'));
     }
 
     /* SCREEN 3 (POST) — simpan item + tanggal sekaligus */
@@ -228,8 +229,11 @@ class RuangTitipController extends Controller
     /* ═══ SCREEN 4 — Opsi Logistik (GET) ═══ */
     public function logistikForm(Request $r)
     {
-        if (empty($this->state($r)['items'])) return redirect()->route('ruang-titip.detail-item');
-        return view('dashboard.ruang-titip.logistik');
+        $s = $this->state($r);
+        if (empty($s['items'])) return redirect()->route('ruang-titip.detail-item');
+        $storage = StorageRoom::find($s['storage_id'] ?? null);
+        $calc = $this->calc($s);
+        return view('dashboard.ruang-titip.logistik', compact('s', 'storage', 'calc'));
     }
 
     /* SCREEN 4 (POST) */
@@ -260,7 +264,9 @@ class RuangTitipController extends Controller
             ->orderByDesc('is_primary')->orderByDesc('id')->get();
 
         $s = $this->state($r);
-        return view('dashboard.ruang-titip.alamat', compact('addresses', 's'));
+        $storage = StorageRoom::find($s['storage_id'] ?? null);
+        $calc = $this->calc($s);
+        return view('dashboard.ruang-titip.alamat', compact('addresses', 's', 'storage', 'calc'));
     }
 
     /* SCREEN 5 (POST) — pilih alamat tersimpan ATAU tambah baru */
@@ -330,7 +336,9 @@ class RuangTitipController extends Controller
             return redirect()->route('ruang-titip.logistik');
         }
 
-        return view('dashboard.ruang-titip.kurir', compact('s'));
+        $storage = StorageRoom::find($s['storage_id'] ?? null);
+        $calc = $this->calc($s);
+        return view('dashboard.ruang-titip.kurir', compact('s', 'storage', 'calc'));
     }
 
     /* AJAX — hitung ongkir live Biteship dari alamat pelanggan ke gudang RUTIP */

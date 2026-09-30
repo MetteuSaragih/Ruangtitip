@@ -1,49 +1,72 @@
-@extends('layouts.dashboard')
+@extends('layouts.ruang-titip')
 @section('title', 'Pilih Kurir')
 
-@php function rp($n){ return 'Rp '.number_format($n,0,',','.'); } @endphp
+@php function rp($n){ return 'Rp'.number_format($n,0,',','.'); } @endphp
 
 @section('content')
 <x-courier-group-script />
-<div class="max-w-xl mx-auto pt-6 pb-8">
-    @include('dashboard.ruang-titip._progress', ['step' => 3])
-    <h1 class="text-xl font-extrabold text-white font-display mb-1">Pilih Kurir Instan</h1>
-    <p class="text-xs mb-5" style="color:rgba(255,255,255,0.4);">Langkah 3 dari 4 - Dari alamatmu ke gudang RUTIP</p>
+<main class="wrap">
+  <a class="back-link" href="{{ route('ruang-titip.alamat') }}">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+    Kembali
+  </a>
 
-    <div class="flex items-start gap-2.5 px-4 py-3 rounded-xl mb-5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-        <x-lucide-map-pin class="w-4 h-4 shrink-0 mt-0.5" style="color:#a78bfa;" />
-        <p class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.6);">{{ $s['address'] ?? '' }}</p>
-    </div>
+  <div class="layout">
+    <div>
+      @include('dashboard.ruang-titip._progress', ['step' => 3])
 
-    @if ($errors->any())
-        <div class="rounded-xl px-4 py-2.5 mb-4 text-sm" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;">{{ $errors->first() }}</div>
-    @endif
+      <div class="step-head">
+        <h1>Pilih Kurir Instan</h1>
+        <p>Dari alamatmu ke gudang RuangTitip.</p>
+      </div>
 
-    <form method="POST" action="{{ route('ruang-titip.kurir.store') }}">
+      <div class="panel" style="display:flex;align-items:flex-start;gap:10px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tape-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+        <p style="font-size:14px;color:var(--body)">{{ $s['address'] ?? '' }}</p>
+      </div>
+
+      @if ($errors->any())
+        <p class="err" style="margin-top:12px">{{ $errors->first() }}</p>
+      @endif
+
+      <form method="POST" action="{{ route('ruang-titip.kurir.store') }}">
         @csrf
         <input type="hidden" name="courier_code" id="courierCode">
         <input type="hidden" name="service_code" id="serviceCode">
-        <div class="space-y-3 mb-6" id="courierList">
-            <div class="rounded-2xl p-4 text-xs text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.45);">
-                Menghitung ongkos kirim...
-            </div>
+        <div id="courierList" style="margin-top:16px">
+          <div class="panel" style="text-align:center;color:var(--muted);font-size:14px">Menghitung ongkos kirim...</div>
         </div>
-        <div class="flex gap-3">
-            <a href="{{ route('ruang-titip.alamat') }}" class="flex items-center justify-center gap-1.5 py-3.5 px-4 rounded-xl font-semibold text-sm hover:bg-white/5 shrink-0" style="border:1.5px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.65);"><x-lucide-chevron-left class="w-4 h-4" /> Kembali</a>
-            <button type="submit" id="nextBtn" disabled class="flex-1 py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-40" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Lanjutkan <x-lucide-arrow-right class="w-4 h-4" /></button>
+        <div class="actions">
+          <a href="{{ route('ruang-titip.alamat') }}" class="btn btn-outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            Kembali
+          </a>
+          <button type="submit" id="nextBtn" disabled class="btn btn-primary">Lanjutkan
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
         </div>
-    </form>
-</div>
+      </form>
+    </div>
+
+    @include('dashboard.ruang-titip._summary', ['storage' => $storage, 's' => $s, 'calc' => $calc])
+  </div>
+</main>
+
+@push('scripts')
 <script>
 (function () {
     const courierCode = document.getElementById('courierCode');
     const serviceCode = document.getElementById('serviceCode');
     const nextBtn = document.getElementById('nextBtn');
     const courierList = document.getElementById('courierList');
+    const sLines = document.getElementById('s-lines');
+    const sTotal = document.getElementById('s-total');
+    const baseTotal = {{ $calc['total'] }};
+    const baseSubtotal = {{ $calc['itemSubtotal'] }};
 
     function renderCouriers(pricing) {
         if (!pricing || !pricing.length) {
-            courierList.innerHTML = '<div class="rounded-2xl p-4 text-xs text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.45);">Kurir instan tidak tersedia untuk rute ini.</div>';
+            courierList.innerHTML = '<div class="panel" style="text-align:center;color:var(--muted);font-size:14px">Kurir instan tidak tersedia untuk rute ini.</div>';
             return;
         }
 
@@ -51,7 +74,14 @@
             courierCode.value = c.courier_code;
             serviceCode.value = c.courier_service_code || '';
             nextBtn.disabled = false;
-        });
+
+            if (sLines) {
+                sLines.innerHTML =
+                    (baseSubtotal ? '<div class="line"><span>Subtotal barang</span><span>Rp' + baseSubtotal.toLocaleString('id-ID') + '</span></div>' : '') +
+                    '<div class="line"><span>Kurir/anjem</span><span>Rp' + Number(c.price).toLocaleString('id-ID') + '</span></div>';
+            }
+            if (sTotal) sTotal.textContent = 'Rp' + (baseTotal + Number(c.price)).toLocaleString('id-ID');
+        }, 'light');
     }
 
     fetch('{{ route("ruang-titip.kurir.rates") }}', {
@@ -63,4 +93,5 @@
     .catch(() => renderCouriers([]));
 })();
 </script>
+@endpush
 @endsection

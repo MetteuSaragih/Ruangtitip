@@ -1,51 +1,30 @@
-{{-- ==========================================================================
-     Navbar
-     Fixed top nav with scroll-based blur transition (handled in app.js)
-     and a mobile menu toggle.
-     ========================================================================== --}}
-<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
-     style="background: transparent; backdrop-filter: none; border-bottom: 1px solid transparent; box-shadow: none;">
-    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        {{-- Logo --}}
-        <a href="{{ url('/') }}" class="flex items-center">
-            <img src="{{ asset('images/logo-rutip-putih.png') }}" alt="RUTIP" class="h-12 w-auto">
-        </a>
-
-        {{-- Desktop nav --}}
-        <div class="hidden md:flex items-center gap-8">
-            <a href="#layanan" class="text-sm font-medium transition-colors hover:text-violet-300" style="color: rgba(255,255,255,0.65);">Layanan</a>
-            <a href="#cara-kerja" class="text-sm font-medium transition-colors hover:text-violet-300" style="color: rgba(255,255,255,0.65);">Cara Kerja</a>
-            <a href="#testimoni" class="text-sm font-medium transition-colors hover:text-violet-300" style="color: rgba(255,255,255,0.65);">Testimoni</a>
-            <a href="#faq" class="text-sm font-medium transition-colors hover:text-violet-300" style="color: rgba(255,255,255,0.65);">FAQ</a>
-            <a href="#tentang" class="text-sm font-medium transition-colors hover:text-violet-300" style="color: rgba(255,255,255,0.65);">Tentang Kami</a>
-        </div>
-
-        {{-- CTA --}}
-        <div class="hidden md:flex items-center gap-3">
-            <a href="{{ route('login') }}" class="px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:bg-white/8"
-               style="color: rgba(255,255,255,0.75); border: 1px solid rgba(255,255,255,0.18);">
-                Masuk
-            </a>
-        </div>
-
-        {{-- Mobile toggle --}}
-        <button id="navbar-mobile-toggle" class="md:hidden p-2 rounded-lg" style="color: rgba(255,255,255,0.7);">
-            <x-lucide-menu id="navbar-icon-menu" class="w-5 h-5" />
-            <x-lucide-x id="navbar-icon-close" class="w-5 h-5 hidden" />
-        </button>
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="{{ url('/') }}" aria-label="RuangTitip, ke beranda">
+      <img src="{{ asset('assets/logo-ruangtitip.svg') }}" alt="RuangTitip" width="220" height="56">
+    </a>
+    <nav aria-label="Menu utama">
+      <ul class="nav-links">
+        <li><a href="#cara">Cara kerja</a></li>
+        <li><a href="#layanan">Layanan</a></li>
+        <li><a href="#testimoni">Cerita penitip</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-dark" href="{{ route('login') }}">Masuk</a>
+      <button class="menu-btn" type="button" aria-label="Buka menu" aria-expanded="false" aria-controls="mobile-menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
     </div>
-
-    {{-- Mobile menu --}}
-    <div id="navbar-mobile-menu" class="md:hidden hidden px-6 py-4 space-y-1"
-         style="background: rgba(14,8,28,0.98); backdrop-filter: blur(20px); border-top: 1px solid rgba(139,92,246,0.15);">
-        <a href="#layanan" class="block py-2.5 text-sm font-medium transition-colors hover:text-violet-300" style="color: rgba(255,255,255,0.65);">Layanan</a>
-        <a href="#cara-kerja" class="block py-2.5 text-sm font-medium transition-colors hover:text-violet-300" style="color: rgba(255,255,255,0.65);">Cara Kerja</a>
-        <a href="#testimoni" class="block py-2.5 text-sm font-medium transition-colors hover:text-violet-300" style="color: rgba(255,255,255,0.65);">Testimoni</a>
-        <a href="#faq" class="block py-2.5 text-sm font-medium transition-colors hover:text-violet-300" style="color: rgba(255,255,255,0.65);">FAQ</a>
-        <a href="#tentang" class="block py-2.5 text-sm font-medium transition-colors hover:text-violet-300" style="color: rgba(255,255,255,0.65);">Tentang Kami</a>
-        <div class="pt-3" style="border-top: 1px solid rgba(255,255,255,0.08);">
-            <a href="{{ route('login') }}" class="block text-center px-4 py-2.5 rounded-lg text-sm font-semibold"
-               style="color: rgba(255,255,255,0.75); border: 1px solid rgba(255,255,255,0.18);">Masuk</a>
-        </div>
-    </div>
-</nav>
+  </div>
+  <div class="wrap mobile-menu" id="mobile-menu">
+    <ul>
+      <li><a href="#cara">Cara kerja</a></li>
+      <li><a href="#layanan">Layanan</a></li>
+      <li><a href="#testimoni">Cerita penitip</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="{{ route('login') }}">Masuk</a></li>
+    </ul>
+  </div>
+</header>

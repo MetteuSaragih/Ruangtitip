@@ -37,7 +37,14 @@ class PackingController extends Controller
     {
         abort_unless($product->is_active, 404);
 
-        return view('packing.show', compact('product'));
+        $related = PackingProduct::active()
+            ->where('id', '!=', $product->id)
+            ->where('stock', '>', 0)
+            ->inRandomOrder()
+            ->take(4)
+            ->get();
+
+        return view('packing.show', compact('product', 'related'));
     }
 
     public function buy(Request $request, PackingProduct $product)

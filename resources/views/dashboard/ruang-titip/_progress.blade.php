@@ -1,23 +1,24 @@
-{{-- Progress bar 4 langkah. Pakai: @include('dashboard.ruang-titip._progress', ['step' => 1]) --}}
+{{-- Stepper 4 langkah. Pakai: @include('dashboard.ruang-titip._progress', ['step' => 1]) --}}
 @php
     $labels = ['Detail Penitipan', 'Opsi Logistik', 'Alamat', 'Checkout'];
 @endphp
-<div class="flex items-start gap-0 mb-6 overflow-x-auto pb-1">
+<ol class="stepper" aria-label="Langkah pemesanan">
     @foreach ($labels as $i => $label)
-        <div class="flex items-center flex-1 last:flex-none min-w-0">
-            <div class="flex flex-col items-center gap-1.5 shrink-0">
-                <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold"
-                     style="background:{{ $i < $step - 1 ? '#7c3aed' : ($i === $step - 1 ? 'linear-gradient(135deg,#7c3aed,#6366f1)' : 'rgba(255,255,255,0.08)') }};
-                            color:{{ $i <= $step - 1 ? 'white' : 'rgba(255,255,255,0.3)' }};
-                            box-shadow:{{ $i === $step - 1 ? '0 0 12px rgba(124,58,237,0.55)' : 'none' }};">
-                    @if ($i < $step - 1)<x-lucide-check class="w-3.5 h-3.5" />@else{{ $i + 1 }}@endif
-                </div>
-                <span class="text-[9px] font-medium text-center leading-tight w-16"
-                      style="color:{{ $i <= $step - 1 ? '#a78bfa' : 'rgba(255,255,255,0.25)' }};">{{ $label }}</span>
-            </div>
-            @if ($i < count($labels) - 1)
-                <div class="flex-1 h-px mx-1 mb-5" style="background:{{ $i < $step - 1 ? '#7c3aed' : 'rgba(255,255,255,0.09)' }};"></div>
-            @endif
-        </div>
+        @php $n = $i + 1; $state = $n < $step ? 'done' : ($n === $step ? 'now' : ''); @endphp
+        <li class="{{ $state }}">
+            <button type="button">
+                <span class="bar"></span>
+                <span class="lbl">
+                    <span class="num">
+                        @if ($state === 'done')
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        @else
+                            {{ $n }}
+                        @endif
+                    </span>
+                    <span>{{ $label }}</span>
+                </span>
+            </button>
+        </li>
     @endforeach
-</div>
+</ol>

@@ -1,50 +1,77 @@
-
 @php
     $meta = $order->statusMeta();
-    if (!function_exists('rp_ps')) {
-        function rp_ps($n){ return 'Rp '.number_format($n,0,',','.'); }
-    }
+    $step = $order->statusStep();
+    $flowKeys = array_keys(\App\Models\TitipanOrder::FLOW);
+    $statusClass = match ($order->status) {
+        'menunggu_pembayaran' => 's-pay',
+        'dalam_gudang' => 's-store',
+        'selesai' => 's-done',
+        default => 's-run',
+    };
     $logisticLabel = [
-        'self'    => 'Antar Sendiri',
+        'sendiri' => 'Antar sendiri',
+        'self'    => 'Antar sendiri',
+        'anjem'   => 'Packing + Anjem RuTip',
         'rutip'   => 'Packing + Anjem RuTip',
-        'instant' => 'Kurir Biteship',
+        'kurir'   => 'Kurir instan',
+        'instant' => 'Kurir instan',
     ][$order->logistic] ?? '-';
+    $isDone = $order->isDone();
+    $left = $order->date_end ? (int) ceil(now()->startOfDay()->diffInDays($order->date_end->copy()->startOfDay(), false)) : null;
 @endphp
-<a href="{{ route('pesanan.detail', $order) }}"
-   class="block rounded-2xl p-4 transition-all hover:-translate-y-0.5"
-   style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
+<article class="order {{ $order->status === 'menunggu_pembayaran' ? 'attn' : '' }}">
+  <div class="o-head">
+    <span class="ic" style="background:var(--depot-light)">
+      @if ($order->storage && $order->storage->primary_photo)
+        <img src="{{ asset('storage/'.$order->storage->primary_photo) }}" alt="{{ $order->storage->name }}">
+      @else
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1C1B18" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10 12 4l9 6v10H3z"/><path d="M8 20v-6h8v6"/></svg>
+      @endif
+    </span>
+    <div class="who"><strong>{{ $order->storage->name ?? 'Penitipan Barang' }}</strong><small><code>{{ $order->code() }}</code> · {{ $order->created_at->format('d M Y') }}</small></div>
+    <span class="status {{ $statusClass }}">{{ $meta['label'] }}</span>
+  </div>
+  <div class="o-body">
+    <p class="o-items">{{ $order->totalItems() }} item &middot; {{ $logisticLabel }}<small>Ruang Titip</small></p>
 
-    <div class="flex items-start justify-between gap-3 mb-3">
-        <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden shrink-0" style="background:rgba(124,58,237,0.15);">
-                @if ($order->storage && $order->storage->primary_photo)
-                    <img src="{{ asset('storage/'.$order->storage->primary_photo) }}" alt="{{ $order->storage->name }}" class="w-full h-full object-cover">
-                @else
-                    <x-lucide-package class="w-4 h-4" style="color:#a78bfa;" />
-                @endif
-            </div>
-            <div class="min-w-0">
-                <p class="text-sm font-bold text-white truncate">{{ $order->storage->name ?? 'Penitipan Barang' }}</p>
-                <p class="text-[11px]" style="color:rgba(255,255,255,0.4);">#{{ $order->code() }} · {{ $order->created_at->format('d M Y') }}</p>
-            </div>
-        </div>
-        <span class="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0"
-              style="background:{{ $meta['color'] }}1f;color:{{ $meta['color'] }};">
-            <x-dynamic-component :component="'lucide-' . $meta['icon']" class="w-3 h-3" />
-            {{ $meta['label'] }}
-        </span>
-    </div>
+    @if ($order->date_start && $order->date_end && !$isDone)
+      @php
+        $total = $order->date_start->diffInDays($order->date_end) ?: 1;
+        $elapsed = now()->greaterThan($order->date_start) ? $order->date_start->diffInDays(now()) : 0;
+        $used = min($elapsed, $total);
+        $soon = $left !== null && $left <= 7;
+      @endphp
+      <div class="period {{ $soon ? 'soon' : '' }}">
+        <div class="row"><span>{{ $order->date_start->format('d M Y') }} – {{ $order->date_end->format('d M Y') }}</span><b>{{ $left !== null && $left > 0 ? 'Sisa '.$left.' hari' : 'Masa titip habis' }}</b></div>
+        <div class="bar"><i style="width:{{ min(100, round($used / $total * 100)) }}%"></i></div>
+      </div>
+    @endif
 
-    <div class="flex items-center gap-4 mb-3 text-[11px]" style="color:rgba(255,255,255,0.5);">
-        <span class="flex items-center gap-1"><x-lucide-package class="w-3.5 h-3.5" /> {{ $order->totalItems() }} item</span>
-        <span class="flex items-center gap-1"><x-lucide-truck class="w-3.5 h-3.5" /> {{ $logisticLabel }}</span>
-        @if ($order->date_start && $order->date_end)
-            <span class="flex items-center gap-1"><x-lucide-calendar class="w-3.5 h-3.5" /> {{ $order->date_start->format('d/m') }}–{{ $order->date_end->format('d/m/y') }}</span>
-        @endif
-    </div>
+    @if ($order->status === 'menunggu_pembayaran')
+      <div class="pay-due">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--tape-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <span>Pesanan menunggu pembayaran{{ $order->tripay_checkout_url ? '. Selesaikan lewat tombol di bawah.' : '.' }}</span>
+      </div>
+    @endif
 
-    <div class="flex items-center justify-between pt-3" style="border-top:1px solid rgba(255,255,255,0.07);">
-        <span class="text-[11px]" style="color:rgba(255,255,255,0.4);">Total</span>
-        <span class="text-sm font-bold" style="color:#a78bfa;">{{ rp_ps($order->total) }}</span>
+    @unless ($isDone)
+      <ol class="track" style="grid-template-columns:repeat({{ count($flowKeys) }},1fr)" aria-label="Progres pesanan">
+        @foreach (\App\Models\TitipanOrder::FLOW as $key => $f)
+          @php $i = array_search($key, $flowKeys, true); @endphp
+          <li class="{{ $i < $step ? 'done' : ($i === $step ? 'now' : '') }}"><span>{{ $f['label'] }}</span></li>
+        @endforeach
+      </ol>
+    @endunless
+  </div>
+  <div class="o-foot">
+    <div class="total"><small>Total</small><strong>{{ rp($order->total) }}</strong></div>
+    <div class="acts">
+      @if ($order->status === 'menunggu_pembayaran' && $order->tripay_checkout_url)
+        <a href="{{ route('pesanan.detail', $order) }}" class="btn btn-outline btn-sm">Detail</a>
+        <a href="{{ $order->tripay_checkout_url }}" class="btn btn-primary btn-sm">Bayar sekarang</a>
+      @else
+        <a href="{{ route('pesanan.detail', $order) }}" class="btn btn-primary btn-sm">Lihat detail</a>
+      @endif
     </div>
-</a>
+  </div>
+</article>
