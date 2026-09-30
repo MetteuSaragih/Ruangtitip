@@ -79,6 +79,9 @@ class RuangTitipController extends Controller
             'images.*'       => 'image|max:5120',
         ]);
 
+        if ($this->uploadedImagesCount($request) < 1) {
+            return back()->withErrors(['images' => 'Wajib unggah minimal 1 foto ruangan.'])->withInput();
+        }
         if ($this->uploadedImagesCount($request) > 10) {
             return back()->withErrors(['images' => 'Maksimal 10 gambar untuk setiap ruangan.'])->withInput();
         }
@@ -111,6 +114,9 @@ class RuangTitipController extends Controller
         ]);
 
         $existingCount = count($room->photos ?? []);
+        if ($existingCount + $this->uploadedImagesCount($request) < 1) {
+            return back()->withErrors(['images' => 'Ruangan wajib memiliki minimal 1 foto.'])->withInput();
+        }
         if ($existingCount + $this->uploadedImagesCount($request) > 10) {
             return back()->withErrors(['images' => 'Maksimal 10 gambar untuk setiap ruangan.'])->withInput();
         }
@@ -191,6 +197,65 @@ class RuangTitipController extends Controller
         return $request->hasFile('images') ? count($request->file('images')) : 0;
     }
 
+    /** Normalisasi nomor HP ke format internasional (62...) untuk link wa.me. */
+    private function waNumber(?string $phone): ?string
+    {
+        if (! $phone) {
+            return null;
+        }
+
+        $digits = preg_replace('/\D/', '', $phone);
+        if (! $digits) {
+            return null;
+        }
+
+        if (str_starts_with($digits, '0')) {
+            return '62' . substr($digits, 1);
+        }
+        if (str_starts_with($digits, '62')) {
+            return $digits;
+        }
+
+        return '62' . $digits;
+    }
+
+    /** Daftar template pesan WA siap pakai untuk satu pesanan Ruang Titip. */
+    private function waTemplates(string $customer, TitipanOrder $order): array
+    {
+        $code = $order->code();
+        $endDate = optional($order->date_end)->format('d M Y') ?? '-';
+        $daysLeft = $order->date_end ? max(0, now()->startOfDay()->diffInDays($order->date_end->startOfDay(), false)) : null;
+        $daysLeftText = $daysLeft !== null ? $daysLeft . ' hari' : 'beberapa hari';
+
+        return [
+            [
+                'key' => 'sampai',
+                'label' => 'Barang Sudah Sampai di Gudang',
+                'text' => "Halo {$customer}, barang penitipanmu (kode {$code}) sudah sampai dan tersimpan aman di gudang RUTIP. Terima kasih telah menggunakan layanan kami! 📦",
+            ],
+            [
+                'key' => 'bukti',
+                'label' => 'Bukti Foto Sudah Diunggah',
+                'text' => "Halo {$customer}, bukti foto kondisi barang penitipanmu (kode {$code}) sudah kami unggah. Silakan cek di halaman Pesanan Saya ya. 📸",
+            ],
+            [
+                'key' => 'durasi',
+                'label' => 'Sisa Durasi Penitipan',
+                'text' => "Halo {$customer}, masa penitipan barangmu (kode {$code}) tersisa {$daysLeftText} lagi (berakhir {$endDate}). Jangan lupa untuk perpanjang atau ambil barangmu ya! ⏰",
+            ],
+            [
+                'key' => 'proses_keluar',
+                'label' => 'Barang Sedang Diproses Keluar',
+                'text' => "Halo {$customer}, barang penitipanmu (kode {$code}) sedang kami proses untuk pengembalian/pengiriman. Mohon ditunggu ya! 🚚",
+            ],
+            [
+                'key' => 'selesai',
+                'label' => 'Barang Berhasil Dikirim/Diterima',
+                'text' => "Halo {$customer}, barang penitipanmu (kode {$code}) sudah berhasil dikirim/diterima. Terima kasih telah menggunakan RUTIP! 🙏",
+            ],
+        ];
+    }
+
     private function orderData(): array
     {
         $blank = ['baru' => [], 'inspeksi' => [], 'gudang' => [], 'keluar' => []];
@@ -202,11 +267,15 @@ class RuangTitipController extends Controller
 
         return TitipanOrder::with('user')->latest()->get()
             ->map(function (TitipanOrder $order) use ($returnModeByLogistic) {
+                $customer = $order->user?->name ?? 'Pelanggan';
+                $waNumber = $this->waNumber($order->user?->phone);
+
                 return [
                     'orderId' => $order->id,
                     'id' => $order->code(),
-                    'customer' => $order->user?->name ?? 'Pelanggan',
+                    'customer' => $customer,
                     'wa' => $order->user?->phone ?? '-',
+                    'waNumber' => $waNumber,
                     'items' => collect($order->items ?? [])->map(fn ($qty, $code) => strtoupper($code) . ' x ' . $qty)->implode(', '),
                     'qty' => $order->totalItems(),
                     'duration' => optional($order->date_start)->diffInMonths($order->date_end, false) ?: 1,
@@ -218,6 +287,7 @@ class RuangTitipController extends Controller
                     'returnMode' => $returnModeByLogistic[$order->logistic] ?? null,
                     'trackingId' => $order->biteship_tracking_id,
                     'rackCode' => null,
+                    'waTemplates' => $waNumber ? $this->waTemplates($customer, $order) : [],
                     'group' => match ($order->status) {
                         'penjadwalan_penjemputan' => 'inspeksi',
                         'dalam_gudang' => 'gudang',

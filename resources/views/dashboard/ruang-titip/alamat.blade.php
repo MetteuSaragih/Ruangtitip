@@ -1,103 +1,114 @@
-@extends('layouts.dashboard')
+@extends('layouts.ruang-titip')
 @section('title', 'Alamat Penjemputan')
 
+@php function rp($n){ return 'Rp'.number_format($n,0,',','.'); } @endphp
+
 @section('content')
-<div class="max-w-xl mx-auto pt-6 pb-8">
-    @include('dashboard.ruang-titip._progress', ['step' => 3])
-    <h1 class="text-xl font-extrabold text-white font-display mb-1">Alamat Penjemputan</h1>
-    <p class="text-xs mb-5" style="color:rgba(255,255,255,0.4);">Langkah 3 dari 4 — Pilih alamat tersimpan atau tambah baru</p>
+<main class="wrap">
+  <a class="back-link" href="{{ route('ruang-titip.logistik') }}">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+    Kembali
+  </a>
 
-    @if ($errors->any())
-        <div class="rounded-xl px-4 py-2.5 mb-4 text-sm" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;">{{ $errors->first() }}</div>
-    @endif
+  <div class="layout">
+    <div>
+      @include('dashboard.ruang-titip._progress', ['step' => 3])
 
-    {{-- ── Alamat tersimpan ── --}}
-    @if ($addresses->count())
-        <form method="POST" action="{{ route('ruang-titip.alamat.store') }}" class="mb-5">
-            @csrf
-            <input type="hidden" name="mode" value="select">
-            <input type="hidden" name="address_id" id="addressId">
-            <p class="text-xs font-bold text-white mb-3">Alamat Tersimpan</p>
-            <div class="space-y-3 mb-4">
-                @foreach ($addresses as $addr)
-                    <button type="button" data-id="{{ $addr->id }}" onclick="pickAddr('{{ $addr->id }}', {{ $addr->area_id ? 'true' : 'false' }})"
-                            class="addr w-full flex items-start gap-3 p-4 rounded-2xl text-left transition-all hover:scale-[1.01]"
-                            style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.09);">
-                        <x-lucide-map-pin class="w-4 h-4 shrink-0 mt-0.5" style="color:#a78bfa;" />
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-0.5">
-                                <span class="text-sm font-bold text-white">{{ $addr->label ?: 'Alamat' }}</span>
-                                @if ($addr->is_primary)<span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:rgba(124,58,237,0.2);color:#a78bfa;">Utama</span>@endif
-                            </div>
-                            <p class="text-xs leading-relaxed" style="color:rgba(255,255,255,0.55);">{{ $addr->address }}</p>
-                            @if ($addr->note)<p class="text-[10px] mt-1" style="color:rgba(255,255,255,0.35);">Catatan: {{ $addr->note }}</p>@endif
-                            @if (! $addr->area_id)<p class="text-[10px] mt-1" style="color:#fbbf24;">Belum ada kecamatan tersimpan, tidak bisa dipakai untuk kurir instan.</p>@endif
-                        </div>
-                        <div class="radio w-5 h-5 rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center" style="border-color:rgba(255,255,255,0.2);"></div>
-                    </button>
-                @endforeach
-            </div>
-            <button type="submit" id="useSelected" disabled class="w-full py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-40" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">
-                Gunakan Alamat Ini <x-lucide-arrow-right class="w-4 h-4" />
+      <div class="step-head">
+        <h1>Barangnya dijemput di mana?</h1>
+        <p>Isi selengkap mungkin biar tim nggak nyasar.</p>
+      </div>
+
+      @if ($errors->any())
+        <p class="err" style="margin-top:12px">{{ $errors->first() }}</p>
+      @endif
+
+      @if ($addresses->count())
+        <form method="POST" action="{{ route('ruang-titip.alamat.store') }}">
+          @csrf
+          <input type="hidden" name="mode" value="select">
+          <input type="hidden" name="address_id" id="addressId">
+          <div class="panel">
+            <h2 style="margin-bottom:4px">Alamat Tersimpan</h2>
+            <fieldset class="choices" style="border:0;padding:0;margin-top:14px">
+              <legend class="sr">Alamat tersimpan</legend>
+              @foreach ($addresses as $addr)
+                <button type="button" class="choice addr" data-id="{{ $addr->id }}" data-has-area="{{ $addr->area_id ? '1' : '0' }}" onclick="pickAddr('{{ $addr->id }}', {{ $addr->area_id ? 'true' : 'false' }})">
+                  <span class="ic bg-sand" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--tape-dark)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                  </span>
+                  <span class="t">
+                    <strong>{{ $addr->label ?: 'Alamat' }}</strong>
+                    @if ($addr->is_primary)<span class="pill pill-green">Utama</span>@endif
+                    <p class="desc">{{ $addr->address }}</p>
+                    @if ($addr->note)<p class="meta">Catatan: {{ $addr->note }}</p>@endif
+                    @if (! $addr->area_id)<p class="meta" style="color:var(--tape-dark)">Belum ada kecamatan tersimpan, tidak bisa dipakai untuk kurir instan.</p>@endif
+                  </span>
+                  <span class="radio" aria-hidden="true"></span>
+                </button>
+              @endforeach
+            </fieldset>
+            <button type="submit" id="useSelected" disabled class="btn btn-primary" style="width:100%;margin-top:16px">Gunakan Alamat Ini
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </button>
+          </div>
         </form>
 
-        <div class="flex items-center gap-3 my-5">
-            <div class="flex-1 h-px" style="background:rgba(255,255,255,0.08);"></div>
-            <span class="text-[10px]" style="color:rgba(255,255,255,0.3);">atau tambah alamat baru</span>
-            <div class="flex-1 h-px" style="background:rgba(255,255,255,0.08);"></div>
+        <div style="display:flex;align-items:center;gap:14px;margin:24px 0;color:var(--muted);font-size:14px">
+          <span style="flex:1;height:1px;background:var(--line)"></span>
+          atau tambah alamat baru
+          <span style="flex:1;height:1px;background:var(--line)"></span>
         </div>
-    @endif
+      @endif
 
-    {{-- ── Form tambah alamat baru ── --}}
-    <form method="POST" action="{{ route('ruang-titip.alamat.store') }}">
+      <form method="POST" action="{{ route('ruang-titip.alamat.store') }}">
         @csrf
         <input type="hidden" name="mode" value="new">
-        <div class="rounded-2xl p-5 space-y-4 mb-6" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-            <p class="text-xs font-bold text-white">{{ $addresses->count() ? 'Daftarkan Alamat Baru' : 'Masukkan Alamat Penjemputan' }}</p>
-            <div>
-                <label class="block text-[11px] font-semibold mb-2" style="color:rgba(255,255,255,0.55);">Label <span style="color:rgba(255,255,255,0.3);">(opsional)</span></label>
-                <input type="text" name="label" placeholder="Kos / Rumah / Kontrakan" value="{{ old('label') }}"
-                       class="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/20 outline-none"
-                       style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">
-            </div>
-            <x-biteship-area-search />
-            <div>
-                <label class="block text-[11px] font-semibold mb-2" style="color:rgba(255,255,255,0.55);">Alamat Lengkap <span style="color:#f87171;">*</span></label>
-                <textarea name="address" rows="3" placeholder="Jl. Veteran No. 10, Kec. Lowokwaru, Malang"
-                          class="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/20 outline-none resize-none"
-                          style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">{{ old('address') }}</textarea>
-            </div>
-            <div>
-                <label class="block text-[11px] font-semibold mb-2" style="color:rgba(255,255,255,0.55);">Catatan untuk Kurir <span style="color:rgba(255,255,255,0.3);">(opsional)</span></label>
-                <textarea name="note" rows="2" placeholder="Rumah cat hijau, pagar depan, dekat masjid"
-                          class="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/20 outline-none resize-none"
-                          style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);">{{ old('note') }}</textarea>
-            </div>
-            <label class="flex items-center gap-2.5 cursor-pointer">
-                <input type="checkbox" name="is_primary" value="1" class="accent-violet-500 w-4 h-4">
-                <span class="text-xs" style="color:rgba(255,255,255,0.6);">Jadikan alamat utama</span>
-            </label>
+        <div class="panel">
+          <h2>{{ $addresses->count() ? 'Daftarkan Alamat Baru' : 'Masukkan Alamat Penjemputan' }}</h2>
+          <div class="field" style="margin-top:16px">
+            <label for="label">Label <span style="font-weight:400;color:var(--muted)">(opsional)</span></label>
+            <input type="text" id="label" name="label" placeholder="Kos / Rumah / Kontrakan" value="{{ old('label') }}">
+          </div>
+          <div style="margin-top:16px"><x-biteship-area-search theme="light" /></div>
+          <div class="field" style="margin-top:16px">
+            <label for="address">Alamat lengkap <span style="color:var(--danger)">*</span></label>
+            <textarea id="address" name="address" rows="3" placeholder="Jl. Veteran No. 10, Kec. Lowokwaru, Malang">{{ old('address') }}</textarea>
+          </div>
+          <div class="field" style="margin-top:16px">
+            <label for="note">Catatan untuk kurir <span style="font-weight:400;color:var(--muted)">(opsional)</span></label>
+            <textarea id="note" name="note" rows="2" placeholder="Rumah cat hijau, pagar depan, dekat masjid">{{ old('note') }}</textarea>
+          </div>
+          <label style="display:flex;align-items:center;gap:10px;margin-top:16px;cursor:pointer">
+            <input type="checkbox" name="is_primary" value="1" style="width:18px;height:18px;accent-color:var(--tape)">
+            <span style="font-size:14px;color:var(--body)">Jadikan alamat utama</span>
+          </label>
         </div>
-        <div class="flex gap-3">
-            <a href="{{ route('ruang-titip.logistik') }}" class="flex items-center justify-center gap-1.5 py-3.5 px-4 rounded-xl font-semibold text-sm hover:bg-white/5 shrink-0" style="border:1.5px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.65);"><x-lucide-chevron-left class="w-4 h-4" /> Kembali</a>
-            <button type="submit" class="flex-1 py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02]" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Simpan &amp; Lanjutkan <x-lucide-arrow-right class="w-4 h-4" /></button>
+        <div class="actions">
+          <a href="{{ route('ruang-titip.logistik') }}" class="btn btn-outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            Kembali
+          </a>
+          <button type="submit" class="btn btn-primary">Simpan &amp; Lanjutkan
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
         </div>
-    </form>
-</div>
+      </form>
+    </div>
+
+    @include('dashboard.ruang-titip._summary', ['storage' => $storage, 's' => $s, 'calc' => $calc])
+  </div>
+</main>
+
+@push('scripts')
 <script>
     function pickAddr(id, hasArea) {
         document.getElementById('addressId').value = id;
         document.getElementById('useSelected').disabled = !hasArea;
         document.querySelectorAll('.addr').forEach(b => {
-            const on = b.dataset.id === String(id);
-            b.style.background = on ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.04)';
-            b.style.borderColor = on ? '#7c3aed' : 'rgba(255,255,255,0.09)';
-            const radio = b.querySelector('.radio');
-            radio.style.background = on ? '#7c3aed' : 'transparent';
-            radio.style.borderColor = on ? '#7c3aed' : 'rgba(255,255,255,0.2)';
-            radio.innerHTML = on ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '';
+            b.classList.toggle('on', b.dataset.id === String(id));
         });
     }
 </script>
+@endpush
 @endsection

@@ -35,13 +35,14 @@ class GoogleController extends Controller
 
         Auth::login($user, remember: true);
 
-        // ─── PENAMBAHAN CEK ROLE DI SINI ───
+        $firstName = $user->name ? explode(' ', trim($user->name))[0] : explode('@', $googleUser->getEmail())[0];
+        session()->flash('welcome_name', $firstName);
+        session()->flash('welcome_type', $user->wasRecentlyCreated ? 'new' : 'returning');
+
         if ($user->role === 'admin') {
-            // Jika dia admin, arahkan ke dashboard admin
             return redirect()->route('admin.dashboard');
         }
 
-        // Jika dia penitip biasa, arahkan ke dashboard penitip
         return redirect()->route('dashboard');
     }
 }

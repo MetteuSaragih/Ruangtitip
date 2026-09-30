@@ -1,6 +1,6 @@
 {{--
     Layout untuk langkah-langkah checkout Toko Packing & Toko Preloved.
-    Disamakan dengan pola flat Ruang Titip — tanpa kartu pembungkus, tombol
+    Disamakan dengan pola flat Ruang Titip - tanpa kartu pembungkus, tombol
     "Kembali" dikelola masing-masing halaman (di bawah, sejajar tombol lanjut).
 
     View anak mengisi:

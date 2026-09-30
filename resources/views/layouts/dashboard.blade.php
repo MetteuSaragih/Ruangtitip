@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Dashboard') — RUTIP</title>
+    <title>@yield('title', 'Dashboard') - RUTIP</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -16,14 +16,21 @@
         .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
 
         /* ─── Product card image carousel ─── */
-        .rt-carousel { position: relative; }
+        .rt-carousel { position: relative; overflow: hidden; }
         .rt-carousel img.rt-slide {
-            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
             width: 100%; height: 100%;
             object-fit: cover;
-            position: absolute; inset: 0;
+            opacity: 0;
+            z-index: 0;
+            transition: opacity .25s ease;
+            display: block !important;
         }
-        .rt-carousel img.rt-slide.active { display: block; }
+        .rt-carousel img.rt-slide.active {
+            opacity: 1;
+            z-index: 1;
+        }
         .rt-carousel-btn {
             position: absolute;
             top: 50%;
@@ -52,9 +59,182 @@
             background: rgba(255,255,255,0.4);
         }
         .rt-carousel-dots span.active { background: #fff; }
+
+        /* ─── Lightbox overlay ─── */
+        #rt-lightbox {
+            display: none;
+            position: fixed; inset: 0;
+            z-index: 9999;
+            background: rgba(0,0,0,0.93);
+            align-items: center; justify-content: center;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        #rt-lightbox.open { display: flex; }
+        #rt-lightbox .lb-img {
+            max-width: min(92vw, 560px);
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.7);
+            transition: opacity .2s;
+        }
+        #rt-lightbox .lb-close {
+            position: absolute; top: 16px; right: 16px;
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(255,255,255,0.12);
+            color: #fff; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; z-index: 2;
+        }
+        #rt-lightbox .lb-close:hover { background: rgba(255,255,255,0.22); }
+        #rt-lightbox .lb-nav {
+            position: absolute; top: 50%;
+            transform: translateY(-50%);
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(255,255,255,0.12);
+            color: #fff; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2;
+        }
+        #rt-lightbox .lb-nav:hover { background: rgba(124,58,237,0.6); }
+        #rt-lightbox .lb-prev { left: 16px; }
+        #rt-lightbox .lb-next { right: 16px; }
+        #rt-lightbox .lb-counter {
+            position: absolute; bottom: 18px;
+            font-size: 13px; color: rgba(255,255,255,0.6);
+        }
+        #rt-lightbox .lb-thumbs {
+            position: absolute; bottom: 44px;
+            display: flex; gap: 8px;
+            max-width: 90vw; overflow-x: auto;
+        }
+        #rt-lightbox .lb-thumbs img {
+            width: 52px; height: 52px; object-fit: cover;
+            border-radius: 8px; cursor: pointer;
+            opacity: .55; border: 2px solid transparent;
+            transition: opacity .15s, border-color .15s;
+            flex-shrink: 0;
+        }
+        #rt-lightbox .lb-thumbs img.active {
+            opacity: 1;
+            border-color: #a78bfa;
+        }
+
+        /* ─── Product detail gallery thumbnails ─── */
+        .rt-thumb-strip {
+            display: flex; gap: 8px;
+            overflow-x: auto; padding: 4px 0;
+        }
+        .rt-thumb-strip::-webkit-scrollbar { height: 3px; }
+        .rt-thumb-strip::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.4); border-radius:2px; }
+        .rt-thumb-strip button {
+            width: 52px; height: 52px; flex-shrink: 0;
+            border-radius: 10px; overflow: hidden;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid transparent;
+            cursor: pointer; padding: 0;
+            transition: border-color .15s, opacity .15s;
+            opacity: .6;
+        }
+        .rt-thumb-strip button.active {
+            border-color: #a78bfa; opacity: 1;
+        }
+        .rt-thumb-strip button img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+        }
+
+        /* ── Welcome banner ── */
+        #rt-welcome-banner {
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.5s cubic-bezier(0.22,1,0.36,1), opacity 0.4s ease, margin-bottom 0.5s ease;
+            margin-bottom: 0;
+        }
+        #rt-welcome-banner.open {
+            max-height: 200px;
+            opacity: 1;
+            margin-bottom: 24px;
+        }
+        #rt-welcome-banner.closing {
+            max-height: 0;
+            opacity: 0;
+            margin-bottom: 0;
+        }
+        #rt-welcome-progress {
+            height: 3px;
+            border-radius: 0 0 16px 16px;
+            background: linear-gradient(90deg, #7c3aed, #a78bfa);
+            width: 100%;
+            transition: width linear;
+        }
+
+        /* ── Scroll reveal ── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(22px);
+            transition: opacity 0.55s ease, transform 0.55s ease;
+        }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        /* ── Page loader bar ── */
+        #rt-page-bar {
+            position: fixed; top: 0; left: 0; z-index: 9999;
+            height: 3px; width: 0%;
+            background: linear-gradient(90deg, #7c3aed, #a78bfa, #6366f1);
+            transition: width 0.3s ease, opacity 0.4s ease;
+            box-shadow: 0 0 12px rgba(124,58,237,0.7);
+            pointer-events: none;
+        }
+
+        /* ── Skeleton loading ── */
+        @keyframes rt-shimmer {
+            0% { background-position: -400px 0; }
+            100% { background-position: 400px 0; }
+        }
+        .rt-skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+            background-size: 800px 100%;
+            animation: rt-shimmer 1.4s ease-in-out infinite;
+            border-radius: 8px;
+        }
+
+        /* ── Toast ── */
+        #rt-toast-stack {
+            position: fixed; bottom: 80px; right: 16px; z-index: 9990;
+            display: flex; flex-direction: column; gap: 10px;
+            pointer-events: none;
+        }
+        @media(min-width:1024px) {
+            #rt-toast-stack { bottom: 24px; right: 24px; }
+        }
+        .rt-toast {
+            pointer-events: all;
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 12px 14px; border-radius: 14px;
+            max-width: 320px; min-width: 220px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+            animation: toastIn .3s cubic-bezier(.22,1,.36,1) both;
+        }
+        .rt-toast.out { animation: toastOut .25s ease forwards; }
+        @keyframes toastIn  { from { opacity:0; transform:translateX(40px) scale(.95); } to { opacity:1; transform:none; } }
+        @keyframes toastOut { to   { opacity:0; transform:translateX(40px) scale(.95); } }
+        .rt-toast-icon { width:20px; height:20px; shrink:0; margin-top:1px; }
+        .rt-toast-body { flex:1; }
+        .rt-toast-title { font-size:13px; font-weight:700; line-height:1.3; }
+        .rt-toast-msg   { font-size:12px; margin-top:2px; line-height:1.4; opacity:.75; }
+        .rt-toast-close { background:none; border:none; cursor:pointer; opacity:.5; color:inherit; padding:0; font-size:16px; line-height:1; margin-top:-1px; }
+        .rt-toast-close:hover { opacity:.85; }
+        .rt-toast.success { background:rgba(16,45,28,0.97); border:1px solid rgba(52,211,153,0.35); color:#6ee7b7; }
+        .rt-toast.error   { background:rgba(45,16,16,0.97); border:1px solid rgba(239,68,68,0.35);  color:#fca5a5; }
+        .rt-toast.info    { background:rgba(16,22,45,0.97); border:1px solid rgba(99,102,241,0.4);  color:#a5b4fc; }
+        .rt-toast.warning { background:rgba(45,35,16,0.97); border:1px solid rgba(251,191,36,0.35); color:#fcd34d; }
     </style>
 </head>
 <body class="min-h-screen pb-20 lg:pb-0 flex flex-col" style="background:#0c0618;">
+<div id="rt-page-bar"></div>
 
 @php
     $u = $user ?? auth()->user();
@@ -278,6 +458,51 @@
 
 {{-- ─── KONTEN ─── --}}
 <main class="w-full max-w-7xl mx-auto px-4 lg:px-6 pt-20 flex-1">
+
+    {{-- Welcome banner (only for new users after first login) --}}
+    @if(session('welcome_type') === 'new')
+    <div id="rt-welcome-banner">
+        <div class="relative rounded-2xl overflow-hidden" style="background:linear-gradient(135deg,rgba(124,58,237,0.18),rgba(99,102,241,0.12));border:1px solid rgba(124,58,237,0.3);">
+            {{-- Glow --}}
+            <div class="absolute -top-10 -right-10 w-48 h-48 rounded-full blur-3xl pointer-events-none" style="background:radial-gradient(circle,rgba(124,58,237,0.25),transparent);"></div>
+
+            <div class="relative flex items-center gap-4 px-5 py-4 pr-12">
+                {{-- Icon --}}
+                <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-2xl"
+                     style="background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 8px 24px rgba(124,58,237,0.4);">
+                    🎉
+                </div>
+
+                {{-- Text --}}
+                <div class="flex-1 min-w-0">
+                    <p class="font-extrabold text-white text-base font-display leading-tight">
+                        Selamat datang di RUTIP, {{ session('welcome_name', 'Kamu') }}!
+                    </p>
+                    <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.55);">
+                        Titip barang pertamamu sekarang — aman, praktis, dan bisa dipantau kapan saja.
+                    </p>
+                </div>
+
+                {{-- CTA --}}
+                <a href="{{ route('ruang-titip.index') }}"
+                   class="hidden sm:inline-flex items-center gap-1.5 shrink-0 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all hover:scale-105"
+                   style="background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 4px 14px rgba(124,58,237,0.4);">
+                    Mulai Titip
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+
+                {{-- Close --}}
+                <button onclick="rtWelcomeDismiss()" class="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center transition-all hover:bg-white/10" style="color:rgba(255,255,255,0.4);">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+
+            {{-- Progress bar --}}
+            <div id="rt-welcome-progress"></div>
+        </div>
+    </div>
+    @endif
+
     @yield('content')
 </main>
 @include('layouts.footer')
@@ -318,7 +543,7 @@
 </nav>
 
 {{-- ─── WHATSAPP FLOATING ─── --}}
-<a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer"
+<a href="https://wa.me/6285121091134" target="_blank" rel="noopener noreferrer"
    class="fixed bottom-24 right-5 lg:bottom-8 lg:right-8 w-14 h-14 rounded-full flex items-center justify-center z-40"
    style="background:linear-gradient(135deg,#25d366,#128c7e);box-shadow:0 8px 32px rgba(37,211,102,0.45);">
     <x-lucide-message-circle class="w-6 h-6 text-white" />
@@ -401,6 +626,247 @@
             setLogoutModal(false);
         }
     });
+</script>
+
+{{-- ─── LIGHTBOX ─── --}}
+<div id="rt-lightbox" onclick="if(event.target===this)rtLbClose()">
+    <button class="lb-close" onclick="rtLbClose()">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <button class="lb-nav lb-prev" onclick="rtLbNav(-1)">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <img class="lb-img" id="rtLbImg" src="" alt="">
+    <button class="lb-nav lb-next" onclick="rtLbNav(1)">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+    <div class="lb-thumbs" id="rtLbThumbs"></div>
+    <span class="lb-counter" id="rtLbCounter"></span>
+</div>
+
+<script>
+(function () {
+    let lbSrcs = [], lbIdx = 0;
+
+    function open(srcs, idx) {
+        lbSrcs = srcs; lbIdx = idx;
+        render();
+        document.getElementById('rt-lightbox').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function render() {
+        const img = document.getElementById('rtLbImg');
+        img.style.opacity = '0';
+        img.src = lbSrcs[lbIdx];
+        img.onload = function () { img.style.opacity = '1'; };
+        const thumbs = document.getElementById('rtLbThumbs');
+        thumbs.innerHTML = '';
+        if (lbSrcs.length > 1) {
+            lbSrcs.forEach((src, i) => {
+                const t = document.createElement('img');
+                t.src = src;
+                t.className = i === lbIdx ? 'active' : '';
+                t.onclick = function (e) { e.stopPropagation(); lbIdx = i; render(); };
+                thumbs.appendChild(t);
+            });
+            document.querySelector('#rt-lightbox .lb-prev').style.display = '';
+            document.querySelector('#rt-lightbox .lb-next').style.display = '';
+        } else {
+            document.querySelector('#rt-lightbox .lb-prev').style.display = 'none';
+            document.querySelector('#rt-lightbox .lb-next').style.display = 'none';
+        }
+        const counter = document.getElementById('rtLbCounter');
+        counter.textContent = lbSrcs.length > 1 ? (lbIdx + 1) + ' / ' + lbSrcs.length : '';
+    }
+
+    window.rtLbClose = function () {
+        document.getElementById('rt-lightbox').classList.remove('open');
+        document.body.style.overflow = '';
+    };
+
+    window.rtLbNav = function (dir) {
+        lbIdx = (lbIdx + dir + lbSrcs.length) % lbSrcs.length;
+        render();
+    };
+
+    window.rtLbOpen = open;
+
+    document.addEventListener('keydown', function (e) {
+        if (!document.getElementById('rt-lightbox').classList.contains('open')) return;
+        if (e.key === 'Escape') rtLbClose();
+        if (e.key === 'ArrowLeft') rtLbNav(-1);
+        if (e.key === 'ArrowRight') rtLbNav(1);
+    });
+})();
+</script>
+
+{{-- ── TOAST CONTAINER ── --}}
+<div id="rt-toast-stack"></div>
+
+{{-- Flash session toasts --}}
+@php
+    $flashTypes = [
+        'success' => ['icon' => '✓', 'title' => 'Berhasil'],
+        'error'   => ['icon' => '✕', 'title' => 'Gagal'],
+        'info'    => ['icon' => 'ℹ', 'title' => 'Info'],
+        'warning' => ['icon' => '⚠', 'title' => 'Perhatian'],
+    ];
+@endphp
+@foreach ($flashTypes as $type => $meta)
+    @if (session($type))
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                rtToast('{{ $type }}', '{{ addslashes(session($type)) }}');
+            });
+        </script>
+    @endif
+@endforeach
+
+<script>
+/* ── Welcome banner & greeting ── */
+(function () {
+    const banner = document.getElementById('rt-welcome-banner');
+    const bar    = document.getElementById('rt-welcome-progress');
+    const DURATION = 6000;
+
+    if (banner) {
+        // Slide open
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            banner.classList.add('open');
+            // Drain progress bar
+            if (bar) {
+                bar.style.transitionDuration = DURATION + 'ms';
+                setTimeout(() => { bar.style.width = '0%'; }, 50);
+            }
+            // Auto-dismiss
+            setTimeout(rtWelcomeDismiss, DURATION);
+        }));
+    }
+
+    window.rtWelcomeDismiss = function () {
+        if (!banner) return;
+        banner.classList.add('closing');
+        banner.classList.remove('open');
+    };
+
+    @if(session('welcome_type') === 'returning' && session('welcome_name'))
+    // Toast for returning users
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof rtToast === 'function') {
+            rtToast('info', 'Selamat datang kembali, {{ session("welcome_name") }}! 👋');
+        }
+    });
+    @endif
+})();
+
+/* ── Toast system ── */
+(function () {
+    const icons = {
+        success: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+        error:   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+        info:    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+        warning: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m10.29 3.86-8.57 14.86A2 2 0 0 0 3.43 22h17.14a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    };
+    const titles = { success: 'Berhasil', error: 'Gagal', info: 'Info', warning: 'Perhatian' };
+
+    window.rtToast = function (type, message, duration) {
+        const stack = document.getElementById('rt-toast-stack');
+        if (!stack) return;
+        const t = duration || 4000;
+        const el = document.createElement('div');
+        el.className = 'rt-toast ' + (type || 'info');
+        el.innerHTML =
+            '<span class="rt-toast-icon">' + (icons[type] || icons.info) + '</span>' +
+            '<div class="rt-toast-body">' +
+                '<div class="rt-toast-title">' + (titles[type] || 'Info') + '</div>' +
+                '<div class="rt-toast-msg">' + message + '</div>' +
+            '</div>' +
+            '<button class="rt-toast-close" onclick="this.closest(\'.rt-toast\') && rtToastDismiss(this.closest(\'.rt-toast\'))">×</button>';
+        stack.appendChild(el);
+        const timer = setTimeout(() => rtToastDismiss(el), t);
+        el._rtTimer = timer;
+    };
+
+    window.rtToastDismiss = function (el) {
+        clearTimeout(el._rtTimer);
+        el.classList.add('out');
+        el.addEventListener('animationend', () => el.remove(), { once: true });
+    };
+})();
+
+/* ── Scroll reveal ── */
+(function () {
+    const io = new IntersectionObserver(entries => {
+        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+})();
+
+/* ── 3D card tilt ── */
+(function () {
+    function applyTilt(card) {
+        card.style.willChange = 'transform';
+        card.addEventListener('mouseenter', () => {
+            card.style.transition = 'transform 0.12s ease, box-shadow 0.12s ease';
+        });
+        card.addEventListener('mousemove', e => {
+            const r  = card.getBoundingClientRect();
+            const dx = (e.clientX - (r.left + r.width  / 2)) / (r.width  / 2);
+            const dy = (e.clientY - (r.top  + r.height / 2)) / (r.height / 2);
+            card.style.transform = 'perspective(700px) rotateY(' + (dx * 9) + 'deg) rotateX(' + (-dy * 9) + 'deg) translateY(-5px) scale(1.015)';
+            card.style.boxShadow = '0 16px 44px rgba(124,58,237,0.25)';
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transition = 'transform 0.45s ease, box-shadow 0.45s ease';
+            card.style.transform  = '';
+            card.style.boxShadow  = '';
+        });
+    }
+    document.querySelectorAll('.rt-tilt').forEach(applyTilt);
+    // Re-apply after skeleton swap (product grids load dynamically)
+    const pg = document.getElementById('rt-product-grid');
+    if (pg) {
+        const mo = new MutationObserver(() => {
+            pg.querySelectorAll('.rt-tilt').forEach(applyTilt);
+        });
+        mo.observe(pg, { childList: true, subtree: true, attributeFilter: ['class'] });
+    }
+})();
+
+/* ── Page transition overlay ── */
+(function () {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:#0c0618;z-index:99998;opacity:1;pointer-events:none;transition:opacity 0.4s ease;';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => requestAnimationFrame(() => { overlay.style.opacity = '0'; }));
+    document.querySelectorAll('a[href]').forEach(a => {
+        const href = a.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('//') || a.target === '_blank') return;
+        a.addEventListener('click', () => { overlay.style.opacity = '0.85'; });
+    });
+})();
+
+/* ── Page loader ── */
+(function () {
+    const bar = document.getElementById('rt-page-bar');
+    if (!bar) return;
+    let timer;
+    document.querySelectorAll('a[href]').forEach(a => {
+        const href = a.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('//') || a.target === '_blank') return;
+        a.addEventListener('click', function () {
+            bar.style.width = '0%'; bar.style.opacity = '1';
+            clearTimeout(timer);
+            setTimeout(() => { bar.style.width = '65%'; }, 10);
+            timer = setTimeout(() => { bar.style.width = '90%'; }, 500);
+        });
+    });
+    window.addEventListener('pageshow', () => {
+        bar.style.width = '100%';
+        setTimeout(() => { bar.style.opacity = '0'; setTimeout(() => { bar.style.width = '0%'; }, 400); }, 200);
+    });
+})();
 </script>
 
 </body>

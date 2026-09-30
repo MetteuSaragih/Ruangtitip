@@ -36,6 +36,9 @@ class TokoPackingController extends Controller
     public function store(Request $request)
     {
         $data = $this->validatedData($request);
+        if ($this->uploadedImagesCount($request) < 1) {
+            return back()->withErrors(['images' => 'Wajib unggah minimal 1 foto produk.'])->withInput();
+        }
         if ($this->uploadedImagesCount($request) > 10) {
             return back()->withErrors(['images' => 'Maksimal 10 gambar untuk setiap produk packing.'])->withInput();
         }
@@ -61,6 +64,9 @@ class TokoPackingController extends Controller
 
         // Jika update full dari form modal
         $data = $this->validatedData($request);
+        if (count($item->images ?? []) + $this->uploadedImagesCount($request) < 1) {
+            return back()->withErrors(['images' => 'Produk wajib memiliki minimal 1 foto.'])->withInput();
+        }
         if (count($item->images ?? []) + $this->uploadedImagesCount($request) > 10) {
             return back()->withErrors(['images' => 'Maksimal 10 gambar untuk setiap produk packing.'])->withInput();
         }
@@ -78,6 +84,14 @@ class TokoPackingController extends Controller
     {
         PackingProduct::findOrFail($id)->delete();
         return back()->with('success', 'Produk berhasil dihapus!');
+    }
+
+    public function updateOrderStatus(Request $request, $id)
+    {
+        $request->validate(['status' => 'required|in:pending,diproses,dikirim,selesai']);
+        $order = PackingOrder::findOrFail($id);
+        $order->update(['status' => $request->status]);
+        return back()->with('success', "Status pesanan #{$order->order_code} berhasil diperbarui.");
     }
 
     private function validatedData(Request $request): array

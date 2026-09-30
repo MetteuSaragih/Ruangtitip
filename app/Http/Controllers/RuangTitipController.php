@@ -36,7 +36,8 @@ use Illuminate\Support\Facades\Auth;
 
 class RuangTitipController extends Controller
 {
-    private const PLATFORM_FEE     = 1000;   // biaya layanan penitipan (dok. Th.1)
+    private const PLATFORM_FEE          = 1000;   // biaya layanan jika logistik tidak pakai Biteship
+    private const PLATFORM_FEE_BITESHIP = 2000;   // biaya layanan jika logistik pakai Biteship
     private const PACKING_PER_BOX  = 15000;  // jasa packing+anjem per kardus (dok. Th.1)
     private const DEFAULT_KM       = 5;      // [DUMMY] estimasi jarak penjemputan
 
@@ -91,7 +92,8 @@ class RuangTitipController extends Controller
             $courierCost = (int) ($s['courier_cost'] ?? 0);
         }
 
-        $total = $itemSubtotal + $courierCost + self::PLATFORM_FEE;
+        $platformFee = $logistic === 'instant' ? self::PLATFORM_FEE_BITESHIP : self::PLATFORM_FEE;
+        $total = $itemSubtotal + $courierCost + $platformFee;
 
         return [
             'months'        => $months,
@@ -101,7 +103,7 @@ class RuangTitipController extends Controller
             'packingCost'   => $packingCost,
             'kmCost'        => $kmCost,
             'km'            => $km,
-            'platform_fee'  => self::PLATFORM_FEE,
+            'platform_fee'  => $platformFee,
             'total'         => $total,
         ];
     }
@@ -133,7 +135,8 @@ class RuangTitipController extends Controller
         $dimensi = $sizes->where('type', 'dimensi')->values();
         $s = $this->state($r);
         $selectedItems = $s['items'] ?? [];
-        return view('dashboard.ruang-titip.detail-item', compact('kardus', 'koper', 'dimensi', 's', 'selectedItems'));
+        $calc = $this->calc($s);
+        return view('dashboard.ruang-titip.detail-item', compact('kardus', 'koper', 'dimensi', 's', 'selectedItems', 'storage', 'calc'));
     }
 
     /* SCREEN 3 (POST) — simpan item + tanggal sekaligus */
@@ -181,8 +184,11 @@ class RuangTitipController extends Controller
     /* ═══ SCREEN 4 — Opsi Logistik (GET) ═══ */
     public function logistikForm(Request $r)
     {
-        if (empty($this->state($r)['items'])) return redirect()->route('ruang-titip.detail-item');
-        return view('dashboard.ruang-titip.logistik');
+        $s = $this->state($r);
+        if (empty($s['items'])) return redirect()->route('ruang-titip.detail-item');
+        $storage = StorageRoom::find($s['storage_id'] ?? null);
+        $calc = $this->calc($s);
+        return view('dashboard.ruang-titip.logistik', compact('s', 'storage', 'calc'));
     }
 
     /* SCREEN 4 (POST) */
@@ -213,7 +219,9 @@ class RuangTitipController extends Controller
             ->orderByDesc('is_primary')->orderByDesc('id')->get();
 
         $s = $this->state($r);
-        return view('dashboard.ruang-titip.alamat', compact('addresses', 's'));
+        $storage = StorageRoom::find($s['storage_id'] ?? null);
+        $calc = $this->calc($s);
+        return view('dashboard.ruang-titip.alamat', compact('addresses', 's', 'storage', 'calc'));
     }
 
     /* SCREEN 5 (POST) — pilih alamat tersimpan ATAU tambah baru */
@@ -279,7 +287,9 @@ class RuangTitipController extends Controller
             return redirect()->route('ruang-titip.logistik');
         }
 
-        return view('dashboard.ruang-titip.kurir', compact('s'));
+        $storage = StorageRoom::find($s['storage_id'] ?? null);
+        $calc = $this->calc($s);
+        return view('dashboard.ruang-titip.kurir', compact('s', 'storage', 'calc'));
     }
 
     /* AJAX — hitung ongkir live Biteship dari alamat pelanggan ke gudang RUTIP */

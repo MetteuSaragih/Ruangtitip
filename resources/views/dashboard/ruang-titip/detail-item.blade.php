@@ -1,117 +1,98 @@
-@extends('layouts.dashboard')
+@extends('layouts.ruang-titip')
 @section('title', 'Detail Penitipan')
 
 @php
-    function rp($n){ return 'Rp '.number_format($n,0,',','.'); }
+    function rp($n){ return 'Rp'.number_format($n,0,',','.'); }
     $selectedItems = old('items', $selectedItems ?? []);
     $dateStart = old('date_start', $s['date_start'] ?? '');
     $dateEnd = old('date_end', $s['date_end'] ?? '');
 @endphp
 
 @section('content')
-<div class="max-w-xl mx-auto pt-6 pb-8">
-    @include('dashboard.ruang-titip._progress', ['step' => 1])
-    <h1 class="text-xl font-extrabold text-white font-display mb-1">Detail Penitipan Barang</h1>
-    <p class="text-xs mb-5" style="color:rgba(255,255,255,0.4);">Langkah 1 dari 4 — Pilih barang dan rentang waktu penitipan</p>
+<main class="wrap">
+  <a class="back-link" href="{{ route('ruang-titip.index') }}">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+    Ganti gudang
+  </a>
 
-    @if ($errors->any())
-        <div class="rounded-xl px-4 py-2.5 mb-4 text-sm" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;">{{ $errors->first() }}</div>
-    @endif
+  <div class="layout">
+    <div>
+      @include('dashboard.ruang-titip._progress', ['step' => 1])
 
-    <form method="POST" action="{{ route('ruang-titip.detail-item.store') }}" id="itemForm">
+      <div class="step-head">
+        <h1>Barang apa yang mau dititip?</h1>
+        <p>Pilih tanggal dan jumlah barang. Harga langsung dihitung di ringkasan.</p>
+      </div>
+
+      @if ($errors->any())
+        <p class="err" style="margin-top:12px">{{ $errors->first() }}</p>
+      @endif
+
+      <form method="POST" action="{{ route('ruang-titip.detail-item.store') }}" id="itemForm">
         @csrf
         <input type="hidden" name="item_type" id="itemType" value="kardus">
 
-        {{-- ── RENTANG WAKTU PENITIPAN (langsung di bawah judul) ── --}}
-        <div class="rounded-2xl p-5 mb-5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-            <p class="text-xs font-bold text-white mb-3">Rentang Waktu Penitipan</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-[11px] font-semibold mb-2" style="color:rgba(255,255,255,0.55);">Tanggal Mulai</label>
-                    <input type="date" name="date_start" id="dateStart" required min="{{ date('Y-m-d') }}" value="{{ $dateStart }}"
-                           class="w-full px-4 py-3 rounded-xl text-sm text-white outline-none"
-                           style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);color-scheme:dark;">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold mb-2" style="color:rgba(255,255,255,0.55);">Tanggal Selesai</label>
-                    <input type="date" name="date_end" id="dateEnd" required min="{{ date('Y-m-d') }}" value="{{ $dateEnd }}"
-                           class="w-full px-4 py-3 rounded-xl text-sm text-white outline-none"
-                           style="background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);color-scheme:dark;">
-                </div>
-            </div>
-            <div id="durBox" class="hidden mt-3 items-center gap-2 px-3 py-2 rounded-lg" style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);">
-                <x-lucide-clock class="w-3.5 h-3.5" style="color:#34d399;" />
-                <span class="text-[11px] font-semibold" style="color:rgba(255,255,255,0.7);">Durasi: <span id="durText" class="text-white"></span></span>
-            </div>
+        <div class="panel">
+          <h2>Kapan dititip?</h2>
+          <p class="hint">Harga dihitung per bulan. Kurang dari 30 hari tetap dihitung 1 bulan.</p>
+          <div class="row2">
+            <div class="field"><label for="dateStart">Tanggal mulai</label><input type="date" id="dateStart" name="date_start" required min="{{ date('Y-m-d') }}" value="{{ $dateStart }}"></div>
+            <div class="field"><label for="dateEnd">Tanggal selesai</label><input type="date" id="dateEnd" name="date_end" required min="{{ date('Y-m-d') }}" value="{{ $dateEnd }}"></div>
+          </div>
+          <div class="info empty" id="dur-info" aria-live="polite">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <span id="durText">Pilih tanggal mulai dan selesai dulu.</span>
+          </div>
         </div>
 
-        {{-- ── PILIH TIPE ── --}}
-        <div class="flex gap-2 mb-5">
-            @foreach (['kardus' => '📦 Kardus', 'koper' => '🧳 Koper', 'dimensi' => '📐 Dimensi Lain'] as $key => $lbl)
-                <button type="button" data-type="{{ $key }}" onclick="switchType('{{ $key }}')"
-                        class="type-btn flex-1 py-2.5 rounded-xl text-xs font-bold transition-all"
-                        style="background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.1);">
-                    {{ $lbl }}
-                </button>
+        <div class="panel">
+          <h2>Jenis &amp; ukuran barang</h2>
+          <p class="hint">Boleh campur, misalnya 2 kardus kecil dan 1 koper.</p>
+          <div class="seg" role="tablist" aria-label="Jenis barang">
+            @foreach (['kardus' => 'Kardus', 'koper' => 'Koper', 'dimensi' => 'Dimensi Lain'] as $key => $lbl)
+              <button type="button" role="tab" aria-selected="{{ $key === 'kardus' ? 'true' : 'false' }}" data-type="{{ $key }}" onclick="switchType('{{ $key }}')">{{ $lbl }}</button>
             @endforeach
-        </div>
+          </div>
 
-        {{-- ── DAFTAR UKURAN (harga beda per ukuran, sesuai dokumen) ── --}}
-        <div class="rounded-2xl overflow-hidden mb-5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-            <div class="px-4 pt-4 pb-2">
-                <p class="text-xs font-bold text-white">Pilih Ukuran &amp; Jumlah</p>
-                <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.38);">Harga berbeda untuk tiap ukuran (per bulan)</p>
-            </div>
-            @foreach (['kardus' => $kardus, 'koper' => $koper, 'dimensi' => $dimensi] as $type => $sizes)
-                <div class="size-group p-3 grid grid-cols-1 sm:grid-cols-2 gap-2" data-group="{{ $type }}" style="{{ $type === 'kardus' ? '' : 'display:none;' }}">
-                    @foreach ($sizes as $sz)
-                        @php
-                            $qty = (int) ($selectedItems[$sz->code] ?? 0);
-                            $typeLabel = ['kardus' => 'Kardus', 'koper' => 'Koper', 'dimensi' => 'Dimensi Lain'][$type];
-                        @endphp
-                        <div class="size-row flex items-center justify-between p-3.5 rounded-xl"
-                             data-price="{{ $sz->price }}"
-                             data-type-label="{{ $typeLabel }}"
-                             data-label="{{ $sz->label }}"
-                             style="background:{{ $qty > 0 ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.04)' }};border:1.5px solid {{ $qty > 0 ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.08)' }};">
-                            <div class="min-w-0 flex-1">
-                                <p class="text-sm font-bold text-white">{{ $sz->label }}</p>
-                                <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.4);">{{ $sz->dims }}</p>
-                                <p class="text-xs font-bold mt-0.5" style="color:#a78bfa;">{{ rp($sz->price) }}<span class="text-[10px] font-normal" style="color:rgba(255,255,255,0.35);">/bln</span></p>
-                            </div>
-                            <div class="flex items-center gap-2 shrink-0">
-                                <button type="button" onclick="changeQty(this,-1)" class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.7);"><x-lucide-minus class="w-3 h-3" /></button>
-                                <span class="qty w-5 text-center text-sm font-bold text-white">{{ $qty }}</span>
-                                <input type="hidden" name="items[{{ $sz->code }}]" value="{{ $qty }}" class="qty-input">
-                                <button type="button" onclick="changeQty(this,1)" class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:rgba(124,58,237,0.25);color:#a78bfa;border:1px solid rgba(124,58,237,0.4);"><x-lucide-plus class="w-3 h-3" /></button>
-                            </div>
-                        </div>
-                    @endforeach
+          @foreach (['kardus' => $kardus, 'koper' => $koper, 'dimensi' => $dimensi] as $type => $sizes)
+            <div class="sizes size-group" data-group="{{ $type }}" style="{{ $type === 'kardus' ? '' : 'display:none;' }}">
+              @foreach ($sizes as $sz)
+                @php $qty = (int) ($selectedItems[$sz->code] ?? 0); $typeLabel = ['kardus' => 'Kardus', 'koper' => 'Koper', 'dimensi' => 'Dimensi Lain'][$type]; @endphp
+                <div class="size size-row {{ $qty > 0 ? 'on' : '' }}" data-price="{{ $sz->price }}" data-type-label="{{ $typeLabel }}" data-label="{{ $sz->label }}">
+                  <div>
+                    <strong>{{ $sz->label }}</strong>
+                    @if ($sz->dims && $sz->dims !== '-')<small>{{ $sz->dims }}</small>@endif
+                    <span class="p">{{ rp($sz->price) }} /bln</span>
+                  </div>
+                  <div class="qty">
+                    <button type="button" onclick="changeQty(this,-1)" aria-label="Kurangi {{ $sz->label }}">&minus;</button>
+                    <output class="qty-val">{{ $qty }}</output>
+                    <input type="hidden" name="items[{{ $sz->code }}]" value="{{ $qty }}" class="qty-input">
+                    <button type="button" onclick="changeQty(this,1)" aria-label="Tambah {{ $sz->label }}">+</button>
+                  </div>
                 </div>
-            @endforeach
-        </div>
-
-        {{-- Total live --}}
-        <div id="totalBox" class="hidden items-center justify-between px-4 py-3.5 rounded-xl mb-5" style="background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.3);">
-            <div>
-                <p class="text-xs font-semibold text-white"><span id="totalItems">0</span> item dipilih</p>
-                <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.45);">Estimasi biaya item × durasi</p>
+              @endforeach
             </div>
-            <p class="text-base font-extrabold font-display" style="color:#a78bfa;" id="totalPrice">Rp 0</p>
+          @endforeach
         </div>
-        <div id="selectedList" class="hidden -mt-3 mb-5 space-y-2"></div>
 
-        <div class="flex gap-3">
-            <a href="{{ route('ruang-titip.index') }}" class="flex items-center justify-center gap-1.5 py-3.5 px-4 rounded-xl font-semibold text-sm transition-all hover:bg-white/5 shrink-0" style="border:1.5px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.65);">
-                <x-lucide-chevron-left class="w-4 h-4" /> Kembali
-            </a>
-            <button type="submit" class="flex-1 py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02]" style="background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 6px 20px rgba(124,58,237,0.4);">
-                Lanjutkan <x-lucide-arrow-right class="w-4 h-4" />
-            </button>
+        <div class="actions">
+          <a href="{{ route('ruang-titip.index') }}" class="btn btn-outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            Kembali
+          </a>
+          <button type="submit" class="btn btn-primary">Lanjutkan
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
         </div>
-    </form>
-</div>
+      </form>
+    </div>
 
+    @include('dashboard.ruang-titip._summary', ['storage' => $storage, 's' => $s, 'calc' => $calc])
+  </div>
+</main>
+
+@push('scripts')
 <script>
     let currentType = 'kardus';
 
@@ -121,23 +102,19 @@
         document.querySelectorAll('.size-group').forEach(g => {
             g.style.display = g.dataset.group === type ? '' : 'none';
         });
-        document.querySelectorAll('.type-btn').forEach(b => {
-            const on = b.dataset.type === type;
-            b.style.background = on ? 'linear-gradient(135deg,#7c3aed,#6366f1)' : 'rgba(255,255,255,0.05)';
-            b.style.color = on ? 'white' : 'rgba(255,255,255,0.5)';
-            b.style.border = on ? 'none' : '1px solid rgba(255,255,255,0.1)';
+        document.querySelectorAll('.seg button').forEach(b => {
+            b.setAttribute('aria-selected', b.dataset.type === type ? 'true' : 'false');
         });
         recalc();
     }
 
     function changeQty(btn, delta) {
         const row = btn.closest('.size-row');
-        const qtyEl = row.querySelector('.qty');
+        const out = row.querySelector('.qty-val');
         const input = row.querySelector('.qty-input');
-        let v = Math.max(0, parseInt(qtyEl.textContent) + delta);
-        qtyEl.textContent = v; input.value = v;
-        row.style.background = v > 0 ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.04)';
-        row.style.borderColor = v > 0 ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.08)';
+        let v = Math.max(0, parseInt(out.textContent) + delta);
+        out.textContent = v; input.value = v;
+        row.classList.toggle('on', v > 0);
         recalc();
     }
 
@@ -156,45 +133,49 @@
         const selected = [];
 
         document.querySelectorAll('.size-row').forEach(row => {
-            const v = parseInt(row.querySelector('.qty').textContent);
+            const v = parseInt(row.querySelector('.qty-val').textContent);
             if (v <= 0) return;
-
             const price = parseInt(row.dataset.price);
             totalItems += v;
             base += v * price;
-            selected.push({
-                name: row.dataset.typeLabel + ' ' + row.dataset.label,
-                qty: v,
-                price: price,
-            });
+            selected.push({ name: row.dataset.typeLabel + ' ' + row.dataset.label, qty: v });
         });
 
-        const total = base * monthsBetween();
-        const box = document.getElementById('totalBox');
-        box.classList.toggle('hidden', totalItems === 0);
-        box.classList.toggle('flex', totalItems > 0);
-        document.getElementById('totalItems').textContent = totalItems;
-        document.getElementById('totalPrice').textContent = 'Rp ' + total.toLocaleString('id-ID');
+        const months = monthsBetween();
+        const itemSubtotal = base * months;
+        const total = totalItems > 0 ? itemSubtotal + {{ $calc['platform_fee'] }} : 0;
 
-        const list = document.getElementById('selectedList');
-        list.classList.toggle('hidden', totalItems === 0);
-        list.innerHTML = selected.map(item => `
-            <div class="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl" style="background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.08);">
-                <span class="text-xs font-semibold text-white">${item.name}</span>
-                <span class="text-xs shrink-0" style="color:rgba(255,255,255,0.55);">${item.qty} item</span>
-            </div>
-        `).join('');
+        const sItems = document.getElementById('s-items');
+        if (sItems) {
+            sItems.innerHTML = totalItems
+                ? selected.map(it => '<li><span>' + it.name + '</span><span>' + it.qty + '&times;</span></li>').join('')
+                : '<li class="dim">Belum ada barang</li>';
+        }
+        const sLines = document.getElementById('s-lines');
+        if (sLines) {
+            sLines.innerHTML = itemSubtotal ? '<div class="line"><span>Subtotal barang</span><span>Rp' + itemSubtotal.toLocaleString('id-ID') + '</span></div>' : '';
+        }
+        const sTotal = document.getElementById('s-total');
+        if (sTotal) sTotal.textContent = 'Rp' + total.toLocaleString('id-ID');
     }
 
     function updateDuration() {
         const s = document.getElementById('dateStart').value;
         const e = document.getElementById('dateEnd').value;
-        const box = document.getElementById('durBox');
+        const box = document.getElementById('dur-info');
+        const text = document.getElementById('durText');
+        const sDate = document.getElementById('s-date');
         if (s && e && new Date(e) > new Date(s)) {
             const days = Math.round((new Date(e) - new Date(s)) / 86400000);
-            document.getElementById('durText').textContent = days + ' hari (~' + Math.ceil(days/30) + ' bulan)';
-            box.classList.remove('hidden'); box.classList.add('flex');
-        } else { box.classList.add('hidden'); box.classList.remove('flex'); }
+            const months = Math.max(1, Math.ceil(days / 30));
+            text.textContent = 'Durasi: ' + days + ' hari (~' + months + ' bulan)';
+            box.classList.remove('empty');
+            if (sDate) sDate.textContent = new Date(s).toLocaleDateString('id-ID', {day:'numeric',month:'short',year:'numeric'}) + ' – ' + new Date(e).toLocaleDateString('id-ID', {day:'numeric',month:'short',year:'numeric'}) + ' (' + months + ' bln)';
+        } else {
+            text.textContent = 'Pilih tanggal mulai dan selesai dulu.';
+            box.classList.add('empty');
+            if (sDate) sDate.textContent = 'Belum dipilih';
+        }
         recalc();
     }
     document.getElementById('dateStart').addEventListener('change', updateDuration);
@@ -202,4 +183,5 @@
     switchType('kardus');
     updateDuration();
 </script>
+@endpush
 @endsection

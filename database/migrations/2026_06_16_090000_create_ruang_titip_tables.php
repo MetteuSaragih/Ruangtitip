@@ -56,7 +56,7 @@ return new class extends Migration
         // Master kurir (dummy Biteship)
         Schema::create('couriers', function (Blueprint $table) {
             $table->id();
-            $table->enum('group', ['instant', 'rutip']); // instant shipper / anjem rutip
+            $table->enum('group', ['instant', 'rutip']); // instant via Biteship / anjem rutip
             $table->string('code');
             $table->string('name');
             $table->string('service');

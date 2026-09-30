@@ -19,7 +19,22 @@ class PrelovedController extends Controller
     public function index(Request $request)
     {
         $condition = $request->get('kondisi', 'semua');
-        $items = PrelovedItem::where('status', 'Tersedia')->latest()->get();
+        $category = $request->get('kategori', 'Semua');
+
+        $categories = PrelovedItem::where('status', 'Tersedia')
+            ->select('category')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category')
+            ->filter()
+            ->prepend('Semua')
+            ->values()
+            ->all();
+
+        $items = PrelovedItem::where('status', 'Tersedia')
+            ->when($category !== 'Semua', fn ($query) => $query->where('category', $category))
+            ->latest()
+            ->get();
 
         if ($condition !== 'semua') {
             $items = $items->filter(function (PrelovedItem $item) use ($condition) {
@@ -42,7 +57,7 @@ class PrelovedController extends Controller
         $products = $items->map(fn (PrelovedItem $item) => $this->toProductArray($item));
         $cartCount = count(session('cart', []));
 
-        return view('preloved.index', compact('products', 'condition', 'cartCount'));
+        return view('preloved.index', compact('products', 'condition', 'category', 'categories', 'cartCount'));
     }
 
     public function caraJual()
@@ -69,6 +84,7 @@ class PrelovedController extends Controller
             'original_price' => (int) $item->price,
             'discount_percent' => 0,
             'condition' => $this->conditionSlug((int) $item->condition),
+            'condition_percent' => (int) $item->condition,
             'condition_label' => $this->conditionLabels[$item->condition] ?? $item->condition . '% Baik',
             'stock' => 1,
             'seller_name' => $item->seller ?: 'RUTIP',

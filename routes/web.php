@@ -12,6 +12,7 @@ use App\Http\Controllers\BiteshipWebhookController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LandingSurveyController;
 use App\Http\Controllers\PackingController;
 use App\Http\Controllers\PesananController;
 use App\Http\Controllers\PrelovedController;
@@ -27,6 +28,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', fn () => view('landing.index'))->name('home');
+Route::post('/survei', [LandingSurveyController::class, 'store'])->name('survey.store');
+Route::get('/syarat-ketentuan', fn () => view('legal.syarat-ketentuan'))->name('legal.terms');
+Route::get('/kebijakan-privasi', fn () => view('legal.kebijakan-privasi'))->name('legal.privacy');
 Route::post('/tripay/callback', [TripayCallbackController::class, 'handle'])
     ->name('tripay.callback');
 Route::post('/biteship/webhook', [BiteshipWebhookController::class, 'handle'])
@@ -62,6 +66,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profil', [ProfileController::class, 'index'])->name('profile.index');
     Route::post('/profil/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profil/avatar', [ProfileController::class, 'uploadAvatar'])->name('profile.avatar');
+    Route::post('/profil/lewati-banner', [ProfileController::class, 'dismissCompleteBanner'])->name('profile.dismiss-banner');
+    Route::post('/profil/alamat', [ProfileController::class, 'storeAddress'])->name('profile.address.store');
+    Route::delete('/profil/alamat/{id}', [ProfileController::class, 'destroyAddress'])->name('profile.address.destroy');
+    Route::post('/profil/alamat/{id}/primary', [ProfileController::class, 'setPrimaryAddress'])->name('profile.address.primary');
 
     Route::get('/dashboard/pesanan', [PesananController::class, 'index'])->name('pesanan.index');
     Route::get('/dashboard/pesanan/{order}', [PesananController::class, 'show'])->name('pesanan.detail');
@@ -73,7 +82,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [PackingController::class, 'index'])->name('index');
         Route::get('/produk/{product}', [PackingController::class, 'show'])->name('show');
         Route::post('/produk/{product}/beli', [PackingController::class, 'buy'])->name('buy');
-        Route::get('/logistik', [PackingController::class, 'logistics'])->name('logistics');
+        Route::get('/logistik', [PackingController::class, 'logistics'])->name('logistics')->middleware('profile.complete');
         Route::post('/logistik', [PackingController::class, 'chooseLogistics'])->name('logistics.choose');
         Route::get('/alamat', [PackingController::class, 'address'])->name('address');
         Route::post('/alamat', [PackingController::class, 'saveAddress'])->name('address.save');
@@ -90,7 +99,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/{storage}/detail', [UserRuangTitipController::class, 'show'])->name('detail');
         Route::get('/detail-item', [UserRuangTitipController::class, 'detailForm'])->name('detail-item');
         Route::post('/detail-item', [UserRuangTitipController::class, 'detailStore'])->name('detail-item.store');
-        Route::get('/logistik', [UserRuangTitipController::class, 'logistikForm'])->name('logistik');
+        Route::get('/logistik', [UserRuangTitipController::class, 'logistikForm'])->name('logistik')->middleware('profile.complete');
         Route::post('/logistik', [UserRuangTitipController::class, 'logistikStore'])->name('logistik.store');
         Route::get('/alamat', [UserRuangTitipController::class, 'alamatForm'])->name('alamat');
         Route::post('/alamat', [UserRuangTitipController::class, 'alamatStore'])->name('alamat.store');
@@ -104,6 +113,8 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/profil', [AdminDashboardController::class, 'profile'])->name('profile');
+        Route::post('/profil/update', [AdminDashboardController::class, 'updateProfile'])->name('profile.update');
 
         Route::get('/ruang-titip', [AdminRuangTitipController::class, 'index'])->name('ruang-titip');
         Route::post('/ruang-titip', [AdminRuangTitipController::class, 'store'])->name('ruang-titip.store');
@@ -129,6 +140,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/toko-packing', [TokoPackingController::class, 'store'])->name('packing.store');
         Route::put('/toko-packing/{id}', [TokoPackingController::class, 'update'])->name('packing.update');
         Route::delete('/toko-packing/{id}', [TokoPackingController::class, 'destroy'])->name('packing.destroy');
+        Route::post('/toko-packing/orders/{id}/status', [TokoPackingController::class, 'updateOrderStatus'])->name('packing.order.status');
 
         Route::get('/accounts', [AccountManagementController::class, 'index'])->name('accounts');
         Route::post('/accounts/{user}/toggle-active', [AccountManagementController::class, 'toggleActive'])
@@ -154,7 +166,7 @@ Route::prefix('toko-preloved')->name('preloved.')->group(function () {
 });
 
 Route::middleware('auth')->prefix('checkout')->name('checkout.')->group(function () {
-    Route::get('/pengiriman', [CheckoutController::class, 'shipping'])->name('shipping');
+    Route::get('/pengiriman', [CheckoutController::class, 'shipping'])->name('shipping')->middleware('profile.complete');
     Route::post('/pengiriman/pilih', [CheckoutController::class, 'chooseShipping'])->name('shipping.choose');
     Route::get('/alamat', [CheckoutController::class, 'address'])->name('address');
     Route::post('/alamat/simpan', [CheckoutController::class, 'saveAddress'])->name('address.save');

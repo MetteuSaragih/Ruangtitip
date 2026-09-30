@@ -40,7 +40,7 @@
 
     <p class="text-xs font-mono mb-8" style="color:rgba(167,139,250,0.7);">#{{ $order->order_code }}</p>
 
-    {{-- Tombol lanjut bayar — redirect ke halaman checkout Tripay --}}
+    {{-- Tombol lanjut bayar - redirect ke halaman checkout Tripay --}}
     @if ($isPending && $order->tripay_checkout_url)
         <a href="{{ $order->tripay_checkout_url }}"
            class="w-full py-4 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02] mb-4"

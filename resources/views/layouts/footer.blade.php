@@ -168,17 +168,17 @@
                 <h4>Kontak</h4>
                 <div class="footer-contact-item">
                     <x-lucide-mail class="w-3.5 h-3.5" />
-                    rutip@ub.ac.id
+                    ruangtitipmu@gmail.com
                 </div>
                 <div class="footer-contact-item">
                     <x-lucide-phone class="w-3.5 h-3.5" />
-                    +62 812-3456-7890
+                    +62 851-2109-1134
                 </div>
                 <div class="footer-contact-item">
                     <x-lucide-map-pin class="w-3.5 h-3.5" />
                     Malang, Jawa Timur
                 </div>
-                <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" class="btn-wa">
+                <a href="https://wa.me/6285121091134" target="_blank" rel="noopener noreferrer" class="btn-wa">
                     <x-lucide-message-circle class="w-4 h-4" />
                     Chat via WhatsApp
                 </a>
@@ -188,8 +188,8 @@
         <div class="footer-bottom">
             <span>&copy; 2026 RUTIP &middot; Malang, Indonesia &middot; All rights reserved.</span>
             <div style="display:flex;gap:20px;flex-wrap:wrap;">
-                <a href="#">Syarat &amp; Ketentuan</a>
-                <a href="#">Kebijakan Privasi</a>
+                <a href="{{ route('legal.terms') }}">Syarat &amp; Ketentuan</a>
+                <a href="{{ route('legal.privacy') }}">Kebijakan Privasi</a>
             </div>
         </div>
     </div>

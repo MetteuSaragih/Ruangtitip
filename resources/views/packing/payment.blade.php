@@ -51,6 +51,10 @@
                 <span class="text-sm font-medium text-white">{{ rupiah($shipping) }}</span>
             </div>
             @endif
+            <div class="flex justify-between items-center py-1">
+                <span class="text-sm" style="color:rgba(255,255,255,0.45);">Biaya Layanan Platform</span>
+                <span class="text-sm font-medium text-white">{{ rupiah($platformFee) }}</span>
+            </div>
         </div>
 
         <div class="flex justify-between items-center mt-3 pt-3" style="border-top:1px solid rgba(255,255,255,0.12);">
@@ -89,6 +93,7 @@
                     <p class="text-base font-extrabold font-display" style="color:#a78bfa;">{{ rupiah($total) }}</p>
                 </div>
                 <button type="submit" id="payBtn" disabled
+                        onclick="this.disabled=true;this.innerHTML='<svg class=\'w-4 h-4 animate-spin\' fill=\'none\' viewBox=\'0 0 24 24\'><circle class=\'opacity-25\' cx=\'12\' cy=\'12\' r=\'10\' stroke=\'currentColor\' stroke-width=\'4\'></circle><path class=\'opacity-75\' fill=\'currentColor\' d=\'M4 12a8 8 0 018-8v8z\'></path></svg> Memproses...';this.closest('form').submit();"
                         class="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40"
                         style="background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 6px 20px rgba(124,58,237,0.4);">
                     Bayar →

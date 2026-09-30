@@ -1,105 +1,93 @@
-@extends('layouts.dashboard')
-
+@extends('layouts.ruang-titip')
 @section('title', 'Ringkasan Pembayaran')
 
-@php
-    if (! function_exists('rupiah')) {
-        function rupiah($n) { return 'Rp ' . number_format($n, 0, ',', '.'); }
-    }
-@endphp
+@php function rp($n){ return 'Rp'.number_format($n,0,',','.'); } @endphp
 
 @section('content')
-<div class="py-6 pb-24 flex flex-col items-center max-w-xl mx-auto">
+@php
+    $back = ($shipping['method'] ?? 'pickup') === 'biteship' ? route('checkout.courier') : route('checkout.shipping');
+@endphp
+<main class="wrap">
+  <a class="back-link" href="{{ $back }}">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+    Kembali
+  </a>
 
-    <x-checkout-progress :labels="['Metode Pengiriman', 'Alamat', 'Kurir', 'Pembayaran']" :step="4" />
-    <div class="w-full mb-2">
-        <h1 class="text-xl font-extrabold text-white font-display">Ringkasan Pembayaran</h1>
-        <p class="text-sm mt-1" style="color:rgba(255,255,255,0.45);">Tinjau dan selesaikan pembayaran</p>
+  <div class="layout">
+    <div>
+      <ol class="stepper" aria-label="Langkah checkout">
+        <li class="done"><button type="button"><span class="bar"></span><span class="lbl"><span class="num"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Pengambilan</span></span></button></li>
+        <li class="done {{ ($shipping['method'] ?? 'pickup') === 'pickup' ? 'skip' : '' }}"><button type="button"><span class="bar"></span><span class="lbl"><span class="num"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Alamat</span></span></button></li>
+        <li class="done {{ ($shipping['method'] ?? 'pickup') === 'pickup' ? 'skip' : '' }}"><button type="button"><span class="bar"></span><span class="lbl"><span class="num"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Kurir</span></span></button></li>
+        <li class="now"><button type="button"><span class="bar"></span><span class="lbl"><span class="num">4</span><span>Bayar</span></span></button></li>
+      </ol>
+
+      <div class="step-head">
+        <h1>Cek lagi, lalu bayar</h1>
+        <p>Pastikan pesanan dan pengirimannya sudah benar.</p>
+      </div>
+
+      @if (session('error'))
+        <p class="err" style="margin-top:12px">{{ session('error') }}</p>
+      @endif
+
+      <div class="panel">
+        <h2>{{ ($shipping['method'] ?? 'pickup') === 'pickup' ? 'Ambil di Gudang RuangTitip' : 'Dikirim ke ' . ($shipping['address']['full'] ?? '-') }}</h2>
+        <p class="hint" style="margin-top:6px">
+          @if (($shipping['method'] ?? 'pickup') === 'pickup')
+            Datang ke gudang RuangTitip dan tunjukkan kode pesanan yang muncul setelah bayar.
+          @else
+            {{ $shipping['courier_name'] ?? '' }}
+          @endif
+        </p>
+      </div>
+
+      <div class="panel">
+        <h2>Rincian tagihan</h2>
+        <div class="lines">
+          @foreach ($cart as $item)
+            <div class="line"><span>{{ $item['name'] }} &times;{{ $item['qty'] }}</span><span>{{ rp($item['subtotal']) }}</span></div>
+          @endforeach
+          <div class="line"><span>Biaya Layanan dan Platform</span><span>{{ rp($serviceFee) }}</span></div>
+          <div class="line"><span>Biaya Pengiriman</span><span>{{ $shippingCost === 0 ? 'Gratis' : rp($shippingCost) }}</span></div>
+        </div>
+        <div class="total"><span style="font-weight:700">Total bayar</span><strong>{{ rp($total) }}</strong></div>
+      </div>
+
+      <form id="payForm">
+        @csrf
+
+        @if (($shipping['method'] ?? 'pickup') === 'biteship')
+          <div class="panel">
+            <x-pickup-schedule theme="light" :old-date="old('pickup_date')" :old-time="old('pickup_time')" />
+          </div>
+        @endif
+
+        <div class="panel">
+          <h2>Metode pembayaran</h2>
+          <p class="hint">Pembayaran diproses aman lewat Tripay.</p>
+          <input type="hidden" name="payment_method">
+          <div style="margin-top:16px">
+            <x-tripay-channel-picker theme="light" button-id="payBtn" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <a href="{{ $back }}" class="btn btn-outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            Kembali
+          </a>
+          <button type="button" id="payBtn" disabled class="btn btn-primary" onclick="processPayment()">Bayar {{ rp($total) }}</button>
+        </div>
+        <p class="err" id="payErr"></p>
+      </form>
     </div>
 
-    @if (session('error'))
-        <div class="w-full rounded-2xl px-4 py-3 mb-4 text-sm font-medium" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;">
-            {{ session('error') }}
-        </div>
-    @endif
+    @include('checkout._summary', ['cart' => $cart, 'shipping' => $shipping])
+  </div>
+</main>
 
-    {{-- Ringkasan Harga --}}
-    <div class="w-full rounded-2xl p-5 mb-4" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-        <p class="text-xs font-bold text-white mb-3">Total Harga Produk</p>
-        @foreach ($cart as $item)
-            @php $itemType = $item['type'] ?? 'preloved'; @endphp
-            <div class="flex items-center gap-3 py-1.5">
-                <div class="w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden shrink-0" style="background:rgba(255,255,255,0.06);">
-                    @if (!empty($item['image']))
-                        @if ($itemType === 'packing')
-                            <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ $item['name'] }}" class="w-full h-full object-cover">
-                        @else
-                            <img src="{{ Storage::url($item['image']) }}" alt="{{ $item['name'] }}" class="w-full h-full object-cover">
-                        @endif
-                    @else
-                        <x-lucide-image class="w-4 h-4" style="color:#a78bfa;" />
-                    @endif
-                </div>
-                <span class="flex-1 text-sm" style="color:rgba(255,255,255,0.55);">{{ $item['name'] }} × {{ $item['qty'] }}</span>
-                <span class="text-sm font-semibold text-white shrink-0">{{ rupiah($item['subtotal']) }}</span>
-            </div>
-        @endforeach
-
-        <div class="mt-3 pt-3" style="border-top:1px solid rgba(255,255,255,0.08);">
-            <div class="flex justify-between items-center py-1">
-                <span class="text-sm" style="color:rgba(255,255,255,0.45);">Subtotal Produk</span>
-                <span class="text-sm font-medium text-white">{{ rupiah($subtotal) }}</span>
-            </div>
-            <div class="flex justify-between items-center py-1">
-                <span class="text-sm" style="color:rgba(255,255,255,0.45);">Biaya Layanan dan Platform</span>
-                <span class="text-sm font-medium text-white">{{ rupiah($serviceFee) }}</span>
-            </div>
-            <div class="flex justify-between items-center py-1">
-                <span class="text-sm" style="color:rgba(255,255,255,0.45);">Biaya Pengiriman ({{ ($shipping['method'] ?? 'pickup') === 'pickup' ? 'Jemput Sendiri' : 'Biteship' }})</span>
-                <span class="text-sm font-medium {{ $shippingCost === 0 ? '' : 'text-white' }}" style="{{ $shippingCost === 0 ? 'color:#34d399;' : '' }}">{{ $shippingCost === 0 ? 'Gratis' : rupiah($shippingCost) }}</span>
-            </div>
-        </div>
-
-        <div class="flex justify-between items-center mt-3 pt-3" style="border-top:1px solid rgba(255,255,255,0.12);">
-            <span class="text-sm font-bold text-white">Total Keseluruhan</span>
-            <span class="text-lg font-extrabold font-display" style="color:#a78bfa;">{{ rupiah($total) }}</span>
-        </div>
-    </div>
-
-    @if (($shipping['method'] ?? 'pickup') === 'biteship')
-        <div class="w-full rounded-2xl p-5 mb-6" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-            <x-pickup-schedule :old-date="old('pickup_date')" :old-time="old('pickup_time')" />
-        </div>
-    @endif
-
-    {{-- Pilih metode pembayaran (Tripay) --}}
-    <div class="w-full rounded-2xl p-5 mb-6" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-        <p class="text-xs font-bold text-white mb-3">Pilih Metode Pembayaran</p>
-        <input type="hidden" name="payment_method">
-        <x-tripay-channel-picker button-id="payBtn" />
-    </div>
-
-    <div class="w-full flex gap-3">
-        <a href="{{ ($shipping['method'] ?? 'pickup') === 'biteship' ? route('checkout.courier') : route('checkout.shipping') }}"
-           class="flex items-center justify-center gap-1.5 py-3.5 px-4 rounded-xl font-semibold text-sm hover:bg-white/5 shrink-0"
-           style="border:1.5px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.65);">
-            <x-lucide-chevron-left class="w-4 h-4" /> Kembali
-        </a>
-        <div class="flex-1 rounded-2xl px-5 py-3.5 flex items-center justify-between"
-             style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-            <div>
-                <p class="text-[10px]" style="color:rgba(255,255,255,0.4);">Total Pembayaran</p>
-                <p class="text-base font-extrabold font-display" style="color:#a78bfa;">{{ rupiah($total) }}</p>
-            </div>
-            <button type="button" id="payBtn" disabled onclick="processPayment()"
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40"
-                    style="background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 6px 20px rgba(124,58,237,0.4);">
-                Bayar →
-            </button>
-        </div>
-    </div>
-
-</div>
+@push('scripts')
 <script>
 function processPayment() {
     const selectedPayment = document.querySelector('input[name="payment_method"]').value;
@@ -127,16 +115,17 @@ function processPayment() {
         if (data.redirect) {
             window.location.href = data.redirect;
         } else {
-            alert(data.message || 'Gagal memproses pembayaran.');
+            document.getElementById('payErr').textContent = data.message || 'Gagal memproses pembayaran.';
             btn.innerHTML = originalLabel;
             btn.disabled = false;
         }
     })
     .catch(() => {
-        alert('Gagal memproses pembayaran.');
+        document.getElementById('payErr').textContent = 'Gagal memproses pembayaran.';
         btn.innerHTML = originalLabel;
         btn.disabled = false;
     });
 }
 </script>
+@endpush
 @endsection

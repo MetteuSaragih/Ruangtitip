@@ -1,68 +1,64 @@
-@extends('layouts.dashboard')
+@extends('layouts.ruang-titip')
 @section('title', 'Pesanan Dibuat')
 
 @php
-    function rp($n){ return 'Rp '.number_format($n,0,',','.'); }
+    function rp($n){ return 'Rp'.number_format($n,0,',','.'); }
     $isPaid = $order->payment_status === 'PAID';
     $isPending = in_array($order->payment_status, ['UNPAID', 'pending']);
     $isFailed = in_array($order->payment_status, ['EXPIRED', 'FAILED', 'REFUND']);
 @endphp
 
 @section('content')
-<div class="max-w-xl mx-auto pt-16 pb-8 flex flex-col items-center text-center">
-    @if ($isPaid)
-        <div class="w-20 h-20 rounded-full flex items-center justify-center mb-6" style="background:rgba(52,211,153,0.15);border:2px solid rgba(52,211,153,0.4);">
-            <x-lucide-check-circle class="w-10 h-10" style="color:#34d399;" />
-        </div>
-        <h2 class="text-2xl font-extrabold text-white font-display mb-2">Pembayaran Berhasil!</h2>
-    @elseif ($isFailed)
-        <div class="w-20 h-20 rounded-full flex items-center justify-center mb-6" style="background:rgba(239,68,68,0.15);border:2px solid rgba(239,68,68,0.4);">
-            <x-lucide-x-circle class="w-10 h-10" style="color:#f87171;" />
-        </div>
-        <h2 class="text-2xl font-extrabold text-white font-display mb-2">Pembayaran Gagal</h2>
-    @else
-        <div class="w-20 h-20 rounded-full flex items-center justify-center mb-6" style="background:rgba(251,191,36,0.15);border:2px solid rgba(251,191,36,0.4);">
-            <x-lucide-clock class="w-10 h-10" style="color:#fbbf24;" />
-        </div>
-        <h2 class="text-2xl font-extrabold text-white font-display mb-2">Pesanan Dibuat!</h2>
-    @endif
-
-    <p class="text-sm mb-1" style="color:rgba(255,255,255,0.45);">Nomor pesanan #{{ $order->code() }}</p>
-    <p class="text-sm mb-6" style="color:rgba(255,255,255,0.45);">
-        Status: <span style="color:{{ $isPaid ? '#34d399' : ($isFailed ? '#f87171' : '#fbbf24') }};">{{ $isPaid ? 'Lunas' : ($isFailed ? 'Gagal/Kedaluwarsa' : 'Menunggu Pembayaran') }}</span>
-    </p>
-
-    @if ($isPending && $order->tripay_checkout_url)
-        <a href="{{ $order->tripay_checkout_url }}"
-           class="w-full py-3.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] mb-3"
-           style="background:linear-gradient(135deg,#7c3aed,#6366f1);">
-            Lanjutkan Pembayaran
-        </a>
-        @if ($order->tripay_pay_code)
-            <p class="text-xs mb-6" style="color:rgba(255,255,255,0.45);">Kode pembayaran: <span class="font-mono font-bold text-white">{{ $order->tripay_pay_code }}</span></p>
-        @endif
-    @endif
-
-    <div class="w-full rounded-2xl p-5 mb-6 text-left" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-        @if ($order->storage)
-            <div class="flex items-center gap-3 pb-4 mb-4" style="border-bottom:1px solid rgba(255,255,255,0.08);">
-                <div class="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden shrink-0" style="background:rgba(124,58,237,0.1);">
-                    @if ($order->storage->primary_photo)
-                        <img src="{{ asset('storage/'.$order->storage->primary_photo) }}" alt="{{ $order->storage->name }}" class="w-full h-full object-cover">
-                    @else
-                        <x-lucide-warehouse class="w-5 h-5" style="color:#a78bfa;" />
-                    @endif
-                </div>
-                <p class="text-sm font-bold text-white truncate">{{ $order->storage->name }}</p>
-            </div>
-        @endif
-        <div class="flex items-center justify-between mb-2">
-            <span class="text-xs" style="color:rgba(255,255,255,0.5);">Total Tagihan</span>
-            <span class="text-lg font-extrabold font-display" style="color:#a78bfa;">{{ rp($order->total) }}</span>
-        </div>
-        <p class="text-[11px]" style="color:rgba(255,255,255,0.35);">Metode: {{ strtoupper($order->tripay_payment_method ?? $order->payment_method) }}</p>
+<main class="wrap" style="max-width:520px;margin:0 auto;padding-top:56px;padding-bottom:64px;display:flex;flex-direction:column;align-items:center;text-align:center">
+  @if ($isPaid)
+    <div style="width:80px;height:80px;border-radius:50%;display:grid;place-items:center;margin-bottom:24px;background:var(--depot-light);border:2px solid var(--depot)">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--depot)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
     </div>
+    <h1 style="font-size:28px;margin-bottom:8px">Pembayaran Berhasil!</h1>
+  @elseif ($isFailed)
+    <div style="width:80px;height:80px;border-radius:50%;display:grid;place-items:center;margin-bottom:24px;background:var(--tape-soft);border:2px solid var(--tape)">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--tape-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    </div>
+    <h1 style="font-size:28px;margin-bottom:8px">Pembayaran Gagal</h1>
+  @else
+    <div style="width:80px;height:80px;border-radius:50%;display:grid;place-items:center;margin-bottom:24px;background:var(--sand);border:2px solid var(--ink)">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 2"/></svg>
+    </div>
+    <h1 style="font-size:28px;margin-bottom:8px">Pesanan Dibuat!</h1>
+  @endif
 
-    <a href="{{ route('dashboard') }}" class="w-full py-3.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02]" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Kembali ke Dashboard</a>
-</div>
+  <p style="color:var(--muted);margin-bottom:4px">Nomor pesanan #{{ $order->code() }}</p>
+  <p style="color:var(--muted);margin-bottom:24px">
+    Status: <strong style="color:{{ $isPaid ? 'var(--depot)' : ($isFailed ? 'var(--tape-dark)' : 'var(--ink)') }}">{{ $isPaid ? 'Lunas' : ($isFailed ? 'Gagal/Kedaluwarsa' : 'Menunggu Pembayaran') }}</strong>
+  </p>
+
+  @if ($isPending && $order->tripay_checkout_url)
+    <a href="{{ $order->tripay_checkout_url }}" class="btn btn-primary" style="width:100%;margin-bottom:12px">Lanjutkan Pembayaran</a>
+    @if ($order->tripay_pay_code)
+      <p style="font-size:13px;color:var(--muted);margin-bottom:24px">Kode pembayaran: <strong style="font-family:monospace;color:var(--ink)">{{ $order->tripay_pay_code }}</strong></p>
+    @endif
+  @endif
+
+  <div class="panel" style="width:100%;text-align:left;margin-top:0">
+    @if ($order->storage)
+      <div style="display:flex;align-items:center;gap:12px;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--line)">
+        <span style="width:48px;height:48px;border-radius:12px;background:var(--sand);border:1px solid var(--line-strong);display:grid;place-items:center;flex-shrink:0;overflow:hidden">
+          @if ($order->storage->primary_photo)
+            <img src="{{ asset('storage/'.$order->storage->primary_photo) }}" alt="{{ $order->storage->name }}" style="width:100%;height:100%;object-fit:cover">
+          @else
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--tape-dark)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10 12 4l9 6v10H3z"/><path d="M8 20v-6h8v6"/></svg>
+          @endif
+        </span>
+        <strong>{{ $order->storage->name }}</strong>
+      </div>
+    @endif
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:14px;color:var(--muted)">Total Tagihan</span>
+      <strong style="font-family:var(--font-display);font-size:20px;color:var(--tape-dark)">{{ rp($order->total) }}</strong>
+    </div>
+    <p style="font-size:13px;color:var(--muted)">Metode: {{ strtoupper($order->tripay_payment_method ?? $order->payment_method) }}</p>
+  </div>
+
+  <a href="{{ route('dashboard') }}" class="btn btn-primary" style="width:100%;margin-top:20px">Kembali ke Dashboard</a>
+</main>
 @endsection

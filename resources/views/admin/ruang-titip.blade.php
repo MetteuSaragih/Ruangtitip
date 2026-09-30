@@ -212,8 +212,10 @@ $orderTabCfg = [
                                         </button>
                                         @endif
                                         {{-- WA --}}
-                                        <button onclick="showWaToast('{{ $row['customer'] }}')"
-                                                class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105"
+                                        <button type="button" {{ $row['waNumber'] ? '' : 'disabled' }}
+                                                title="{{ $row['waNumber'] ? 'Kirim pesan WhatsApp ke '.$row['customer'] : 'Nomor WA pelanggan belum diisi' }}"
+                                                onclick="openWaModal(@js($row['waNumber']), @js($row['waTemplates']), @js('Kirim ke '.$row['customer'].' ('.$row['wa'].')'))"
+                                                class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105 disabled:opacity-30 disabled:cursor-not-allowed"
                                                 style="background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.25);color:#34d399;">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                                             <span class="hidden xl:inline">WA</span>
@@ -225,8 +227,17 @@ $orderTabCfg = [
                         </tbody>
                     </table>
                     @if(count($rows) === 0)
-                    <div class="py-16 flex flex-col items-center gap-3">
-                        <p class="text-sm" style="color:rgba(255,255,255,0.3);">Tidak ada data di tab ini</p>
+                    <div class="py-16 flex flex-col items-center text-center">
+                        <div class="relative inline-flex mx-auto mb-5">
+                            <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#6366f1,#818cf8);"></div>
+                            <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(99,102,241,0.2),rgba(129,140,248,0.1));border:1px solid rgba(99,102,241,0.35);">
+                                <svg class="w-9 h-9" fill="none" stroke="#818cf8" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-sm font-bold text-white mb-1">Tidak ada data di tab ini</p>
+                        <p class="text-xs" style="color:rgba(255,255,255,0.38);">Pesanan akan muncul sesuai status yang dipilih</p>
                     </div>
                     @endif
                 </div>
@@ -330,7 +341,20 @@ $orderTabCfg = [
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="6" class="px-5 py-16 text-center text-sm" style="color:rgba(255,255,255,0.3);">Belum ada ruangan. Klik "Tambah Ruangan Baru" untuk mulai.</td></tr>
+                        <tr><td colspan="6" class="py-16 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="relative inline-flex mx-auto mb-5">
+                                    <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);"></div>
+                                    <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(167,139,250,0.1));border:1px solid rgba(124,58,237,0.35);">
+                                        <svg class="w-9 h-9" fill="none" stroke="#a78bfa" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 9.5L12 4l9 5.5V20H3V9.5z"/><path d="M9 20v-5h6v5"/><line x1="12" y1="4" x2="12" y2="9"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <p class="text-sm font-bold text-white mb-1">Belum ada ruangan</p>
+                                <p class="text-xs" style="color:rgba(255,255,255,0.38);">Klik "Tambah Ruangan Baru" untuk mulai</p>
+                            </div>
+                        </td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -409,12 +433,16 @@ $orderTabCfg = [
                         </div>
                         <div>
                             <p class="text-xs font-bold text-white">Klik untuk pilih / tambah foto</p>
-                            <p class="text-[10px]" style="color:rgba(255,255,255,0.35);">Bisa diklik berkali-kali untuk menambah foto satu per satu.</p>
+                            <p class="text-[10px]" style="color:rgba(255,255,255,0.35);">JPG / PNG · Maks 5 MB per foto</p>
+                            <div class="mt-1 flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-lg w-fit mx-auto" style="background:rgba(124,58,237,0.15);color:#c4b5fd;">
+                                <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+                                Rasio 4:3 &bull; Min. 800×600 px
+                            </div>
                         </div>
                         <input id="room-images-input" type="file" name="images[]" accept="image/*" multiple data-existing-count="0" class="sr-only">
                     </label>
                     <div id="room-images-preview" class="rt-img-pick-grid hidden"></div>
-                    <p id="room-images-label" class="text-[10px] mt-1.5" style="color:rgba(255,255,255,0.35);">Bisa pilih lebih dari satu gambar. Maksimal 10 foto asli per ruangan.</p>
+                    <p id="room-images-label" class="text-[10px] mt-1.5" style="color:rgba(255,255,255,0.35);">Wajib minimal 1 foto, maksimal 10 foto asli per ruangan.</p>
                     @error('images')
                         <p class="text-[10px] mt-1.5 text-red-400">{{ $message }}</p>
                     @enderror
@@ -582,17 +610,7 @@ $orderTabCfg = [
             style="color:rgba(255,255,255,0.35);">✕</button>
 </div>
 
-{{-- WA Toast --}}
-<div id="wa-toast" class="fixed bottom-6 right-6 z-50 hidden items-center gap-3 px-4 py-3 rounded-2xl"
-     style="background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.35);backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,0.4);">
-    <span class="text-xl">💬</span>
-    <div>
-        <p class="text-xs font-bold text-white">Notifikasi WA Terkirim</p>
-        <p id="wa-toast-name" class="text-[10px]" style="color:rgba(255,255,255,0.5);"></p>
-    </div>
-    <button onclick="document.getElementById('wa-toast').classList.add('hidden');document.getElementById('wa-toast').classList.remove('flex');"
-            style="color:rgba(255,255,255,0.35);">✕</button>
-</div>
+<x-admin-wa-modal />
 
 @push('scripts')
 <script>
@@ -608,7 +626,7 @@ const roomImagePicker = createMultiImagePicker({
     previewId: 'room-images-preview',
     labelId: 'room-images-label',
     maxImages: MAX_ROOM_IMAGES,
-    emptyText: 'Bisa pilih lebih dari satu gambar. Maksimal 10 foto asli per ruangan.',
+    emptyText: 'Wajib minimal 1 foto, maksimal 10 foto asli per ruangan.',
 });
 
 /* ── Page tab ── */
@@ -636,15 +654,6 @@ function switchOrderTab(key) {
     });
     document.getElementById('opanel-' + key).classList.remove('hidden');
     document.getElementById('otab-' + key).style.color = '#c4b5fd';
-}
-
-/* ── WA Toast ── */
-function showWaToast(name) {
-    const t = document.getElementById('wa-toast');
-    document.getElementById('wa-toast-name').textContent = 'ke ' + name;
-    t.classList.remove('hidden');
-    t.classList.add('flex');
-    setTimeout(() => { t.classList.add('hidden'); t.classList.remove('flex'); }, 3500);
 }
 
 /* ── Active toggle ── */

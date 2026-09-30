@@ -1,6 +1,19 @@
 @extends('layouts.admin')
 
-@section('title', 'Toko Packing | Admin RUTIP')
+@section('title', 'Toko Packing')
+
+@php
+if (! function_exists('rt_wa_number')) {
+    function rt_wa_number($phone) {
+        if (! $phone) return null;
+        $digits = preg_replace('/\D/', '', $phone);
+        if (! $digits) return null;
+        if (str_starts_with($digits, '0')) return '62' . substr($digits, 1);
+        if (str_starts_with($digits, '62')) return $digits;
+        return '62' . $digits;
+    }
+}
+@endphp
 
 @section('content')
 <style>
@@ -11,7 +24,14 @@
 </style>
 
 <div id="packing-admin" data-active-tab="{{ $tab }}" class="p-6 max-w-[1280px] mx-auto min-h-screen">
-    @if($errors->any())
+    @if (session('success'))
+    <div class="mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium"
+         style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);color:#34d399;">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        {{ session('success') }}
+    </div>
+    @endif
+    @if ($errors->any())
     <div class="mb-4 px-4 py-3 rounded-2xl text-sm font-medium"
          style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;">
         {{ $errors->first() }}
@@ -217,11 +237,18 @@
                     @empty
                         <tr>
                             <td colspan="6" class="py-16 text-center">
-                                <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25);">
-                                    <x-lucide-alert-triangle class="w-6 h-6" style="color: #f87171;" />
+                                <div class="flex flex-col items-center">
+                                    <div class="relative inline-flex mx-auto mb-5">
+                                        <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#f97316,#fb923c);"></div>
+                                        <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(249,115,22,0.2),rgba(251,146,60,0.1));border:1px solid rgba(249,115,22,0.35);">
+                                            <svg class="w-9 h-9" fill="none" stroke="#fb923c" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M21 8L12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm font-bold text-white mb-1">Belum ada produk</p>
+                                    <p class="text-xs" style="color:rgba(255,255,255,0.38);">Klik "Tambah Produk" di atas untuk mulai</p>
                                 </div>
-                                <h3 class="text-base font-extrabold text-white font-display">0 Produk</h3>
-                                <p class="text-xs mt-1" style="color: rgba(255,255,255,0.4);">Belum ada produk. Silakan klik "Tambah Produk" di atas.</p>
                             </td>
                         </tr>
                     @endforelse
@@ -245,10 +272,17 @@
             </div>
         </div>
         @if ($orders->isEmpty())
-            <div class="py-20 text-center">
-                <x-lucide-package class="w-10 h-10 mx-auto mb-3" style="color: rgba(255,255,255,0.2);" />
-                <p class="text-sm font-semibold text-white">Tidak ada pesanan masuk</p>
-                <p class="text-xs mt-1" style="color: rgba(255,255,255,0.4);">Pesanan dari pelanggan akan muncul di sini.</p>
+            <div class="py-16 flex flex-col items-center text-center">
+                <div class="relative inline-flex mx-auto mb-5">
+                    <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#d97706,#fbbf24);"></div>
+                    <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(217,119,6,0.2),rgba(251,191,36,0.1));border:1px solid rgba(217,119,6,0.35);">
+                        <svg class="w-9 h-9" fill="none" stroke="#fbbf24" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-sm font-bold text-white mb-1">Tidak ada pesanan masuk</p>
+                <p class="text-xs" style="color:rgba(255,255,255,0.38);">Pesanan dari pelanggan akan muncul di sini</p>
             </div>
         @else
             <div class="overflow-x-auto">
@@ -259,8 +293,10 @@
                             <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Pelanggan</th>
                             <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Item</th>
                             <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Total</th>
-                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Status</th>
+                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Pembayaran</th>
+                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Status Order</th>
                             <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Tanggal</th>
+                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -271,6 +307,13 @@
                                     'FAILED', 'EXPIRED' => ['Gagal', '#f87171', 'rgba(239,68,68,0.12)'],
                                     default => ['Menunggu', '#fbbf24', 'rgba(251,191,36,0.12)'],
                                 };
+                                $waNumber = rt_wa_number($order->user->phone ?? null);
+                                $waCustomer = $order->user->name ?? 'Pelanggan';
+                                $waTemplates = [
+                                    ['key' => 'diproses', 'label' => 'Pesanan Sedang Diproses', 'text' => "Halo {$waCustomer}, pesanan packing-mu (kode {$order->order_code}) sedang kami proses. Mohon ditunggu ya! 📦"],
+                                    ['key' => 'dikirim', 'label' => 'Pesanan Sudah Dikirim', 'text' => "Halo {$waCustomer}, pesanan packing-mu (kode {$order->order_code}) sudah dikirim. Terima kasih telah berbelanja di RUTIP! 🚚"],
+                                    ['key' => 'selesai', 'label' => 'Pesanan Sudah Diterima/Selesai', 'text' => "Halo {$waCustomer}, terima kasih! Pesanan packing-mu (kode {$order->order_code}) sudah selesai. 🙏"],
+                                ];
                             @endphp
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
                                 <td class="px-5 py-4 font-mono font-semibold text-white whitespace-nowrap">{{ $order->order_code }}</td>
@@ -280,7 +323,40 @@
                                 <td class="px-5 py-4 whitespace-nowrap">
                                     <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:{{ $badge[2] }};color:{{ $badge[1] }};">{{ $badge[0] }}</span>
                                 </td>
+                                <td class="px-5 py-4 whitespace-nowrap">
+                                    @php
+                                        $orderStatus = $order->status ?? 'pending';
+                                        $statusOpts = [
+                                            'pending'   => ['label' => 'Pending',   'color' => '#fbbf24', 'bg' => 'rgba(251,191,36,0.12)'],
+                                            'diproses'  => ['label' => 'Diproses',  'color' => '#38bdf8', 'bg' => 'rgba(56,189,248,0.12)'],
+                                            'dikirim'   => ['label' => 'Dikirim',   'color' => '#a78bfa', 'bg' => 'rgba(167,139,250,0.12)'],
+                                            'selesai'   => ['label' => 'Selesai',   'color' => '#34d399', 'bg' => 'rgba(52,211,153,0.12)'],
+                                        ];
+                                        $cur = $statusOpts[$orderStatus] ?? $statusOpts['pending'];
+                                    @endphp
+                                    <form action="{{ route('admin.packing.order.status', $order->id) }}" method="POST" class="flex items-center gap-1.5">
+                                        @csrf
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0" style="background:{{ $cur['bg'] }};color:{{ $cur['color'] }};">{{ $cur['label'] }}</span>
+                                        <select name="status" onchange="this.form.submit()"
+                                                class="px-2 py-1 rounded-lg text-[10px] font-semibold outline-none appearance-none cursor-pointer transition-colors"
+                                                style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);">
+                                            @foreach($statusOpts as $val => $opt)
+                                                <option value="{{ $val }}" {{ $orderStatus === $val ? 'selected' : '' }} style="background:#0f0720;">{{ $opt['label'] }}</option>
+                                            @endforeach
+                                        </select>
+                                    </form>
+                                </td>
                                 <td class="px-5 py-4 whitespace-nowrap" style="color: rgba(255,255,255,0.4);">{{ $order->created_at->format('d M Y, H:i') }}</td>
+                                <td class="px-5 py-4 whitespace-nowrap">
+                                    <button type="button" {{ $waNumber ? '' : 'disabled' }}
+                                            title="{{ $waNumber ? 'Kirim pesan WhatsApp ke '.$waCustomer : 'Nomor WA pelanggan belum diisi' }}"
+                                            onclick="openWaModal(@js($waNumber), @js($waTemplates), @js('Kirim ke '.$waCustomer))"
+                                            class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105 disabled:opacity-30 disabled:cursor-not-allowed"
+                                            style="background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.25);color:#34d399;">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                        WA
+                                    </button>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -317,12 +393,16 @@
                             </div>
                             <div>
                                 <p class="text-xs font-bold text-white">Klik untuk pilih / tambah foto</p>
-                                <p class="text-[10px]" style="color:rgba(255,255,255,0.35);">Bisa diklik berkali-kali untuk menambah foto satu per satu.</p>
+                                <p class="text-[10px]" style="color:rgba(255,255,255,0.35);">JPG / PNG · Maks 5 MB per foto</p>
+                                <div class="mt-1 flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-lg w-fit mx-auto" style="background:rgba(124,58,237,0.15);color:#c4b5fd;">
+                                    <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+                                    Rasio 1:1 &bull; Min. 500×500 px
+                                </div>
                             </div>
                             <input id="packing-images-input" type="file" name="images[]" accept="image/*" multiple data-existing-count="0" class="sr-only" />
                         </label>
                         <div id="packing-images-preview" class="rt-img-pick-grid hidden"></div>
-                        <p id="packing-images-label" class="text-[10px] mt-1.5" style="color:rgba(255,255,255,0.35);">Maksimal 10 foto asli per produk.</p>
+                        <p id="packing-images-label" class="text-[10px] mt-1.5" style="color:rgba(255,255,255,0.35);">Wajib minimal 1 foto, maksimal 10 foto asli per produk.</p>
                         @error('images')
                             <p class="text-[10px] mt-1.5 text-red-400">{{ $message }}</p>
                         @enderror
@@ -399,6 +479,8 @@
             </div>
         </div>
     </div>
+
+    <x-admin-wa-modal />
 
     {{-- TOAST SUCCESS --}}
     @if(session('success') || session('save_toast'))
@@ -492,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
         previewId: 'packing-images-preview',
         labelId: 'packing-images-label',
         maxImages,
-        emptyText: 'Maksimal 10 foto asli per produk.',
+        emptyText: 'Wajib minimal 1 foto, maksimal 10 foto asli per produk.',
     });
 
     const fillForm = (data) => {
