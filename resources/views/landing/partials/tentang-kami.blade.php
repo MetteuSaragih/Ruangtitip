@@ -6,9 +6,9 @@
     </div>
     <ul class="team-list">
       {{-- Ganti isi .ph dengan <img src="{{ asset('assets/tim-metteu.webp') }}" alt="Metteu AK. Saragih"> --}}
-      <li><div class="ph">[Foto]</div><strong>Metteu AK. Saragih</strong><span>Founder &amp; CEO</span></li>
-      <li><div class="ph">[Foto]</div><strong>Gracyella Exaudi Girsang</strong><span>Co-Founder &amp; CTO</span></li>
-      <li><div class="ph">[Foto]</div><strong>Jeanete Arthika Lorentz</strong><span>Co-Founder &amp; COO</span></li>
+      <li><div class="ph"></div><strong>Metteu AK. Saragih</strong><span>Founder &amp; CEO</span></li>
+      <li><div class="ph"></div><strong>Gracyella Exaudi Girsang</strong><span>Co-Founder &amp; CTO</span></li>
+      <li><div class="ph"></div><strong>Jeanete Arthika Lorentz</strong><span>Co-Founder &amp; COO</span></li>
     </ul>
   </div>
 </section>

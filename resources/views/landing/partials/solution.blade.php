@@ -4,7 +4,7 @@
       <h2 class="h2-sm">Yang kamu dapat.</h2>
       <p class="lead" style="font-size:17px">Bukan cuma tempat naruh barang. Tiap titipan dicatat, difoto, dan bisa kamu cek sendiri.</p>
       {{-- Ganti div ini dengan <img src="{{ asset('assets/foto-tim.webp') }}" alt="..."> --}}
-      <div class="photo-ph">[Foto asli: tim RuangTitip angkat kardus dari kos, atau rak gudang]</div>
+      <div class="photo-ph"></div>
     </div>
     <ul class="svc">
       <li><h3>Penitipan barang</h3><p>Disimpan di gudang dengan akses terbatas dan CCTV. Cocok untuk libur semester, KKN, atau magang.</p></li>
