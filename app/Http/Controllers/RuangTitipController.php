@@ -39,10 +39,6 @@ class RuangTitipController extends Controller
 {
     private const PLATFORM_FEE          = 1000;   // biaya layanan jika logistik tidak pakai Biteship
     private const PLATFORM_FEE_BITESHIP = 2000;   // biaya layanan jika logistik pakai Biteship
-<<<<<<< HEAD
-    private const PACKING_PER_BOX  = 15000;  // jasa packing+anjem per kardus (dok. Th.1)
-    private const DEFAULT_KM       = 5;      // [DUMMY] estimasi jarak penjemputan
-=======
     private const PICKUP_PER_KM  = 4000;   // biaya antar-jemput per km
     private const PICKUP_PER_BOX = 2000;   // biaya antar-jemput per kardus
     private const PACKING_PER_BOX = 3000;  // jasa packing per kardus
@@ -51,7 +47,6 @@ class RuangTitipController extends Controller
     public function __construct(private DistanceService $distance)
     {
     }
->>>>>>> hostinger/main
 
     /* ─── Helper session ─── */
     private function state(Request $r): array

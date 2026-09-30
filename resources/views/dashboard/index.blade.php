@@ -54,7 +54,6 @@ button{font:inherit;color:inherit}
 .btn-ghost{background:none;border:0;color:var(--muted);font-weight:600;min-height:40px;padding:0 12px;cursor:pointer}
 .btn-ghost:hover{color:var(--ink)}
 
-<<<<<<< HEAD
 /* ================= Navbar ================= */
 .nav{position:sticky;top:0;z-index:40;background:rgba(245,241,232,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 .nav-in{display:flex;align-items:center;gap:32px;height:72px}
@@ -394,49 +393,11 @@ button{font:inherit;color:inherit}
         <div class="txt">
           <h3>Gudang belum tersedia di kotamu</h3>
           <p>Ruru lagi siapin gudangnya. Kami kabari lewat notifikasi begitu sudah buka.</p>
-=======
-@if ((empty($user->name) || empty($user->phone)) && ! session('profile_banner_dismissed'))
-<div id="profile-complete-banner" class="flex items-center justify-between gap-4 px-5 py-4 rounded-2xl mb-6 flex-wrap"
-     style="background:linear-gradient(135deg,rgba(251,191,36,0.15),rgba(245,158,11,0.08));border:1px solid rgba(251,191,36,0.3);">
-    <div class="flex items-center gap-3">
-        <span class="text-2xl">📝</span>
-        <div>
-            <p class="text-xs font-bold text-white">Lengkapi profil kamu</p>
-            <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.5);">Isi nama & nomor WhatsApp agar admin bisa menghubungimu soal pesananmu.</p>
-        </div>
-    </div>
-    <div class="flex items-center gap-2 shrink-0">
-        <a href="{{ route('profile.index') }}" class="px-3 py-2 rounded-xl text-[11px] font-bold text-white" style="background:#f59e0b;">Lengkapi Sekarang</a>
-        <button type="button" onclick="dismissProfileBanner()" class="px-3 py-2 rounded-xl text-[11px] font-semibold" style="color:rgba(255,255,255,0.45);">Lewati</button>
-    </div>
-</div>
-<script>
-function dismissProfileBanner() {
-    document.getElementById('profile-complete-banner')?.remove();
-    fetch('{{ route('profile.dismiss-banner') }}', {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
-    });
-}
-</script>
-@endif
-
-{{-- ─── HERO BANNER ─── --}}
-<section class="pt-4 lg:pt-6 mb-8">
-    <div class="relative overflow-hidden rounded-2xl lg:rounded-3xl"
-         style="background:linear-gradient(135deg,#3b0764 0%,#4c1d95 30%,#312e81 60%,#1e1b4b 100%);min-height:320px;">
-        {{-- Dekorasi --}}
-        <div class="absolute inset-0 pointer-events-none">
-            <div class="absolute -top-20 -right-20 w-72 h-72 rounded-full opacity-30 blur-3xl" style="background:radial-gradient(circle,#7c3aed,transparent 70%);"></div>
-            <div class="absolute bottom-0 left-1/4 w-48 h-48 rounded-full opacity-20 blur-3xl" style="background:radial-gradient(circle,#7c3aed,transparent 70%);"></div>
-            <div class="absolute inset-0 opacity-[0.04]" style="background-image:linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px);background-size:32px 32px;"></div>
->>>>>>> hostinger/main
         </div>
       </div>
     @endforelse
   </section>
 
-<<<<<<< HEAD
   {{-- ================= TOKO PACKING ================= --}}
   <section class="sec" aria-labelledby="sec-packing">
     <div class="sec-head">
@@ -466,68 +427,6 @@ function dismissProfileBanner() {
         <div class="txt">
           <h3>Produk packing segera hadir</h3>
           <p>Sementara itu, tim kami tetap bisa bawa perlengkapan packing saat menjemput barangmu.</p>
-=======
-        <div class="relative z-10 flex flex-col lg:flex-row items-center gap-8 px-6 py-8 lg:px-10 lg:py-10">
-            {{-- Kiri --}}
-            <div class="flex-1 text-center lg:text-left">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-4"
-                      style="background:rgba(251,146,60,0.2);color:#fb923c;border:1px solid rgba(251,146,60,0.3);">
-                    <x-lucide-star class="w-3 h-3" /> Selamat datang{{ $user->name ? ', ' . explode(' ', $user->name)[0] : '' }}! 👋
-                </span>
-                <h1 class="text-2xl lg:text-4xl font-extrabold text-white font-display leading-tight mb-3">
-                    Titip Barangmu,<br>
-                    <span style="background:linear-gradient(90deg,#fb923c,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Simpan Uangmu</span>
-                </h1>
-                <p class="text-sm lg:text-base mb-6 max-w-md mx-auto lg:mx-0" style="color:rgba(255,255,255,0.65);">
-                    Hemat biaya kos hingga jutaan rupiah dengan menitipkan barangmu di gudang RUTIP yang aman dan terpercaya.
-                </p>
-                <div class="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                    <a href="{{ route('ruang-titip.index') }}" class="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105"
-                       style="background:linear-gradient(135deg,#ea580c,#fb923c);color:#fff;box-shadow:0 6px 24px rgba(234,88,12,0.45);">
-                        Titip Barang Sekarang <x-lucide-arrow-right class="w-4 h-4" />
-                    </a>
-                    <a href="{{ route('pesanan.index') }}" class="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all hover:bg-white/10"
-                       style="color:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.2);">
-                        Lihat Pesanan Aktif
-                    </a>
-                </div>
-                <div class="flex items-center gap-6 mt-6 justify-center lg:justify-start">
-                    <div class="flex items-center gap-1.5"><x-lucide-shield class="w-3.5 h-3.5" style="color:#a78bfa;" /><span class="text-xs font-medium" style="color:rgba(255,255,255,0.6);">100% Aman</span></div>
-                    <div class="flex items-center gap-1.5"><x-lucide-clock class="w-3.5 h-3.5" style="color:#34d399;" /><span class="text-xs font-medium" style="color:rgba(255,255,255,0.6);">Jemput 24 Jam</span></div>
-                    <div class="flex items-center gap-1.5"><x-lucide-star class="w-3.5 h-3.5" style="color:#fb923c;" /><span class="text-xs font-medium" style="color:rgba(255,255,255,0.6);">4.9 Rating</span></div>
-                </div>
-            </div>
-
-            {{-- Kanan: ilustrasi --}}
-            <div class="shrink-0 relative">
-                <div class="relative w-52 h-52 lg:w-64 lg:h-64">
-                    <div class="absolute inset-0 rounded-full opacity-20" style="background:radial-gradient(circle,#a78bfa,transparent 70%);"></div>
-                    <svg viewBox="0 0 200 200" class="w-full h-full" fill="none">
-                        <ellipse cx="100" cy="185" rx="55" ry="8" fill="rgba(0,0,0,0.2)"/>
-                        <rect x="72" y="88" width="56" height="68" rx="8" fill="#7c3aed"/>
-                        <rect x="90" y="96" width="20" height="14" rx="3" fill="rgba(255,255,255,0.15)"/>
-                        <circle cx="100" cy="72" r="22" fill="#fbbf24"/>
-                        <path d="M78 65 Q100 48 122 65 Q120 56 100 52 Q80 56 78 65Z" fill="#1c1917"/>
-                        <circle cx="93" cy="70" r="3" fill="#1c1917"/><circle cx="107" cy="70" r="3" fill="#1c1917"/>
-                        <path d="M93 78 Q100 84 107 78" stroke="#1c1917" stroke-width="2" stroke-linecap="round" fill="none"/>
-                        <rect x="48" y="100" width="24" height="12" rx="6" fill="#fbbf24" transform="rotate(-20 60 106)"/>
-                        <rect x="128" y="100" width="24" height="12" rx="6" fill="#fbbf24" transform="rotate(20 140 106)"/>
-                        <rect x="52" y="108" width="96" height="60" rx="6" fill="#f97316"/>
-                        <rect x="52" y="108" width="96" height="20" rx="6" fill="#ea580c"/>
-                        <rect x="82" y="104" width="36" height="8" rx="2" fill="#fbbf24" opacity="0.9"/>
-                        <text x="100" y="158" text-anchor="middle" fill="white" font-size="10" font-weight="bold" opacity="0.8">RUTIP</text>
-                        <rect x="78" y="152" width="18" height="36" rx="9" fill="#312e81"/>
-                        <rect x="104" y="152" width="18" height="36" rx="9" fill="#312e81"/>
-                        <ellipse cx="87" cy="188" rx="13" ry="6" fill="#1c1917"/>
-                        <ellipse cx="113" cy="188" rx="13" ry="6" fill="#1c1917"/>
-                    </svg>
-                    <div class="absolute -top-2 -right-2 px-2.5 py-1.5 rounded-xl text-xs font-bold" style="background:linear-gradient(135deg,#059669,#10b981);color:white;box-shadow:0 4px 12px rgba(5,150,105,0.4);">Hemat Rp 2,4jt/bln</div>
-                    <div class="absolute -bottom-2 -left-4 px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1" style="background:rgba(124,58,237,0.9);color:white;border:1px solid rgba(167,139,250,0.3);">
-                        <x-lucide-shield class="w-3 h-3" /> Terjamin Aman
-                    </div>
-                </div>
-            </div>
->>>>>>> hostinger/main
         </div>
       </div>
     @endforelse
@@ -539,7 +438,6 @@ function dismissProfileBanner() {
       <div><h2 id="sec-preloved">Toko Preloved</h2><p>Barang bekas mahasiswa, masih layak pakai.</p></div>
       <a class="see-all" href="{{ route('preloved.index') }}">Lihat semua <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>
     </div>
-<<<<<<< HEAD
     <div class="promo">
       <span class="ic" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1C1B18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span>
       <div class="txt">
@@ -589,106 +487,10 @@ function dismissProfileBanner() {
           <figcaption><span class="av bg-{{ $t['color'] }}" aria-hidden="true">{{ $t['avatar'] }}</span><span><strong>{{ $t['name'] }}</strong><span>{{ $t['major'] }}</span></span></figcaption>
         </figure>
       @endforeach
-=======
-    @if ($storages->isEmpty())
-        <div class="rounded-2xl py-10 flex flex-col items-center text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-            <div class="relative inline-flex mb-4">
-                <div class="absolute inset-0 rounded-2xl blur-xl opacity-25" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);"></div>
-                <div class="relative w-14 h-14 rounded-2xl flex items-center justify-center" style="background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);">
-                    <svg class="w-7 h-7" fill="none" stroke="#a78bfa" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 4l9 5.5V20H3V9.5z"/><path d="M9 20v-5h6v5"/></svg>
-                </div>
-            </div>
-            <p class="text-xs font-semibold text-white mb-0.5">Belum ada gudang tersedia</p>
-            <p class="text-[11px]" style="color:rgba(255,255,255,0.35);">Gudang akan segera hadir di kotamu</p>
-        </div>
-    @else
-    <div class="flex gap-4 overflow-x-auto pb-2 lg:overflow-visible lg:grid lg:grid-cols-3 lg:pb-0 no-scrollbar">
-        @foreach ($storages as $s)
-            <div class="rounded-2xl overflow-hidden shrink-0 w-72 lg:w-auto transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-                <div class="h-32 flex items-center justify-center relative" style="background:linear-gradient(135deg,#7c3aed20,#7c3aed08);">
-                    @if($s->primary_photo)
-                        <img src="{{ asset('storage/'.$s->primary_photo) }}" alt="{{ $s->name }}" class="w-full h-full object-cover">
-                    @else
-                        <x-lucide-warehouse class="w-12 h-12" style="color:#a78bfa;" />
-                    @endif
-                </div>
-                <div class="p-4">
-                    <h3 class="text-sm font-bold text-white leading-snug mb-1">{{ $s->name }}</h3>
-                    <div class="flex items-center gap-1.5 mb-3">
-                        <x-lucide-map-pin class="w-3 h-3 shrink-0" style="color:rgba(255,255,255,0.3);" />
-                        <p class="text-[11px] truncate" style="color:rgba(255,255,255,0.45);">{{ $s->address }}</p>
-                    </div>
-                    <div class="mb-3">
-                        <div class="flex justify-between mb-1.5">
-                            <span class="text-[10px]" style="color:rgba(255,255,255,0.4);">Kapasitas terisi</span>
-                            <span class="text-[10px] font-bold" style="color:{{ $s->capacity_pct >= 80 ? '#fb923c' : '#34d399' }};">{{ $s->capacity_pct }}%</span>
-                        </div>
-                        <div class="h-1.5 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.07);">
-                            <div class="h-full rounded-full" style="width:{{ $s->capacity_pct }}%;background:linear-gradient(90deg,#7c3aed,#7c3aed99);"></div>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap gap-1.5 mb-4">
-                        @foreach (($s->facilities ?? []) as $tag)
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.5);">{{ $tag }}</span>
-                        @endforeach
-                    </div>
-                    <div class="pt-3 mb-3" style="border-top:1px solid rgba(255,255,255,0.07);">
-                        <p class="text-sm font-bold" style="color:#7c3aed;">{{ rupiah($s->min_price) }}</p>
-                        <p class="text-[10px]" style="color:rgba(255,255,255,0.3);">mulai dari / hari</p>
-                    </div>
-                    <a href="{{ route('ruang-titip.detail', $s) }}" class="block text-center w-full py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-[1.02]" style="border:1.5px solid rgba(124,58,237,0.5);color:#a78bfa;background:rgba(124,58,237,0.08);">Lihat</a>
-                </div>
-            </div>
-        @endforeach
-    </div>
-    @endif
-</section>
-
-{{-- ─── TOKO PACKING ─── --}}
-<section class="mb-10">
-    <div class="flex items-center justify-between mb-5">
-        <h2 class="text-base font-bold text-white">Toko Packing</h2>
-        <a href="{{ route('packing.index') }}" class="flex items-center gap-1 text-xs font-semibold" style="color:#a78bfa;">Lihat Semua <x-lucide-chevron-right class="w-3.5 h-3.5" /></a>
-    </div>
-    @if ($packing->isEmpty())
-        <div class="rounded-2xl py-10 flex flex-col items-center text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-            <div class="relative inline-flex mb-4">
-                <div class="absolute inset-0 rounded-2xl blur-xl opacity-25" style="background:linear-gradient(135deg,#f97316,#fb923c);"></div>
-                <div class="relative w-14 h-14 rounded-2xl flex items-center justify-center" style="background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);">
-                    <svg class="w-7 h-7" fill="none" stroke="#fb923c" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8L12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>
-                </div>
-            </div>
-            <p class="text-xs font-semibold text-white mb-0.5">Belum ada produk packing</p>
-            <p class="text-[11px]" style="color:rgba(255,255,255,0.35);">Produk akan segera tersedia</p>
-        </div>
-    @else
-    <div class="flex gap-4 overflow-x-auto pb-2 lg:overflow-visible lg:grid lg:grid-cols-4 lg:pb-0 no-scrollbar">
-        @foreach ($packing as $p)
-            <div class="rounded-2xl overflow-hidden shrink-0 w-44 lg:w-auto transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-                <div class="h-24 flex items-center justify-center text-4xl" style="background:#7c3aed12;">
-                    @if($p->primary_image)
-                        <img src="{{ asset('storage/'.$p->primary_image) }}" alt="{{ $p->name }}" class="w-full h-full object-cover">
-                    @else
-                        <x-lucide-package class="w-10 h-10" style="color:#a78bfa;" />
-                    @endif
-                </div>
-                <div class="p-3">
-                    <p class="text-xs font-bold text-white mb-0.5">{{ $p->name }}</p>
-                    <p class="text-xs font-bold mb-0.5" style="color:#7c3aed;">{{ rupiah($p->price) }}</p>
-                    <p class="text-[10px] mb-3" style="color:rgba(255,255,255,0.35);">Stok: {{ $p->stock }}</p>
-                    <div class="flex gap-1.5">
-                        <a href="{{ route('packing.show', $p) }}" class="flex-1 flex items-center justify-center gap-0.5 py-2 rounded-xl text-[10px] font-bold" style="border:1.5px solid rgba(124,58,237,0.5);color:#a78bfa;"><x-lucide-plus class="w-3 h-3" /> Keranjang</a>
-                        <a href="{{ route('packing.show', $p) }}" class="flex-1 text-center py-2 rounded-xl text-[10px] font-bold text-white" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Beli</a>
-                    </div>
-                </div>
-            </div>
-        @endforeach
->>>>>>> hostinger/main
     </div>
   </section>
 </main>
 
-<<<<<<< HEAD
 {{-- ================= FOOTER ================= --}}
 <footer class="footer">
   <div class="wrap">
@@ -723,56 +525,13 @@ function dismissProfileBanner() {
         </ul>
         <a class="btn btn-wa btn-sm" href="https://wa.me/6285121091134" target="_blank" rel="noopener">Chat via WhatsApp</a>
       </div>
-=======
-{{-- ─── TOKO PRELOVED ─── --}}
-<section class="mb-10">
-    <div class="flex items-center justify-between mb-5">
-        <h2 class="text-base font-bold text-white">Toko Preloved</h2>
-        <a href="{{ route('preloved.index') }}" class="flex items-center gap-1 text-xs font-semibold" style="color:#a78bfa;">Lihat Semua <x-lucide-chevron-right class="w-3.5 h-3.5" /></a>
->>>>>>> hostinger/main
     </div>
     <div class="foot-bottom">
       <span>&copy; 2026 RuangTitip &middot; Malang, Indonesia</span>
       <span><a href="{{ route('legal.terms') }}">Syarat &amp; Ketentuan</a><a href="{{ route('legal.privacy') }}">Kebijakan Privasi</a></span>
     </div>
-<<<<<<< HEAD
   </div>
 </footer>
-=======
-    @if ($preloved->isEmpty())
-        <div class="rounded-2xl py-10 flex flex-col items-center text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-            <div class="relative inline-flex mb-4">
-                <div class="absolute inset-0 rounded-2xl blur-xl opacity-25" style="background:linear-gradient(135deg,#059669,#34d399);"></div>
-                <div class="relative w-14 h-14 rounded-2xl flex items-center justify-center" style="background:rgba(5,150,105,0.15);border:1px solid rgba(5,150,105,0.3);">
-                    <svg class="w-7 h-7" fill="none" stroke="#34d399" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-                </div>
-            </div>
-            <p class="text-xs font-semibold text-white mb-0.5">Belum ada produk preloved</p>
-            <p class="text-[11px]" style="color:rgba(255,255,255,0.35);">Produk akan segera tersedia</p>
-        </div>
-    @else
-    <div class="flex gap-4 overflow-x-auto pb-2 lg:overflow-visible lg:grid lg:grid-cols-4 lg:pb-0 no-scrollbar">
-        @foreach ($preloved as $p)
-            <div class="rounded-2xl overflow-hidden shrink-0 w-44 lg:w-auto transition-all hover:-translate-y-0.5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-                <div class="h-24 flex items-center justify-center text-4xl" style="background:rgba(255,255,255,0.04);">
-                    @if($p->primary_photo)
-                        <img src="{{ asset('storage/'.$p->primary_photo) }}" alt="{{ $p->name }}" class="w-full h-full object-cover">
-                    @else
-                        <x-lucide-image class="w-10 h-10" style="color:#a78bfa;" />
-                    @endif
-                </div>
-                <div class="p-3">
-                    <span class="inline-block text-[9px] font-bold px-2 py-0.5 rounded-full mb-2" style="background:rgba(52,211,153,0.12);color:#34d399;">{{ $p->condition }}%</span>
-                    <p class="text-xs font-bold text-white mb-0.5">{{ $p->name }}</p>
-                    <p class="text-xs font-bold mb-3" style="color:#a78bfa;">{{ rupiah($p->price) }}</p>
-                    <a href="{{ route('preloved.show', $p->id) }}" class="block text-center w-full py-2 rounded-xl text-[10px] font-bold text-white" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Beli</a>
-                </div>
-            </div>
-        @endforeach
-    </div>
-    @endif
-</section>
->>>>>>> hostinger/main
 
 {{-- Tombol WhatsApp mengambang --}}
 <a class="fab" href="https://wa.me/6285121091134" target="_blank" rel="noopener" aria-label="Chat dengan tim RuangTitip lewat WhatsApp">

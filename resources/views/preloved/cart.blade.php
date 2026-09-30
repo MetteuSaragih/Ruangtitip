@@ -1,9 +1,4 @@
-<<<<<<< HEAD
 @extends('layouts.ruang-titip')
-=======
-﻿@extends('layouts.dashboard')
-
->>>>>>> hostinger/main
 @section('title', 'Keranjang')
 
 @php function rp($n){ return 'Rp'.number_format($n,0,',','.'); } @endphp
@@ -37,7 +32,6 @@
 @endpush
 
 @section('content')
-<<<<<<< HEAD
 <main class="wrap">
   @if ($errors->any())
     <p class="err" style="margin-top:20px">{{ $errors->first() }}</p>
@@ -59,42 +53,8 @@
         <div class="step-head" style="margin-bottom:16px">
           <h1>Keranjang</h1>
           <p>Produk packing dan preloved yang kamu pilih.</p>
-=======
-<div class="pt-6 pb-10 max-w-xl mx-auto">
-
-    <div class="mb-5">
-        <h1 class="text-xl font-extrabold text-white font-display">Keranjang</h1>
-        <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.4);">Produk packing dan preloved yang kamu pilih</p>
-    </div>
-
-    @if ($errors->any())
-        <div class="flex items-center gap-3 rounded-xl px-4 py-3 mb-4 text-sm" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;">
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            {{ $errors->first() }}
->>>>>>> hostinger/main
         </div>
 
-<<<<<<< HEAD
-=======
-    @if (empty($cart))
-        <div class="rounded-2xl py-16 flex flex-col items-center text-center" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-            <div class="relative inline-flex mx-auto mb-5">
-                <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#0284c7,#38bdf8);"></div>
-                <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(2,132,199,0.2),rgba(56,189,248,0.1));border:1px solid rgba(2,132,199,0.35);">
-                    <svg class="w-9 h-9" fill="none" stroke="#38bdf8" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 001.95-1.57L23 6H6"/>
-                    </svg>
-                </div>
-            </div>
-            <p class="text-sm font-bold text-white mb-1">Keranjangmu masih kosong</p>
-            <p class="text-xs mt-1 mb-6" style="color:rgba(255,255,255,0.4);">Yuk, jelajahi produk packing dan preloved pilihan</p>
-            <div class="flex items-center justify-center gap-3">
-                <a href="{{ route('preloved.index') }}" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Toko Preloved</a>
-                <a href="{{ route('packing.index') }}" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all hover:bg-violet-900/20" style="border:1.5px solid rgba(124,58,237,0.4);color:#a78bfa;">Toko Packing</a>
-            </div>
-        </div>
-    @else
->>>>>>> hostinger/main
         <form method="POST" action="{{ route('preloved.cart.checkout') }}" id="cartForm">
           @csrf
           <div class="select-all">
@@ -105,7 +65,6 @@
             <span id="totalItemCount">{{ count($cart) }} produk</span>
           </div>
 
-<<<<<<< HEAD
           <div id="cartItems">
             @foreach ($cart as $key => $item)
               @php $type = $item['type'] ?? 'preloved'; @endphp
@@ -139,66 +98,6 @@
                 </div>
                 <button type="button" class="rm" aria-label="Hapus {{ $item['name'] }}" onclick="cartRemove('{{ $key }}')">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
-=======
-            <div id="cartItems" class="space-y-3 mb-4">
-                @foreach ($cart as $key => $item)
-                    @php $type = $item['type'] ?? 'preloved'; @endphp
-                    <div class="cart-item flex items-start gap-3 p-3.5 rounded-2xl transition-all" data-key="{{ $key }}"
-                         style="background:rgba(124,58,237,0.06);border:1.5px solid rgba(124,58,237,0.3);">
-                        <div class="pt-7 shrink-0">
-                            <input type="checkbox" name="selected[]" value="{{ $key }}" class="item-checkbox w-[18px] h-[18px] accent-violet-500" checked onchange="recalcSummary()">
-                        </div>
-                        <div class="w-[72px] h-[72px] rounded-xl flex items-center justify-center overflow-hidden shrink-0" style="background:rgba(255,255,255,0.05);">
-                            @if (!empty($item['image']))
-                                @if ($type === 'packing')
-                                    <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ $item['name'] }}" class="w-full h-full object-cover">
-                                @else
-                                    <img src="{{ Storage::url($item['image']) }}" alt="{{ $item['name'] }}" class="w-full h-full object-cover">
-                                @endif
-                            @else
-                                <x-lucide-image class="w-6 h-6" style="color:#a78bfa;" />
-                            @endif
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold mb-1"
-                                  style="{{ $type === 'packing' ? 'background:rgba(56,189,248,0.15);color:#38bdf8;' : 'background:rgba(124,58,237,0.15);color:#a78bfa;' }}">
-                                {{ $type === 'packing' ? 'Toko Packing' : 'Preloved' }}
-                            </span>
-                            <p class="text-sm font-bold text-white leading-snug">{{ $item['name'] }}</p>
-                            @if ($type === 'packing')
-                                <p class="text-[11px] mb-1" style="color:rgba(255,255,255,0.4);">Satuan: {{ $item['unit'] ?? 'pcs' }}</p>
-                            @elseif (!empty($item['condition_label']))
-                                <p class="text-[11px] mb-1" style="color:rgba(255,255,255,0.4);">{{ $item['condition_label'] }}</p>
-                            @endif
-                            <p class="text-sm font-bold mb-2" style="color:#a78bfa;" data-price="{{ $item['price'] }}">{{ rupiah($item['price']) }}</p>
-                            <div class="flex items-center gap-2.5">
-                                <button type="button" class="w-7 h-7 rounded-lg flex items-center justify-center text-sm" style="background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.1);" onclick="cartChangeQty(‘{{ $key }}’, -1)">&minus;</button>
-                                <span class="qty-num text-xs font-bold text-white min-w-[18px] text-center">{{ $item['qty'] }}</span>
-                                <button type="button" class="w-7 h-7 rounded-lg flex items-center justify-center text-sm" style="background:rgba(124,58,237,0.2);color:#a78bfa;border:1px solid rgba(124,58,237,0.35);" onclick="cartChangeQty('{{ $key }}', 1)">+</button>
-                            </div>
-                        </div>
-                        <button type="button" class="shrink-0 p-1.5 rounded-lg transition-colors hover:bg-red-500/10" style="color:rgba(255,255,255,0.35);" onclick="cartRemove('{{ $key }}')" aria-label="Hapus">
-                            <x-lucide-trash-2 class="w-4 h-4" />
-                        </button>
-                    </div>
-                @endforeach
-            </div>
-
-            <div class="rounded-2xl p-5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-                <div class="flex justify-between items-center py-1">
-                    <span class="text-sm" style="color:rgba(255,255,255,0.45);">Produk dipilih</span>
-                    <span class="text-sm font-semibold text-white" id="summarySelectedCount">{{ count($cart) }}</span>
-                </div>
-                <div class="flex justify-between items-center mt-2 pt-3" style="border-top:1px solid rgba(255,255,255,0.1);">
-                    <span class="text-sm font-bold text-white">Total</span>
-                    <span class="text-lg font-extrabold font-display" id="summaryTotal" style="color:#a78bfa;">{{ rupiah(array_sum(array_column($cart, 'subtotal'))) }}</span>
-                </div>
-                <button type="submit" id="btnCheckout"
-                        onclick="if(!this.disabled){this.disabled=true;this.innerHTML='<svg class=\'w-4 h-4 animate-spin inline\' fill=\'none\' viewBox=\'0 0 24 24\'><circle class=\'opacity-25\' cx=\'12\' cy=\'12\' r=\'10\' stroke=\'currentColor\' stroke-width=\'4\'></circle><path class=\'opacity-75\' fill=\'currentColor\' d=\'M4 12a8 8 0 018-8v8z\'></path></svg> Memproses...';}"
-                        class="w-full mt-4 py-3.5 rounded-2xl font-bold text-sm text-white transition-all hover:scale-[1.02] disabled:opacity-40 flex items-center justify-center gap-2"
-                        style="background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 6px 20px rgba(124,58,237,0.4);">
-                    Checkout
->>>>>>> hostinger/main
                 </button>
               </div>
             @endforeach

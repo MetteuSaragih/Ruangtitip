@@ -79,10 +79,6 @@ class ProfileController extends Controller
     public function storeAddress(Request $request)
     {
         $data = $request->validate([
-<<<<<<< HEAD
-            'label'   => 'nullable|string|max:50',
-            'address' => 'required|string|max:500',
-=======
             'label'       => 'nullable|string|max:50',
             'address'     => 'required|string|max:500',
             'area_id'     => 'required|string',
@@ -92,27 +88,12 @@ class ProfileController extends Controller
             'longitude'   => 'nullable|numeric',
         ], [
             'area_id.required' => 'Pilih kecamatan/kota dari daftar saran.',
->>>>>>> hostinger/main
         ]);
 
         $user = Auth::user();
         $isPrimary = UserAddress::where('user_id', $user->id)->count() === 0;
 
         $addr = UserAddress::create([
-<<<<<<< HEAD
-            'user_id'    => $user->id,
-            'label'      => $data['label'] ?: 'Alamat Baru',
-            'address'    => $data['address'],
-            'is_primary' => $isPrimary,
-        ]);
-
-        return response()->json([
-            'success'   => true,
-            'id'        => $addr->id,
-            'label'     => $addr->label,
-            'address'   => $addr->address,
-            'isPrimary' => $addr->is_primary,
-=======
             'user_id'     => $user->id,
             'label'       => $data['label'] ?: 'Alamat Baru',
             'address'     => $data['address'],
@@ -180,7 +161,6 @@ class ProfileController extends Controller
             'latitude'   => $addr->latitude,
             'longitude'  => $addr->longitude,
             'isPrimary'  => $addr->is_primary,
->>>>>>> hostinger/main
         ]);
     }
 

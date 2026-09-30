@@ -6,11 +6,7 @@
 <title>500 - Terjadi Kesalahan · RUTIP</title>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-<<<<<<< HEAD
   body{min-height:100vh;background:#080212;color:#fff;font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;position:relative;}
-=======
-  body{min-height:100vh;background:#080212;color:#fff;font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:40px 20px;}
->>>>>>> hostinger/main
 
   .bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(239,68,68,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(239,68,68,.04) 1px,transparent 1px);background-size:40px 40px;}
   .bg-orb{position:fixed;border-radius:50%;filter:blur(90px);}
@@ -24,11 +20,7 @@
     .btn-primary,.btn-reload{width:100%;justify-content:center;}
     .err-box pre{font-size:10px;}
   }
-<<<<<<< HEAD
   @media(min-width:768px){body{padding:40px 24px};h1{font-size:28px;}}
-=======
-  @media(min-width:768px){body{padding:60px 24px;}h1{font-size:28px;}}
->>>>>>> hostinger/main
 
   /* Logo */
   .logo{display:inline-flex;align-items:center;gap:8px;margin-bottom:32px;text-decoration:none;color:inherit;opacity:.7;}
@@ -85,14 +77,11 @@
 <div class="p" style="width:3px;height:3px;background:#f87171;left:75%;animation-duration:11s;animation-delay:-1s;"></div>
 
 <div class="card">
-<<<<<<< HEAD
   <a href="/" style="display:inline-block;margin-bottom:32px;">
     <img src="/images/logo-rutip-putih.png" alt="RUTIP"
          style="height:48px;width:auto;filter:drop-shadow(0 4px 16px rgba(124,58,237,.3));">
   </a>
 
-=======
->>>>>>> hostinger/main
   <!-- Illustration -->
   <div class="illus">
     <div class="illus-ring"></div>

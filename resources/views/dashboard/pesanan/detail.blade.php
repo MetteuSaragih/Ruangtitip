@@ -2,7 +2,6 @@
 @section('title', 'Detail Pesanan')
 
 @php
-<<<<<<< HEAD
 function rp($n){ return 'Rp'.number_format($n,0,',','.'); }
 $meta = $order->statusMeta();
 $step = $order->statusStep();
@@ -21,17 +20,6 @@ $statusClass = match ($order->status) {
     'selesai' => 's-done',
     default => 's-run',
 };
-=======
-    function rp_d($n){ return 'Rp '.number_format($n,0,',','.'); }
-    $meta = $order->statusMeta();
-    $step = $order->statusStep();
-    $flow = \App\Models\TitipanOrder::FLOW;
-    $logisticLabel = [
-        'self'    => 'Antar Sendiri',
-        'rutip'   => 'Packing + Anjem RuTip',
-        'instant' => 'Kurir Biteship',
-    ][$order->logistic] ?? '-';
->>>>>>> hostinger/main
 @endphp
 
 @push('styles')
@@ -118,7 +106,6 @@ $statusClass = match ($order->status) {
       </ol>
     </div>
 
-<<<<<<< HEAD
     <div class="panel">
       <h2>Detail penitipan</h2>
       <div class="kv" style="margin-top:14px">
@@ -127,53 +114,6 @@ $statusClass = match ($order->status) {
         <div class="row"><span>Jumlah item</span><span>{{ $order->totalItems() }} item</span></div>
         @if ($order->date_start && $order->date_end)
           <div class="row"><span>Periode</span><span>{{ $order->date_start->format('d M Y') }} – {{ $order->date_end->format('d M Y') }}</span></div>
-=======
-    {{-- Info penitipan --}}
-    <div class="rounded-2xl p-5 mb-4" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-        <p class="text-xs font-bold text-white mb-3">Detail Penitipan</p>
-        <div class="space-y-2.5 text-xs">
-            <div class="flex justify-between gap-2"><span style="color:rgba(255,255,255,0.45);">Gudang</span><span class="text-white font-medium text-right">{{ $order->storage->name ?? '-' }}</span></div>
-            <div class="flex justify-between gap-2"><span style="color:rgba(255,255,255,0.45);">Jenis Barang</span><span class="text-white font-medium capitalize">{{ $order->item_type }}</span></div>
-            <div class="flex justify-between gap-2"><span style="color:rgba(255,255,255,0.45);">Jumlah Item</span><span class="text-white font-medium">{{ $order->totalItems() }} item</span></div>
-            @if ($order->date_start && $order->date_end)
-                <div class="flex justify-between gap-2"><span style="color:rgba(255,255,255,0.45);">Periode</span><span class="text-white font-medium text-right">{{ $order->date_start->format('d M Y') }} – {{ $order->date_end->format('d M Y') }}</span></div>
-            @endif
-            <div class="flex justify-between gap-2"><span style="color:rgba(255,255,255,0.45);">Logistik</span><span class="text-white font-medium">{{ $logisticLabel }}</span></div>
-            @if ($order->address)
-                <div class="flex justify-between gap-2"><span style="color:rgba(255,255,255,0.45);">Alamat</span><span class="text-white font-medium text-right max-w-[60%]">{{ $order->address }}</span></div>
-            @endif
-        </div>
-    </div>
-
-    {{-- Rincian biaya --}}
-    <div class="rounded-2xl p-5 mb-4" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);">
-        <p class="text-xs font-bold text-white mb-3">Rincian Biaya</p>
-        <div class="space-y-2.5 text-xs mb-3">
-            <div class="flex justify-between"><span style="color:rgba(255,255,255,0.45);">Biaya Penitipan</span><span class="text-white font-medium">{{ rp_d($order->item_subtotal) }}</span></div>
-            @if ($order->courier_cost > 0)
-                <div class="flex justify-between"><span style="color:rgba(255,255,255,0.45);">Biaya Logistik</span><span class="text-white font-medium">{{ rp_d($order->courier_cost) }}</span></div>
-            @endif
-            <div class="flex justify-between"><span style="color:rgba(255,255,255,0.45);">Biaya Layanan</span><span class="text-white font-medium">{{ rp_d($order->platform_fee) }}</span></div>
-        </div>
-        <div class="flex items-center justify-between pt-3" style="border-top:1px solid rgba(255,255,255,0.1);">
-            <span class="text-sm font-bold text-white">Total</span>
-            <span class="text-lg font-extrabold font-display" style="color:#a78bfa;">{{ rp_d($order->total) }}</span>
-        </div>
-    </div>
-
-    {{-- Aksi sesuai status --}}
-    @if ($order->status === 'menunggu_pembayaran')
-        @if ($order->tripay_checkout_url)
-            <a href="{{ $order->tripay_checkout_url }}"
-               class="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-bold text-white mb-4 transition-all hover:scale-[1.02]"
-               style="background:linear-gradient(135deg,#7c3aed,#6366f1);">
-                <x-lucide-credit-card class="w-4 h-4" /> Lanjutkan Pembayaran
-            </a>
-        @else
-            <div class="flex items-center gap-2 px-3 py-2.5 rounded-xl mb-4 text-[11px]" style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);color:#fbbf24;">
-                <x-lucide-info class="w-3.5 h-3.5 shrink-0" /> Menunggu pembayaran.
-            </div>
->>>>>>> hostinger/main
         @endif
         <div class="row"><span>Logistik</span><span>{{ $logisticLabel }}</span></div>
         @if ($order->address)
@@ -202,18 +142,9 @@ $statusClass = match ($order->status) {
       @endif
     @endif
 
-<<<<<<< HEAD
     <a href="https://wa.me/6285121091134?text={{ urlencode('Halo RuangTitip, saya mau tanya pesanan '.$order->code()) }}" target="_blank" rel="noopener" class="btn btn-outline" style="width:100%;margin-bottom:40px;border-color:var(--depot);color:var(--depot)">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.2A8.5 8.5 0 1 1 21 12z"/></svg>
       Hubungi admin via WhatsApp
-=======
-    {{-- Bantuan via WhatsApp (sesuai dokumen) --}}
-    <a href="https://wa.me/6285121091134?text=Halo%20RUTIP,%20saya%20mau%20tanya%20pesanan%20{{ $order->code() }}"
-       target="_blank" rel="noopener noreferrer"
-       class="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-bold transition-all hover:scale-[1.02]"
-       style="border:1.5px solid rgba(37,211,102,0.4);color:#25d366;background:rgba(37,211,102,0.06);">
-        <x-lucide-message-circle class="w-4 h-4" /> Hubungi Admin via WhatsApp
->>>>>>> hostinger/main
     </a>
   </div>
 </main>

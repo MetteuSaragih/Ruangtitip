@@ -6,21 +6,13 @@
 <title>Sesi Kedaluwarsa - RUTIP</title>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-<<<<<<< HEAD
   body{min-height:100vh;background:#080212;color:#fff;font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;position:relative;}
-=======
-  body{min-height:100vh;background:#080212;color:#fff;font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:40px 20px;}
->>>>>>> hostinger/main
   .bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(245,158,11,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(245,158,11,.04) 1px,transparent 1px);background-size:40px 40px;}
   .bg-orb-1{position:fixed;width:400px;height:400px;background:radial-gradient(circle,rgba(124,58,237,.18),transparent 70%);top:-80px;left:-60px;border-radius:50%;filter:blur(80px);}
   .bg-orb-2{position:fixed;width:350px;height:350px;background:radial-gradient(circle,rgba(245,158,11,.1),transparent 70%);bottom:-60px;right:-60px;border-radius:50%;filter:blur(80px);}
   .card{position:relative;z-index:10;text-align:center;max-width:440px;padding:0 20px;width:100%;}
   @media(max-width:480px){body{padding:24px 16px;}.btn{width:100%;justify-content:center;}}
-<<<<<<< HEAD
   @media(min-width:768px){body{padding:40px 24px;}}
-=======
-  @media(min-width:768px){body{padding:60px 24px;}}
->>>>>>> hostinger/main
   .illus{width:100px;height:100px;margin:0 auto 28px;position:relative;}
   .timer-ring{position:absolute;inset:0;}
   .timer-core{position:absolute;inset:20px;background:rgba(245,158,11,.08);border-radius:50%;border:1.5px solid rgba(245,158,11,.25);display:flex;align-items:center;justify-content:center;}
@@ -39,12 +31,9 @@
 <div class="bg-orb-1"></div>
 <div class="bg-orb-2"></div>
 <div class="card">
-<<<<<<< HEAD
   <a href="/" style="display:inline-block;margin-bottom:32px;">
     <img src="/images/logo-rutip-putih.png" alt="RUTIP" style="height:46px;width:auto;filter:drop-shadow(0 4px 16px rgba(124,58,237,.3));">
   </a>
-=======
->>>>>>> hostinger/main
   <div class="illus">
     <svg class="timer-ring" viewBox="0 0 100 100">
       <circle cx="50" cy="50" r="45" stroke="rgba(245,158,11,.15)" stroke-width="3" fill="none"/>
