@@ -167,8 +167,13 @@ legend span{font-weight:500;color:#6B6557;font-size:15px}
 .faq-list details{border-bottom:1px solid var(--line)}
 .faq-list summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 0;font-family:var(--font-display);font-size:21px;font-weight:700}
 .faq-list summary::-webkit-details-marker{display:none}
-.faq-list summary .ic{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--ink);display:grid;place-items:center;flex-shrink:0;transition:transform .2s}
-.faq-list details[open] summary .ic{transform:rotate(45deg);background:var(--ink);color:var(--cream)}
+.faq-list summary .ic{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--ink);position:relative;flex-shrink:0;transition:transform .2s,background-color .2s,border-color .2s}
+.faq-list summary:hover .ic{border-color:var(--tape)}
+.faq-list summary .ic::before,.faq-list summary .ic::after{content:"";position:absolute;top:50%;left:50%;background:var(--ink);transition:background-color .2s}
+.faq-list summary .ic::before{width:12px;height:1.5px;margin:-.75px 0 0 -6px}
+.faq-list summary .ic::after{width:1.5px;height:12px;margin:-6px 0 0 -.75px}
+.faq-list details[open] summary .ic{transform:rotate(45deg);background:var(--ink);border-color:var(--ink)}
+.faq-list details[open] summary .ic::before,.faq-list details[open] summary .ic::after{background:var(--cream)}
 .faq-list details p{color:var(--body);padding:0 44px 22px 0}
 
 /* ================= Tim ================= */
