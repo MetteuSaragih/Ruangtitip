@@ -1,253 +1,165 @@
 @extends('layouts.admin')
 
-@section('title', 'Dasbor Overview')
+@section('title', 'Dashboard')
 
 @section('content')
-<div class="p-6 max-w-[1280px]">
+@php
+    $badgeTone = [
+        'Menunggu Pembayaran' => 'o',
+        'Penjadwalan Penjemputan' => 'y',
+        'Proses Pengembalian' => 'r',
+    ];
+    $maxPesanan = max(1, max(array_column($trenPesanan, 'pesanan')));
+    $totalTren = array_sum(array_column($trenPesanan, 'pesanan'));
+@endphp
 
-    {{-- Page title --}}
-    <div class="mb-6">
-        <h1 class="text-xl font-extrabold text-white font-display">Dasbor Overview</h1>
-        <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.38);">Ringkasan eksekutif operasional RUTIP hari ini</p>
-    </div>
-
-    {{-- Scorecards --}}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-
-        {{-- Pendapatan --}}
-        <div class="rounded-2xl p-5 flex flex-col gap-3"
-             style="background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.08);">
-            <div class="flex items-center justify-between">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center"
-                     style="background:rgba(124,58,237,0.18);">
-                    <svg class="w-5 h-5" style="color:#a78bfa" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                    </svg>
-                </div>
-                <span class="text-xs font-semibold px-2 py-0.5 rounded-full"
-                      style="background:{{ $pendapatanGrowth >= 0 ? 'rgba(52,211,153,0.12)' : 'rgba(239,68,68,0.12)' }};color:{{ $pendapatanGrowth >= 0 ? '#34d399' : '#f87171' }};">{{ $pendapatanGrowth >= 0 ? '+' : '' }}{{ $pendapatanGrowth }}% bulan lalu</span>
-            </div>
-            <div>
-                <p class="text-xs font-medium mb-1" style="color:rgba(255,255,255,0.45);">Pendapatan (Bulan Ini)</p>
-                <p class="text-2xl font-extrabold text-white font-display">Rp {{ number_format($pendapatan, 0, ',', '.') }}</p>
-            </div>
-        </div>
-
-        {{-- Transaksi Aktif --}}
-        <div class="rounded-2xl p-5 flex flex-col gap-3"
-             style="background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.08);">
-            <div class="flex items-center justify-between">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center"
-                     style="background:rgba(56,189,248,0.15);">
-                    <svg class="w-5 h-5" style="color:#38bdf8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                    </svg>
-                </div>
-            </div>
-            <div>
-                <p class="text-xs font-medium mb-1" style="color:rgba(255,255,255,0.45);">Transaksi Aktif</p>
-                <p class="text-2xl font-extrabold text-white font-display">{{ $transaksiAktif }}</p>
-                <p class="text-xs mt-1" style="color:rgba(255,255,255,0.38);">Penitipan, Preloved, Packing</p>
-            </div>
-        </div>
-
-        {{-- Kapasitas Gudang --}}
-        <div class="rounded-2xl p-5 flex flex-col gap-3"
-             style="background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.08);">
-            <div class="flex items-center justify-between">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center"
-                     style="background:rgba(245,158,11,0.15);">
-                    <svg class="w-5 h-5" style="color:#f59e0b" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                </div>
-            </div>
-            <div>
-                <p class="text-xs font-medium mb-1" style="color:rgba(255,255,255,0.45);">Kapasitas Gudang Terpakai</p>
-                <p class="text-2xl font-extrabold text-white font-display">{{ $kapasitasGudang }}%</p>
-                @php $color = $kapasitasGudang > 80 ? '#ef4444' : ($kapasitasGudang > 50 ? '#f59e0b' : '#34d399'); @endphp
-                <div class="mt-2">
-                    <div class="h-2.5 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.08);">
-                        <div class="h-full rounded-full transition-all duration-700"
-                             style="width:{{ $kapasitasGudang }}%;background:linear-gradient(90deg,{{ $color }}cc,{{ $color }});box-shadow:0 0 8px {{ $color }}66;"></div>
-                    </div>
-                    <div class="flex justify-between mt-1">
-                        <span class="text-[10px]" style="color:rgba(255,255,255,0.3);">0%</span>
-                        <span class="text-[10px]" style="color:{{ $color }};">Kapasitas penuh: 100%</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    {{-- Tugas Prioritas --}}
-    <div class="mb-4 rounded-2xl overflow-hidden"
-         style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
-
-        <div class="px-5 py-4 flex items-center gap-2.5"
-             style="border-bottom:1px solid rgba(255,255,255,0.06);">
-            <div class="w-7 h-7 rounded-lg flex items-center justify-center"
-                 style="background:rgba(245,158,11,0.15);">
-                <svg class="w-3.5 h-3.5" style="color:#f59e0b" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                </svg>
-            </div>
-            <h2 class="text-sm font-bold text-white">Tugas Prioritas Hari Ini</h2>
-            <span class="ml-auto text-xs px-2 py-0.5 rounded-full font-semibold"
-                  style="background:rgba(239,68,68,0.12);color:#f87171;">{{ count($tugasPrioritas) }} tugas</span>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="w-full text-xs">
-                <thead>
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-                        @foreach(['ID Pesanan','Kategori','Pelanggan','Tenggat','Aksi'] as $h)
-                        <th class="text-left px-5 py-3 font-semibold whitespace-nowrap"
-                            style="color:rgba(255,255,255,0.32);">{{ $h }}</th>
-                        @endforeach
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($tugasPrioritas as $i => $task)
-                    @php
-                        $badgeStyle = match($task['badge']) {
-                            'Jadwal Jemput'         => ['bg'=>'rgba(99,102,241,0.15)',  'color'=>'#818cf8', 'dot'=>'#6366f1'],
-                            'Antar/Kirim Ekspedisi' => ['bg'=>'rgba(245,158,11,0.15)',  'color'=>'#fbbf24', 'dot'=>'#f59e0b'],
-                            'Batas Waktu Habis'     => ['bg'=>'rgba(239,68,68,0.18)',   'color'=>'#f87171', 'dot'=>'#ef4444'],
-                            default                 => ['bg'=>'rgba(255,255,255,0.1)',  'color'=>'#fff',    'dot'=>'#fff'],
-                        };
-                    @endphp
-                    <tr style="{{ $i < count($tugasPrioritas)-1 ? 'border-bottom:1px solid rgba(255,255,255,0.04)' : '' }}"
-                        onmouseover="this.style.background='rgba(124,58,237,0.06)'"
-                        onmouseout="this.style.background='transparent'">
-                        <td class="px-5 py-3.5">
-                            <span class="font-mono font-semibold" style="color:#a78bfa;">{{ $task['id'] }}</span>
-                        </td>
-                        <td class="px-5 py-3.5 whitespace-nowrap">
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                                  style="background:{{ $badgeStyle['bg'] }};color:{{ $badgeStyle['color'] }};">
-                                <span class="w-1.5 h-1.5 rounded-full shrink-0"
-                                      style="background:{{ $badgeStyle['dot'] }};"></span>
-                                {{ $task['badge'] }}
-                            </span>
-                        </td>
-                        <td class="px-5 py-3.5">
-                            <p class="font-medium text-white">{{ $task['customer'] }}</p>
-                            <p style="color:rgba(255,255,255,0.35);">{{ $task['wa'] }}</p>
-                        </td>
-                        <td class="px-5 py-3.5 whitespace-nowrap" style="color:rgba(255,255,255,0.55);">
-                            {{ $task['deadline'] }}
-                        </td>
-                        <td class="px-5 py-3.5">
-                            <a href="{{ $task['href'] }}"
-                               class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105"
-                               style="background:rgba(124,58,237,0.18);color:#c4b5fd;border:1px solid rgba(124,58,237,0.25);">
-                                Lihat
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                                </svg>
-                            </a>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    {{-- Tren Pesanan --}}
-    <div class="rounded-2xl p-5"
-         style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
-
-        <div class="flex items-center gap-2.5 mb-5">
-            <div class="w-7 h-7 rounded-lg flex items-center justify-center"
-                 style="background:rgba(124,58,237,0.15);">
-                <svg class="w-3.5 h-3.5" style="color:#a78bfa" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                </svg>
-            </div>
-            <div>
-                <h2 class="text-sm font-bold text-white leading-tight">Tren Pesanan Masuk</h2>
-                <p class="text-[10px]" style="color:rgba(255,255,255,0.35);">7 Hari Terakhir</p>
-            </div>
-        </div>
-
-        <canvas id="trenChart" height="80"></canvas>
-
-        <div class="flex gap-3 mt-4 pt-4" style="border-top:1px solid rgba(255,255,255,0.06);">
-            <div class="flex-1">
-                <p class="text-[10px]" style="color:rgba(255,255,255,0.32);">Total 7 hari</p>
-                <p class="text-xs font-bold text-white mt-0.5">{{ array_sum(array_column($trenPesanan, 'pesanan')) }} pesanan</p>
-            </div>
-            <div class="flex-1">
-                <p class="text-[10px]" style="color:rgba(255,255,255,0.32);">Rata-rata/hari</p>
-                <p class="text-xs font-bold text-white mt-0.5">{{ round(array_sum(array_column($trenPesanan, 'pesanan')) / count($trenPesanan)) }} pesanan</p>
-            </div>
-            <div class="flex-1">
-                <p class="text-[10px]" style="color:rgba(255,255,255,0.32);">Puncak hari ini</p>
-                <p class="text-xs font-bold text-white mt-0.5">{{ max(array_column($trenPesanan, 'pesanan')) }} pesanan</p>
-            </div>
-        </div>
-    </div>
-
+<div class="ph">
+  <div><h1>Halo, {{ Str::of(Auth::user()->name ?? 'Admin')->before(' ') }}</h1><p>Ringkasan operasional RuangTitip hari ini.</p></div>
+  <a class="btn btn-ghost" href="{{ route('admin.ruang-titip') }}">{!! \App\Support\Icons::svg('clipboard', 'sm') !!} Lihat semua pesanan</a>
 </div>
 
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-const ctx = document.getElementById('trenChart').getContext('2d');
-const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-gradient.addColorStop(0, 'rgba(124,58,237,0.35)');
-gradient.addColorStop(1, 'rgba(124,58,237,0)');
+<div class="stats">
+  <div class="card stat">
+    <div class="stat-top">
+      <span class="stat-ico">{!! \App\Support\Icons::svg('wallet') !!}</span>
+      <span class="pill {{ $pendapatanGrowth >= 0 ? 'g' : 'r' }}">{{ $pendapatanGrowth >= 0 ? '+' : '' }}{{ $pendapatanGrowth }}% dari bulan lalu</span>
+    </div>
+    <small>Pendapatan bulan ini</small>
+    <strong>Rp {{ number_format($pendapatan, 0, ',', '.') }}</strong>
+    <span class="sub">Titip, preloved, dan packing</span>
+  </div>
+  <div class="card stat">
+    <div class="stat-top"><span class="stat-ico s">{!! \App\Support\Icons::svg('clipboard') !!}</span></div>
+    <small>Transaksi aktif</small>
+    <strong>{{ $transaksiAktif }}</strong>
+    <span class="sub">Pesanan yang sedang berjalan</span>
+  </div>
+  <div class="card stat">
+    <div class="stat-top"><span class="stat-ico g">{!! \App\Support\Icons::svg('warehouse') !!}</span></div>
+    <small>Kapasitas gudang terpakai</small>
+    <strong>{{ $kapasitasGudang }}%</strong>
+    <span class="sub"><span class="bar {{ $kapasitasGudang > 80 ? 'r' : ($kapasitasGudang > 50 ? 'o' : '') }}" style="margin:6px 0 4px"><i style="width:{{ $kapasitasGudang }}%"></i></span>Dari seluruh ruangan aktif</span>
+  </div>
+</div>
 
-new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: @json(array_column($trenPesanan, 'day')),
-        datasets: [{
-            data: @json(array_column($trenPesanan, 'pesanan')),
-            borderColor: '#7c3aed',
-            borderWidth: 2.5,
-            backgroundColor: gradient,
-            fill: true,
-            tension: 0.4,
-            pointRadius: 0,
-            pointHoverRadius: 5,
-            pointHoverBackgroundColor: '#a78bfa',
-            pointHoverBorderColor: '#c4b5fd',
-            pointHoverBorderWidth: 2,
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                backgroundColor: 'rgba(18,10,35,0.97)',
-                borderColor: 'rgba(124,58,237,0.35)',
-                borderWidth: 1,
-                titleColor: '#fff',
-                bodyColor: '#a78bfa',
-                callbacks: {
-                    label: ctx => ctx.parsed.y + ' pesanan'
-                }
-            }
-        },
-        scales: {
-            x: {
-                grid: { color: 'rgba(255,255,255,0.05)', drawTicks: false },
-                ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 11 } },
-                border: { display: false }
-            },
-            y: {
-                grid: { color: 'rgba(255,255,255,0.05)', drawTicks: false },
-                ticks: { color: 'rgba(255,255,255,0.28)', font: { size: 10 } },
-                border: { display: false }
-            }
-        }
-    }
-});
+<div class="row r-2-1" style="margin-bottom:20px">
+  <section class="card">
+    <div class="card-h">
+      <div><h2>Tugas prioritas hari ini</h2><p>Pesanan Ruang Titip yang butuh tindakan segera</p></div>
+      <span class="pill o">{{ count($tugasPrioritas) }} tugas</span>
+    </div>
+    @if (count($tugasPrioritas))
+      <ul class="tasks">
+        @foreach ($tugasPrioritas as $task)
+          <li>
+            <span class="stat-ico {{ ($badgeTone[$task['badge']] ?? 'o') === 'r' ? 'r' : (($badgeTone[$task['badge']] ?? 'o') === 'g' ? 'g' : '') }}">{!! \App\Support\Icons::svg('clock') !!}</span>
+            <div class="t-main">
+              <b><span class="mono">{{ $task['id'] }}</span> &middot; {{ $task['badge'] }}</b>
+              <small>{{ $task['customer'] }} &middot; {{ $task['wa'] }}</small>
+            </div>
+            <span class="t-time">{!! \App\Support\Icons::svg('calendar', 'sm') !!}{{ $task['deadline'] }}</span>
+            <a class="btn btn-sm" href="{{ $task['href'] }}">Lihat</a>
+          </li>
+        @endforeach
+      </ul>
+    @else
+      <div class="empty"><img class="ruru" src="{{ asset('assets/ruru.webp') }}" alt=""><b>Semua tugas beres!</b><p>Tidak ada pesanan Ruang Titip yang butuh tindakan mendesak saat ini.</p></div>
+    @endif
+  </section>
+
+  <div class="stack">
+    <section class="card">
+      <div class="card-h"><div><h2>Stok menipis</h2><p>Toko Packing</p></div><a class="link-btn" href="{{ route('admin.packing.index') }}">Kelola {!! \App\Support\Icons::svg('chevR', 'sm') !!}</a></div>
+      <div class="card-b" style="display:grid;gap:14px">
+        @php $lowStockItems = \App\Models\PackingProduct::whereColumn('stock', '<=', 'low_threshold')->orderBy('stock')->limit(4)->get(); @endphp
+        @forelse ($lowStockItems as $lp)
+          <div class="mini-row">
+            <span class="thumb">{!! \App\Support\Icons::svg('box') !!}</span>
+            <div><b>{{ $lp->name }}</b><small>Ambang {{ $lp->low_threshold }} {{ $lp->unit }}</small></div>
+            <span class="pill {{ $lp->stock <= 0 ? 'r' : 'y' }}">{{ $lp->stock <= 0 ? 'Habis' : 'Sisa ' . $lp->stock }}</span>
+          </div>
+        @empty
+          <p style="color:var(--muted);font-size:13px">Semua stok packing aman.</p>
+        @endforelse
+      </div>
+    </section>
+    <section class="card">
+      <div class="card-h"><div><h2>Kapasitas per gudang</h2><p>Slot terisi saat ini</p></div></div>
+      <div class="card-b" style="display:grid;gap:16px">
+        @php $rooms = \App\Models\StorageRoom::orderBy('id')->limit(4)->get(); @endphp
+        @forelse ($rooms as $room)
+          @php $pct = $room->capacity_total > 0 ? min(100, round($room->capacity_used / $room->capacity_total * 100)) : 0; @endphp
+          <div class="cap">
+            <div><b>{{ $room->name }}</b><span>{{ $room->capacity_used }} / {{ $room->capacity_total }}</span></div>
+            <span class="bar {{ $pct > 80 ? 'r' : ($pct > 60 ? 'o' : '') }}"><i style="width:{{ $pct }}%"></i></span>
+          </div>
+        @empty
+          <p style="color:var(--muted);font-size:13px">Belum ada ruangan terdaftar.</p>
+        @endforelse
+      </div>
+    </section>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card-h"><div><h2>Pesanan masuk</h2><p>7 hari terakhir, semua layanan</p></div><span class="pill n">Satuan: pesanan</span></div>
+  <div class="card-b">
+    <div class="chart">
+      @php
+        $W = 640; $H = 260; $L = 34; $B = 30; $T = 14;
+        $step = ($W - $L) / count($trenPesanan); $bw = 44;
+        $gridMax = (int) (ceil($maxPesanan / 4) * 4) ?: 4;
+      @endphp
+      <svg viewBox="0 0 {{ $W }} {{ $H }}" role="img" aria-label="Pesanan masuk 7 hari terakhir">
+        @for ($g = 0; $g <= $gridMax; $g += max(1, intdiv($gridMax, 4)))
+          @php $y = $H - $B - ($g / $gridMax) * ($H - $B - $T); @endphp
+          <line x1="{{ $L }}" x2="{{ $W }}" y1="{{ $y }}" y2="{{ $y }}" stroke="#DDD5C4" stroke-width="1" @if($g) stroke-dasharray="3 4" @endif />
+          <text x="{{ $L - 8 }}" y="{{ $y + 4 }}" text-anchor="end" font-size="12" fill="#5C574D">{{ $g }}</text>
+        @endfor
+        @foreach ($trenPesanan as $i => $d)
+          @php
+            $x = $L + $step * $i + ($step - $bw) / 2;
+            $h = $gridMax > 0 ? ($d['pesanan'] / $gridMax) * ($H - $B - $T) : 0;
+            $y = $H - $B - $h;
+            $last = $i === count($trenPesanan) - 1;
+          @endphp
+          <g class="bar-g" tabindex="0" data-day="{{ $d['day'] }}" data-n="{{ $d['pesanan'] }}">
+            <rect x="{{ $L + $step * $i }}" y="{{ $T }}" width="{{ $step }}" height="{{ $H - $B - $T }}" fill="transparent"/>
+            <path d="M{{ $x }} {{ $H - $B }}V{{ $y + 4 }}q0-4 4-4h{{ $bw - 8 }}q4 0 4 4V{{ $H - $B }}z" fill="{{ $last ? '#B4531D' : '#E8A677' }}"/>
+            <text x="{{ $x + $bw / 2 }}" y="{{ $H - 10 }}" text-anchor="middle" font-size="12" fill="#5C574D" font-weight="{{ $last ? 700 : 500 }}">{{ $last ? 'Hari ini' : $d['day'] }}</text>
+          </g>
+        @endforeach
+        <line x1="{{ $L }}" x2="{{ $W }}" y1="{{ $H - $B }}" y2="{{ $H - $B }}" stroke="#1C1B18" stroke-width="1.5"/>
+      </svg>
+      <div class="ctip" hidden></div>
+    </div>
+  </div>
+  <div class="kpis">
+    <div><small>Total 7 hari</small><b>{{ $totalTren }} pesanan</b></div>
+    <div><small>Rata-rata per hari</small><b>{{ round($totalTren / max(1, count($trenPesanan)), 1) }} pesanan</b></div>
+    <div><small>Puncak hari ini</small><b>{{ max(array_column($trenPesanan, 'pesanan')) }} pesanan</b></div>
+  </div>
+</section>
+
+@push('scripts')
+<script>
+(function () {
+  var el = document.querySelector('.chart'); if (!el) return;
+  var tip = el.querySelector('.ctip');
+  function show(gEl) {
+    var r = gEl.getBoundingClientRect(), c = el.getBoundingClientRect();
+    tip.innerHTML = '<small>' + gEl.dataset.day + '</small><b>' + gEl.dataset.n + ' pesanan</b>';
+    tip.hidden = false;
+    tip.style.left = (r.left - c.left + r.width / 2) + 'px';
+    tip.style.top = (r.top - c.top) + 'px';
+  }
+  el.querySelectorAll('.bar-g').forEach(function (gEl) {
+    gEl.addEventListener('mouseenter', function () { show(gEl); });
+    gEl.addEventListener('focus', function () { show(gEl); });
+    gEl.addEventListener('mouseleave', function () { tip.hidden = true; });
+    gEl.addEventListener('blur', function () { tip.hidden = true; });
+  });
+})();
 </script>
 @endpush
 @endsection

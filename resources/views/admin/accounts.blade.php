@@ -4,220 +4,108 @@
 
 @php
     $tabs = [
-        ['key' => 'customers', 'label' => 'Pelanggan / Mahasiswa', 'desc' => 'Kontrol pengguna aktif', 'icon' => 'users'],
-        ['key' => 'staff', 'label' => 'Staf / Karyawan', 'desc' => 'Admin internal', 'icon' => 'shield'],
-        ['key' => 'reviews', 'label' => 'Moderasi Ulasan', 'desc' => 'Kurasi feedback', 'icon' => 'star'],
+        ['key' => 'customers', 'label' => 'Pelanggan', 'desc' => 'Mahasiswa pengguna aplikasi', 'icon' => 'users'],
+        ['key' => 'staff', 'label' => 'Staf', 'desc' => 'Admin dan karyawan internal', 'icon' => 'shield'],
+        ['key' => 'reviews', 'label' => 'Moderasi ulasan', 'desc' => 'Kurasi ulasan pelanggan', 'icon' => 'star'],
     ];
-
-    $initials = function ($name, $email = '') {
-        $source = trim((string) ($name ?: $email ?: 'User'));
-        $parts = preg_split('/\s+/', $source);
-
-        if (count($parts) === 1) {
-            return mb_strtoupper(mb_substr($parts[0], 0, 2));
-        }
-
-        return mb_strtoupper(mb_substr($parts[0], 0, 1) . mb_substr($parts[1], 0, 1));
-    };
-
-    $dateLabel = fn ($date) => $date ? $date->translatedFormat('d M Y') : '-';
+    $initials = fn ($name, $email = '') => \Illuminate\Support\Str::of(trim((string) ($name ?: $email ?: 'User')))->explode(' ')->map(fn($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('');
 @endphp
 
 @section('content')
-<div class="p-6 max-w-[1280px] mx-auto min-h-screen">
-    @if(session('success'))
-        <div class="mb-4 px-4 py-3 rounded-2xl text-sm font-medium" style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;">
-            {{ session('success') }}
-        </div>
-    @endif
+<div class="ph"><div><h1>Manajemen Akun</h1><p>Kontrol akses, moderasi pengguna, dan ulasan pelanggan.</p></div></div>
 
-    @if(session('error'))
-        <div class="mb-4 px-4 py-3 rounded-2xl text-sm font-medium" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;">
-            {{ session('error') }}
-        </div>
-    @endif
-
-    <div class="mb-6">
-        <h1 class="text-xl font-extrabold text-white font-display">Manajemen Akun</h1>
-        <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.38);">Kontrol akses, moderasi pengguna, dan kurasi ulasan</p>
-    </div>
-
-    <div class="flex gap-1 p-1 rounded-2xl mb-6" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);">
-        @foreach($tabs as $item)
-            @php $active = $tab === $item['key']; @endphp
-            <a href="{{ route('admin.accounts', ['tab' => $item['key']]) }}"
-               class="flex-1 py-3 rounded-xl text-sm font-bold transition-all text-center flex items-center justify-center gap-2"
-               style="{{ $active ? 'background:linear-gradient(135deg,#7c3aed,#6366f1);color:white;box-shadow:0 2px 12px rgba(124,58,237,0.35);' : 'color:rgba(255,255,255,0.45);' }}">
-                @if($item['icon'] === 'users')
-                    <x-lucide-users class="w-4 h-4" />
-                @elseif($item['icon'] === 'shield')
-                    <x-lucide-shield class="w-4 h-4" />
-                @else
-                    <x-lucide-star class="w-4 h-4" />
-                @endif
-                <span>{{ $item['label'] }}</span>
-            </a>
-        @endforeach
-    </div>
-
-    @if($tab === 'customers')
-        <div class="rounded-2xl overflow-hidden" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
-            <div class="px-6 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4" style="border-bottom:1px solid rgba(255,255,255,0.06);">
-                <div>
-                    <h3 class="text-sm font-bold text-white">Daftar Pengguna Terdaftar</h3>
-                    <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.35);">
-                        {{ $activeCustomers }} aktif
-                        <span style="color:#f87171;">- {{ $suspendedCustomers }} suspended</span>
-                        - {{ $totalCustomers }} total
-                    </p>
-                </div>
-                <form method="GET" action="{{ route('admin.accounts') }}" class="relative w-full lg:w-80">
-                    <input type="hidden" name="tab" value="customers">
-                    <x-lucide-search class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style="color:rgba(255,255,255,0.28);" />
-                    <input name="search" value="{{ $search }}" placeholder="Cari nama atau email..."
-                           class="w-full pl-11 pr-4 py-3 rounded-2xl text-sm text-white placeholder:text-white/25 outline-none"
-                           style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);">
-                </form>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-xs min-w-[920px]">
-                    <thead>
-                        <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
-                            @foreach(['Nama', 'Email', 'No. WhatsApp', 'Bergabung', 'Pesanan', 'Status', 'Aksi'] as $heading)
-                                <th class="text-left px-6 py-3.5 font-semibold whitespace-nowrap" style="color:rgba(255,255,255,0.32);">{{ $heading }}</th>
-                            @endforeach
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($customers as $user)
-                            @php
-                                $active = (bool) $user->is_active;
-                                $orders = (int) ($orderCounts[$user->id] ?? 0);
-                            @endphp
-                            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);opacity:{{ $active ? '1' : '0.5' }};"
-                                onmouseover="this.style.background='rgba(124,58,237,0.05)'"
-                                onmouseout="this.style.background='transparent'">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style="background:{{ $active ? 'linear-gradient(135deg,#7c3aed,#6366f1)' : 'rgba(255,255,255,0.08)' }};">
-                                            {{ $initials($user->name, $user->email) }}
-                                        </div>
-                                        <div>
-                                            <p class="font-bold text-white">{{ $user->name ?: 'Pengguna RUTIP' }}</p>
-                                            <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.3);">ID #{{ $user->id }}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-2" style="color:rgba(255,255,255,0.52);">
-                                        <x-lucide-mail class="w-3.5 h-3.5" />
-                                        <span>{{ $user->email }}</span>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-2" style="color:rgba(255,255,255,0.52);">
-                                        <x-lucide-phone class="w-3.5 h-3.5" />
-                                        <span>{{ $user->phone ?: '-' }}</span>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap" style="color:rgba(255,255,255,0.52);">{{ $dateLabel($user->created_at) }}</td>
-                                <td class="px-6 py-4 text-white font-bold">{{ $orders }}</td>
-                                <td class="px-6 py-4">
-                                    @if($active)
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold" style="background:rgba(52,211,153,0.12);color:#34d399;">
-                                            <x-lucide-check class="w-3 h-3" /> Aktif
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold" style="background:rgba(239,68,68,0.12);color:#f87171;">
-                                            <x-lucide-ban class="w-3 h-3" /> Suspended
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4">
-                                    <form method="POST" action="{{ route('admin.accounts.toggle-active', $user) }}">
-                                        @csrf
-                                        <button type="submit"
-                                                class="px-3 py-2 rounded-xl text-[11px] font-bold transition-all hover:scale-105"
-                                                style="background:{{ $active ? 'rgba(239,68,68,0.1)' : 'rgba(52,211,153,0.12)' }};border:1px solid {{ $active ? 'rgba(239,68,68,0.24)' : 'rgba(52,211,153,0.28)' }};color:{{ $active ? '#f87171' : '#34d399' }};">
-                                            {{ $active ? 'Suspend' : 'Aktifkan' }}
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="py-16 text-center">
-                                    <div class="flex flex-col items-center">
-                                        <div class="relative inline-flex mx-auto mb-5">
-                                            <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#0284c7,#38bdf8);"></div>
-                                            <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(2,132,199,0.2),rgba(56,189,248,0.1));border:1px solid rgba(2,132,199,0.35);">
-                                                <svg class="w-9 h-9" fill="none" stroke="#38bdf8" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
-                                                </svg>
-                                            </div>
-                                        </div>
-                                        <p class="text-sm font-bold text-white mb-1">Belum ada pengguna</p>
-                                        <p class="text-xs" style="color:rgba(255,255,255,0.38);">Data pengguna muncul setelah pelanggan login</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            <div class="px-6 py-3 flex items-center justify-between" style="border-top:1px solid rgba(255,255,255,0.05);">
-                <p class="text-[10px]" style="color:rgba(255,255,255,0.28);">{{ $customers->count() }} pengguna</p>
-                <span class="flex items-center gap-1 text-[10px] font-semibold" style="color:rgba(255,255,255,0.35);">Ekspor CSV <x-lucide-chevron-right class="w-3 h-3" /></span>
-            </div>
-        </div>
-    @elseif($tab === 'staff')
-        <div class="rounded-2xl overflow-hidden" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
-            <div class="px-6 py-4" style="border-bottom:1px solid rgba(255,255,255,0.06);">
-                <h3 class="text-sm font-bold text-white">Staf / Admin Internal</h3>
-                <p class="text-[10px] mt-0.5" style="color:rgba(255,255,255,0.35);">{{ $staff->count() }} akun admin terdaftar</p>
-            </div>
-            <div class="divide-y" style="border-color:rgba(255,255,255,0.06);">
-                @forelse($staff as $admin)
-                    <div class="px-6 py-4 flex items-center justify-between gap-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">{{ $initials($admin->name, $admin->email) }}</div>
-                            <div>
-                                <p class="text-sm font-bold text-white">{{ $admin->name ?: 'Admin RUTIP' }}</p>
-                                <p class="text-xs" style="color:rgba(255,255,255,0.42);">{{ $admin->email }}</p>
-                            </div>
-                        </div>
-                        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold" style="background:rgba(124,58,237,0.16);color:#c4b5fd;">Admin</span>
-                    </div>
-                @empty
-                    <div class="py-16 flex flex-col items-center text-center">
-                        <div class="relative inline-flex mx-auto mb-5">
-                            <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#7c3aed,#c4b5fd);"></div>
-                            <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(196,181,253,0.1));border:1px solid rgba(124,58,237,0.35);">
-                                <svg class="w-9 h-9" fill="none" stroke="#c4b5fd" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <p class="text-sm font-bold text-white mb-1">Belum ada staf admin</p>
-                        <p class="text-xs" style="color:rgba(255,255,255,0.38);">Tambahkan akun admin untuk mengelola platform</p>
-                    </div>
-                @endforelse
-            </div>
-        </div>
-    @else
-        <div class="rounded-2xl py-16 flex flex-col items-center text-center" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
-            <div class="relative inline-flex mx-auto mb-5">
-                <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#b45309,#fbbf24);"></div>
-                <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(180,83,9,0.2),rgba(251,191,36,0.1));border:1px solid rgba(180,83,9,0.35);">
-                    <svg class="w-9 h-9" fill="none" stroke="#fbbf24" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                    </svg>
-                </div>
-            </div>
-            <p class="text-sm font-bold text-white mb-1">Belum ada ulasan</p>
-            <p class="text-xs" style="color:rgba(255,255,255,0.38);">Ulasan pelanggan akan tampil setelah fitur review aktif</p>
-        </div>
-    @endif
+<div class="seg" role="tablist" aria-label="Bagian halaman">
+  @foreach ($tabs as $item)
+    <a role="tab" aria-selected="{{ $tab === $item['key'] ? 'true' : 'false' }}" href="{{ route('admin.accounts', ['tab' => $item['key']]) }}">
+      {!! \App\Support\Icons::svg($item['icon']) !!}
+      <span>{{ $item['label'] }}<small>{{ $item['desc'] }}</small></span>
+    </a>
+  @endforeach
 </div>
+
+@if ($tab === 'customers')
+  <section class="card">
+    <div class="card-h">
+      <div><h2>Pengguna terdaftar</h2><p>{{ $activeCustomers }} aktif &middot; <span style="color:var(--danger);font-weight:700">{{ $suspendedCustomers }} suspended</span> &middot; {{ $totalCustomers }} total</p></div>
+      <form method="GET" action="{{ route('admin.accounts') }}" class="search">
+        <span class="sr">Cari pengguna</span>
+        <input type="hidden" name="tab" value="customers">
+        {!! \App\Support\Icons::svg('search', 'sm') !!}
+        <input type="search" name="search" value="{{ $search }}" placeholder="Cari nama, email, atau nomor WA">
+      </form>
+    </div>
+    <div class="tbl-wrap">
+      @if ($customers->isNotEmpty())
+        <table>
+          <thead><tr><th>Nama</th><th>Kontak</th><th>Bergabung</th><th class="num">Pesanan</th><th>Status</th><th><span class="sr">Aksi</span></th></tr></thead>
+          <tbody>
+            @foreach ($customers as $user)
+              @php $active = (bool) $user->is_active; $orders = (int) ($orderCounts[$user->id] ?? 0); @endphp
+              <tr style="opacity:{{ $active ? 1 : .55 }}">
+                <td>
+                  <div class="who">
+                    <span class="avatar c{{ ($user->id % 4) + 1 }}">{{ $initials($user->name, $user->email) }}</span>
+                    <div><b>{{ $user->name ?: 'Pengguna RuangTitip' }}</b><small>ID #{{ $user->id }}</small></div>
+                  </div>
+                </td>
+                <td>
+                  <div class="contact">{!! \App\Support\Icons::svg('mail', 'sm') !!}{{ $user->email }}</div>
+                  <div class="contact" style="color:var(--muted)">{!! \App\Support\Icons::svg('phone', 'sm') !!}{{ $user->phone ?: '-' }}</div>
+                </td>
+                <td>{{ $user->created_at?->translatedFormat('d M Y') ?? '-' }}</td>
+                <td class="num"><b>{{ $orders }}</b></td>
+                <td>
+                  @if ($active)
+                    <span class="pill g">{!! \App\Support\Icons::svg('check', 'sm') !!} Aktif</span>
+                  @else
+                    <span class="pill r">{!! \App\Support\Icons::svg('ban', 'sm') !!} Suspended</span>
+                  @endif
+                </td>
+                <td>
+                  <div class="t-actions">
+                    <form method="POST" action="{{ route('admin.accounts.toggle-active', $user) }}" @if($active) data-confirm="Suspend {{ addslashes($user->name ?: 'pengguna ini') }}?|Pengguna ini tidak bisa login dan membuat pesanan baru sampai diaktifkan lagi." data-confirm-ok="Suspend" @endif>
+                      @csrf
+                      <button class="btn btn-sm {{ $active ? 'btn-danger' : 'btn-ghost' }}" type="submit">{{ $active ? 'Suspend' : 'Aktifkan' }}</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            @endforeach
+          </tbody>
+        </table>
+      @else
+        {!! \App\Support\Icons::empty('users', 'Tidak ada pengguna', $search ? 'Coba kata kunci pencarian lain.' : 'Data pengguna akan muncul setelah pelanggan mendaftar.') !!}
+      @endif
+    </div>
+    <div class="card-f"><span>{{ $customers->count() }} pengguna ditampilkan</span></div>
+  </section>
+@elseif ($tab === 'staff')
+  <section class="card">
+    <div class="card-h"><div><h2>Staf dan admin internal</h2><p>{{ $staff->count() }} akun admin terdaftar</p></div></div>
+    @if ($staff->isNotEmpty())
+      <ul class="staff">
+        @foreach ($staff as $admin)
+          <li>
+            <span class="avatar c{{ ($admin->id % 4) + 1 }}">{{ $initials($admin->name, $admin->email) }}</span>
+            <div class="t-main">
+              <b>{{ $admin->name ?: 'Admin RuangTitip' }}{{ $admin->is(Auth::user()) ? ' · Kamu' : '' }}</b>
+              <small>{{ $admin->email }}</small>
+            </div>
+            <span class="pill k">Admin</span>
+          </li>
+        @endforeach
+      </ul>
+    @else
+      {!! \App\Support\Icons::empty('shield', 'Belum ada staf admin', 'Tambahkan akun admin untuk mengelola platform.') !!}
+    @endif
+  </section>
+@else
+  <section class="card">
+    <div class="empty" style="padding:64px 24px">
+      <img class="ruru" src="{{ asset('assets/ruru.webp') }}" alt="">
+      <b>Belum ada ulasan</b>
+      <p>Ulasan pelanggan akan muncul di sini setelah fitur review aktif. Kamu bisa menyetujui atau menyembunyikan ulasan sebelum tayang.</p>
+    </div>
+  </section>
+@endif
 @endsection
