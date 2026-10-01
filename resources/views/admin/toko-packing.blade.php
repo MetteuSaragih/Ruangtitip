@@ -13,629 +13,307 @@ if (! function_exists('rt_wa_number')) {
         return '62' . $digits;
     }
 }
+$categories = ['Kardus', 'Pelindung', 'Perekat', 'Aksesoris'];
+$units = ['pcs', 'roll', 'meter', 'lembar'];
 @endphp
 
 @section('content')
-<style>
-    [x-cloak] { display: none !important; }
-    .is-hidden { display: none !important; }
-    input[type=number]::-webkit-inner-spin-button, 
-    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-</style>
+<div class="ph"><div><h1>Toko Packing</h1><p>Stok perlengkapan packing dan pesanan dari pelanggan.</p></div></div>
 
-<div id="packing-admin" data-active-tab="{{ $tab }}" class="p-6 max-w-[1280px] mx-auto min-h-screen">
-    @if (session('success'))
-    <div class="mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium"
-         style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);color:#34d399;">
-        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        {{ session('success') }}
-    </div>
-    @endif
-    @if ($errors->any())
-    <div class="mb-4 px-4 py-3 rounded-2xl text-sm font-medium"
-         style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;">
-        {{ $errors->first() }}
-    </div>
-    @endif
-
-    {{-- Page title --}}
-    <div class="mb-6">
-        <h1 class="text-xl font-extrabold text-white font-display">Toko Packing</h1>
-        <p class="text-xs mt-0.5" style="color: rgba(255,255,255,0.38);">
-            Manajemen stok perlengkapan logistik dan pemantauan penjualan
-        </p>
-    </div>
-
-    {{-- ── Scorecards ── --}}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        {{-- Card 1: Peringatan Stok --}}
-        <div class="rounded-2xl p-5 flex flex-col gap-3 relative overflow-hidden"
-             style="background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.3); box-shadow: 0 4px 24px rgba(239,68,68,0.12);">
-            <div class="absolute -top-6 -right-6 w-24 h-24 rounded-full blur-3xl opacity-20" style="background: radial-gradient(circle,#ef4444,transparent);"></div>
-            <div class="flex items-center justify-between">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(239,68,68,0.18);">
-                    <x-lucide-alert-triangle class="w-5 h-5" style="color: #f87171;" />
-                </div>
-                @if($lowItems->count() > 0)
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse" style="background: rgba(239,68,68,0.18); color: #f87171;">PERLU RESTOCK</span>
-                @endif
-            </div>
-            <div>
-                <p class="text-xs font-medium mb-1" style="color: rgba(248,113,113,0.7);">Peringatan Stok Menipis</p>
-                <p class="text-2xl font-extrabold font-display" style="color: #fca5a5;">{{ $lowItems->count() }} Produk</p>
-                <div class="mt-2 space-y-1">
-                    @forelse($lowItems->take(3) as $low)
-                        <div class="flex items-center gap-1.5 text-xs" style="color: rgba(252,165,165,0.85);">
-                            <span class="w-1.5 h-1.5 rounded-full shrink-0 bg-red-400"></span>
-                            {{ $low->name }} sisa <span class="font-bold text-red-300">{{ $low->stock }} {{ $low->unit }}</span>!
-                        </div>
-                    @empty
-                        <p class="text-xs mt-1" style="color: rgba(255,255,255,0.38);">Semua stok aman</p>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-
-        {{-- Card 2: Terjual --}}
-        <div class="rounded-2xl p-5 flex flex-col gap-3" style="background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 24px rgba(0,0,0,0.25);">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(52,211,153,0.15);">
-                <x-lucide-trending-up class="w-5 h-5" style="color: #34d399;" />
-            </div>
-            <div>
-                <p class="text-xs font-medium mb-1" style="color: rgba(255,255,255,0.42);">Total Terjual (Bulan ini)</p>
-                <p class="text-2xl font-extrabold text-white font-display">{{ $totalSold }} Item</p>
-                <p class="text-xs mt-1" style="color: rgba(255,255,255,0.38);">Kardus, lakban, dan perlengkapan</p>
-            </div>
-        </div>
-
-        {{-- Card 3: Pendapatan --}}
-        <div class="rounded-2xl p-5 flex flex-col gap-3" style="background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 24px rgba(0,0,0,0.25);">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(245,158,11,0.15);">
-                <x-lucide-wallet class="w-5 h-5" style="color: #fbbf24;" />
-            </div>
-            <div>
-                <p class="text-xs font-medium mb-1" style="color: rgba(255,255,255,0.42);">Pendapatan Khusus Packing</p>
-                <p class="text-2xl font-extrabold text-white font-display">Rp {{ number_format($revenue, 0, ',', '.') }}</p>
-                <span class="inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-full" style="background: rgba(52,211,153,0.12); color: #34d399;">
-                    Dari 0 transaksi selesai
-                </span>
-            </div>
-        </div>
-    </div>
-
-    {{-- ── Tab Switcher ── --}}
-    <div class="flex gap-1 p-1 rounded-2xl mb-6" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);">
-        <button type="button" data-tab-button="inventaris" class="flex-1 py-3 rounded-xl text-sm font-bold transition-all">
-            Manajemen Inventaris
-            <p class="text-[10px] font-normal mt-0.5">Stock opname & master produk</p>
-        </button>
-        <button type="button" data-tab-button="pesanan" class="flex-1 py-3 rounded-xl text-sm font-bold transition-all">
-            Pesanan Packing
-            <p class="text-[10px] font-normal mt-0.5">Transaksi & tindak lanjut logistik</p>
-        </button>
-    </div>
-
-    {{-- ── TAB 1: INVENTARIS ── --}}
-    <div data-tab-panel="inventaris" class="rounded-2xl overflow-hidden {{ $tab !== 'inventaris' ? 'is-hidden' : '' }}" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
-        
-        {{-- Table Header (SELALU TAMPIL AGAR BISA TAMBAH PRODUK) --}}
-        <div class="px-6 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-            <div class="min-w-0">
-                <h3 class="text-sm font-bold text-white">Master Inventaris Packing</h3>
-                <p class="text-[10px] mt-0.5" style="color: {{ $lowItems->count() > 0 ? '#f87171' : 'rgba(255,255,255,0.35)' }};">
-                    {{ $items->count() }} produk terdaftar
-                    @if($lowItems->count() > 0) · {{ $lowItems->count() }} produk perlu restock segera @endif
-                </p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-                {{-- Category Filters --}}
-                <div class="flex flex-wrap items-center gap-1">
-                    @php $cats = ['Semua', 'Kardus', 'Pelindung', 'Perekat', 'Aksesoris']; @endphp
-                    @foreach($cats as $c)
-                        <button type="button" data-category-filter="{{ $c }}" class="px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all">
-                            {{ $c }}
-                        </button>
-                    @endforeach
-                </div>
-                {{-- Tombol Tambah Produk (CRUD) --}}
-                <button type="button" data-open-create class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:scale-105 shrink-0" style="background: linear-gradient(135deg,#7c3aed,#6366f1); box-shadow: 0 4px 16px rgba(124,58,237,0.4);">
-                    <x-lucide-plus class="w-3.5 h-3.5" /> Tambah Produk
-                </button>
-            </div>
-        </div>
-
-        {{-- Table Body --}}
-        <div class="overflow-x-auto">
-            <table class="w-full text-xs min-w-[780px]">
-                <thead>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-                        <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Nama Produk</th>
-                        <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Kategori</th>
-                        <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Harga / Satuan</th>
-                        <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Stok Sistem</th>
-                        <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Update Stok Fisik</th>
-                        <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($items as $item)
-                        @php $isLow = $item->stock <= $item->low_threshold; @endphp
-                        <tr data-category="{{ $item->category }}" class="transition-colors group" 
-                            style="border-bottom: 1px solid rgba(255,255,255,0.04);"
-                            onmouseover="this.style.background='{{ $isLow ? "rgba(239,68,68,0.04)" : "rgba(124,58,237,0.05)" }}'"
-                            onmouseout="this.style.background='transparent'">
-                            
-                            <td class="px-5 py-4">
-                                <div class="flex items-center gap-2.5">
-                                    @if($isLow) <div class="w-1.5 h-1.5 rounded-full shrink-0 animate-pulse bg-red-500"></div> @endif
-                                    <div class="w-12 h-10 rounded-lg overflow-hidden flex items-center justify-center shrink-0" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);">
-                                        @if($item->primary_image)
-                                            <img src="{{ asset('storage/'.$item->primary_image) }}" alt="{{ $item->name }}" class="w-full h-full object-cover">
-                                        @else
-                                            <x-lucide-image class="w-4 h-4" style="color:rgba(167,139,250,0.45)" />
-                                        @endif
-                                    </div>
-                                    <p class="font-semibold text-white">{{ $item->name }}</p>
-                                </div>
-                            </td>
-                            <td class="px-5 py-4">
-                                <span class="px-2 py-0.5 rounded-lg text-[10px] font-semibold" style="background: rgba(124,58,237,0.1); color: rgba(167,139,250,0.8);">
-                                    {{ $item->category }}
-                                </span>
-                            </td>
-                            <td class="px-5 py-4 whitespace-nowrap font-semibold text-white">
-                                Rp {{ number_format($item->price, 0, ',', '.') }}
-                                <span class="text-[10px] font-normal ml-1" style="color: rgba(255,255,255,0.35);">/{{ $item->unit }}</span>
-                            </td>
-                            <td class="px-5 py-4">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-sm font-bold {{ $isLow ? 'text-red-400' : 'text-white' }}">{{ $item->stock }}</span>
-                                    <span class="text-[10px]" style="color: rgba(255,255,255,0.3);">{{ $item->unit }}</span>
-                                    @if($isLow)
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold" style="background: rgba(239,68,68,0.15); color: #f87171;">
-                                            <x-lucide-alert-triangle class="w-2.5 h-2.5" /> Menipis
-                                        </span>
-                                    @endif
-                                </div>
-                            </td>
-                            
-                            {{-- Quick Stock (Replikasi UI React) --}}
-                            <td class="px-5 py-4">
-                                <div data-stock-control data-original="{{ $item->stock }}" class="flex items-center gap-2">
-                                    <form action="{{ route('admin.packing.update', $item->id) }}" method="POST" class="flex items-center gap-2">
-                                        @csrf @method('PUT')
-                                        <input type="hidden" name="quick_stock" value="1">
-                                        <div class="flex items-center rounded-xl overflow-hidden" style="border: 1.5px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04);">
-                                            <button type="button" data-stock-minus class="w-8 h-8 flex items-center justify-center transition-colors hover:bg-white/10 text-white/50" style="border-right: 1px solid rgba(255,255,255,0.08);">
-                                                <x-lucide-minus class="w-3.5 h-3.5" />
-                                            </button>
-                                            <input type="number" name="stock" value="{{ $item->stock }}" data-stock-input class="w-16 text-center text-sm font-bold outline-none bg-transparent text-white" />
-                                            <button type="button" data-stock-plus class="w-8 h-8 flex items-center justify-center transition-colors hover:bg-white/10 text-white/50" style="border-left: 1px solid rgba(255,255,255,0.08);">
-                                                <x-lucide-plus class="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
-                                        <span class="text-[10px] text-white/30 hidden sm:inline">{{ $item->unit }}</span>
-                                        <button type="submit" data-stock-save class="is-hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all hover:scale-105" style="background: rgba(124,58,237,0.2); border: 1px solid rgba(124,58,237,0.4); color: #c4b5fd;">
-                                            <x-lucide-save class="w-3 h-3" /> Simpan
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-
-                            {{-- Actions --}}
-                            <td class="px-5 py-4">
-                                <div class="flex items-center gap-1.5">
-                                    <button type="button" data-open-edit data-item="{{ e($item->toJson()) }}" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105" style="background: rgba(99,102,241,0.13); border: 1px solid rgba(99,102,241,0.28); color: #818cf8;">
-                                        <x-lucide-edit-2 class="w-3.5 h-3.5" /> <span class="hidden xl:inline">Edit</span>
-                                    </button>
-                                    <button type="button" data-open-delete data-id="{{ $item->id }}" data-name="{{ e($item->name) }}" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #f87171;">
-                                        <x-lucide-trash-2 class="w-3.5 h-3.5" /> <span class="hidden xl:inline">Hapus</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="py-16 text-center">
-                                <div class="flex flex-col items-center">
-                                    <div class="relative inline-flex mx-auto mb-5">
-                                        <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#f97316,#fb923c);"></div>
-                                        <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(249,115,22,0.2),rgba(251,146,60,0.1));border:1px solid rgba(249,115,22,0.35);">
-                                            <svg class="w-9 h-9" fill="none" stroke="#fb923c" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M21 8L12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <p class="text-sm font-bold text-white mb-1">Belum ada produk</p>
-                                    <p class="text-xs" style="color:rgba(255,255,255,0.38);">Klik "Tambah Produk" di atas untuk mulai</p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div class="px-5 py-3 flex items-center justify-between" style="border-top: 1px solid rgba(255,255,255,0.05);">
-            <p class="text-[10px]" style="color: rgba(255,255,255,0.28);">{{ $items->count() }} produk ditampilkan</p>
-            <button class="flex items-center gap-1 text-[10px] font-semibold hover:text-white transition-colors" style="color: rgba(255,255,255,0.35);">
-                Ekspor CSV <x-lucide-chevron-right class="w-3 h-3" />
-            </button>
-        </div>
-    </div>
-
-    {{-- ── TAB 2: PESANAN ── --}}
-    <div data-tab-panel="pesanan" class="rounded-2xl overflow-hidden {{ $tab !== 'pesanan' ? 'is-hidden' : '' }}" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
-        <div class="px-6 py-4 flex items-start justify-between gap-4" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-            <div>
-                <h3 class="text-sm font-bold text-white">Transaksi Pesanan Packing</h3>
-                <p class="text-[10px] mt-0.5" style="color: rgba(255,255,255,0.35);">{{ $orders->count() }} pesanan tercatat</p>
-            </div>
-        </div>
-        @if ($orders->isEmpty())
-            <div class="py-16 flex flex-col items-center text-center">
-                <div class="relative inline-flex mx-auto mb-5">
-                    <div class="absolute inset-0 rounded-3xl blur-xl opacity-25" style="background:linear-gradient(135deg,#d97706,#fbbf24);"></div>
-                    <div class="relative w-20 h-20 rounded-3xl flex items-center justify-center" style="background:linear-gradient(135deg,rgba(217,119,6,0.2),rgba(251,191,36,0.1));border:1px solid rgba(217,119,6,0.35);">
-                        <svg class="w-9 h-9" fill="none" stroke="#fbbf24" stroke-width="1.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/>
-                        </svg>
-                    </div>
-                </div>
-                <p class="text-sm font-bold text-white mb-1">Tidak ada pesanan masuk</p>
-                <p class="text-xs" style="color:rgba(255,255,255,0.38);">Pesanan dari pelanggan akan muncul di sini</p>
-            </div>
-        @else
-            <div class="overflow-x-auto">
-                <table class="w-full text-xs">
-                    <thead>
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Kode Pesanan</th>
-                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Pelanggan</th>
-                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Item</th>
-                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Total</th>
-                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Pembayaran</th>
-                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Status Order</th>
-                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Tanggal</th>
-                            <th class="text-left px-5 py-3.5 font-semibold whitespace-nowrap" style="color: rgba(255,255,255,0.3);">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($orders as $order)
-                            @php
-                                $badge = match ($order->payment_status) {
-                                    'PAID' => ['Lunas', '#34d399', 'rgba(52,211,153,0.12)'],
-                                    'FAILED', 'EXPIRED' => ['Gagal', '#f87171', 'rgba(239,68,68,0.12)'],
-                                    default => ['Menunggu', '#fbbf24', 'rgba(251,191,36,0.12)'],
-                                };
-                                $waNumber = rt_wa_number($order->user->phone ?? null);
-                                $waCustomer = $order->user->name ?? 'Pelanggan';
-                                $waTemplates = [
-                                    ['key' => 'diproses', 'label' => 'Pesanan Sedang Diproses', 'text' => "Halo {$waCustomer}, pesanan packing-mu (kode {$order->order_code}) sedang kami proses. Mohon ditunggu ya! 📦"],
-                                    ['key' => 'dikirim', 'label' => 'Pesanan Sudah Dikirim', 'text' => "Halo {$waCustomer}, pesanan packing-mu (kode {$order->order_code}) sudah dikirim. Terima kasih telah berbelanja di RUTIP! 🚚"],
-                                    ['key' => 'selesai', 'label' => 'Pesanan Sudah Diterima/Selesai', 'text' => "Halo {$waCustomer}, terima kasih! Pesanan packing-mu (kode {$order->order_code}) sudah selesai. 🙏"],
-                                ];
-                            @endphp
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
-                                <td class="px-5 py-4 font-mono font-semibold text-white whitespace-nowrap">{{ $order->order_code }}</td>
-                                <td class="px-5 py-4 text-white">{{ $order->user->name ?? '-' }}</td>
-                                <td class="px-5 py-4" style="color: rgba(255,255,255,0.55);">{{ collect($order->items)->pluck('name')->implode(', ') }}</td>
-                                <td class="px-5 py-4 font-semibold text-white whitespace-nowrap">Rp {{ number_format($order->total, 0, ',', '.') }}</td>
-                                <td class="px-5 py-4 whitespace-nowrap">
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:{{ $badge[2] }};color:{{ $badge[1] }};">{{ $badge[0] }}</span>
-                                </td>
-                                <td class="px-5 py-4 whitespace-nowrap">
-                                    @php
-                                        $orderStatus = $order->status ?? 'pending';
-                                        $statusOpts = [
-                                            'pending'   => ['label' => 'Pending',   'color' => '#fbbf24', 'bg' => 'rgba(251,191,36,0.12)'],
-                                            'diproses'  => ['label' => 'Diproses',  'color' => '#38bdf8', 'bg' => 'rgba(56,189,248,0.12)'],
-                                            'dikirim'   => ['label' => 'Dikirim',   'color' => '#a78bfa', 'bg' => 'rgba(167,139,250,0.12)'],
-                                            'selesai'   => ['label' => 'Selesai',   'color' => '#34d399', 'bg' => 'rgba(52,211,153,0.12)'],
-                                        ];
-                                        $cur = $statusOpts[$orderStatus] ?? $statusOpts['pending'];
-                                    @endphp
-                                    <form action="{{ route('admin.packing.order.status', $order->id) }}" method="POST" class="flex items-center gap-1.5">
-                                        @csrf
-                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0" style="background:{{ $cur['bg'] }};color:{{ $cur['color'] }};">{{ $cur['label'] }}</span>
-                                        <select name="status" onchange="this.form.submit()"
-                                                class="px-2 py-1 rounded-lg text-[10px] font-semibold outline-none appearance-none cursor-pointer transition-colors"
-                                                style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);">
-                                            @foreach($statusOpts as $val => $opt)
-                                                <option value="{{ $val }}" {{ $orderStatus === $val ? 'selected' : '' }} style="background:#0f0720;">{{ $opt['label'] }}</option>
-                                            @endforeach
-                                        </select>
-                                    </form>
-                                </td>
-                                <td class="px-5 py-4 whitespace-nowrap" style="color: rgba(255,255,255,0.4);">{{ $order->created_at->format('d M Y, H:i') }}</td>
-                                <td class="px-5 py-4 whitespace-nowrap">
-                                    <button type="button" {{ $waNumber ? '' : 'disabled' }}
-                                            title="{{ $waNumber ? 'Kirim pesan WhatsApp ke '.$waCustomer : 'Nomor WA pelanggan belum diisi' }}"
-                                            onclick="openWaModal(@js($waNumber), @js($waTemplates), @js('Kirim ke '.$waCustomer))"
-                                            class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:scale-105 disabled:opacity-30 disabled:cursor-not-allowed"
-                                            style="background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.25);color:#34d399;">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
-                                        WA
-                                    </button>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @endif
-    </div>
-
-    {{-- ── MODAL FORM (CREATE/EDIT) ── --}}
-    <div id="packing-form-modal" class="is-hidden fixed inset-0 z-50 flex items-center justify-center p-6" style="background: rgba(0,0,0,0.78); backdrop-filter: blur(6px);">
-        <div data-modal-card class="w-full max-w-md rounded-3xl overflow-hidden" style="background: rgba(12,6,24,0.99); border: 1px solid rgba(139,92,246,0.25); box-shadow: 0 24px 80px rgba(0,0,0,0.75);">
-            <form id="packing-product-form" action="{{ route('admin.packing.store') }}" method="POST" enctype="multipart/form-data" data-store-url="{{ route('admin.packing.store') }}" data-base-url="{{ url('/admin/toko-packing') }}">
-                @csrf
-                <input id="packing-form-method" type="hidden" name="_method" value="PUT" disabled>
-
-                <div class="px-7 py-5 flex items-center justify-between" style="border-bottom: 1px solid rgba(255,255,255,0.07); background: rgba(124,58,237,0.06);">
-                    <div>
-                        <h2 id="packing-form-title" class="text-base font-extrabold text-white font-display">Tambah Produk Baru</h2>
-                        <p id="packing-form-subtitle" class="text-xs mt-0.5" style="color: rgba(255,255,255,0.38);">Produk baru akan muncul di katalog packing</p>
-                    </div>
-                    <button type="button" data-close-form class="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-white/10 text-white/40 transition-colors"><x-lucide-x class="w-5 h-5" /></button>
-                </div>
-
-                <div class="px-7 py-6 space-y-5">
-                    <div>
-                        <label class="block text-xs font-bold mb-2 text-white/55">Nama Produk <span class="text-red-400">*</span></label>
-                        <input name="name" required placeholder="Contoh: Kardus Ukuran M" class="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-white/20 outline-none transition-colors focus:border-violet-500" style="background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.1);" />
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold mb-2 text-white/55">Foto Produk</label>
-                        <label for="packing-images-input" class="rt-img-drop">
-                            <div class="rt-img-drop-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                            </div>
-                            <div>
-                                <p class="text-xs font-bold text-white">Klik untuk pilih / tambah foto</p>
-                                <p class="text-[10px]" style="color:rgba(255,255,255,0.35);">JPG / PNG · Maks 5 MB per foto</p>
-                                <div class="mt-1 flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-lg w-fit mx-auto" style="background:rgba(124,58,237,0.15);color:#c4b5fd;">
-                                    <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
-                                    Rasio 1:1 &bull; Min. 500×500 px
-                                </div>
-                            </div>
-                            <input id="packing-images-input" type="file" name="images[]" accept="image/*" multiple data-existing-count="0" class="sr-only" />
-                        </label>
-                        <div id="packing-images-preview" class="rt-img-pick-grid hidden"></div>
-                        <p id="packing-images-label" class="text-[10px] mt-1.5" style="color:rgba(255,255,255,0.35);">Wajib minimal 1 foto, maksimal 10 foto asli per produk.</p>
-                        @error('images')
-                            <p class="text-[10px] mt-1.5 text-red-400">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold mb-2 text-white/55">Kategori</label>
-                            <select name="category" class="w-full px-4 py-3 rounded-xl text-sm text-white outline-none appearance-none" style="background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.1);">
-                                <option value="Kardus" style="background: #0f0720">Kardus</option>
-                                <option value="Pelindung" style="background: #0f0720">Pelindung</option>
-                                <option value="Perekat" style="background: #0f0720">Perekat</option>
-                                <option value="Aksesoris" style="background: #0f0720">Aksesoris</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold mb-2 text-white/55">Satuan</label>
-                            <select name="unit" class="w-full px-4 py-3 rounded-xl text-sm text-white outline-none appearance-none" style="background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.1);">
-                                <option value="pcs" style="background: #0f0720">pcs</option>
-                                <option value="roll" style="background: #0f0720">roll</option>
-                                <option value="meter" style="background: #0f0720">meter</option>
-                                <option value="lembar" style="background: #0f0720">lembar</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold mb-2 text-white/55">Harga Jual <span class="text-red-400">*</span></label>
-                        <div class="flex">
-                            <div class="flex items-center px-3.5 rounded-l-xl text-sm font-semibold shrink-0" style="background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.1); border-right: none; color: rgba(255,255,255,0.45);">Rp</div>
-                            <input type="number" name="price" required class="flex-1 px-4 py-3 rounded-r-xl text-sm text-white outline-none focus:border-violet-500" style="background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.1);" />
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold mb-2 text-white/55">Stok Awal</label>
-                            <input type="number" name="stock" min="0" class="w-full px-4 py-3 rounded-xl text-sm text-white outline-none focus:border-violet-500" style="background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.1);" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold mb-2 text-white/55">Ambang Peringatan</label>
-                            <input type="number" name="low_threshold" min="1" class="w-full px-4 py-3 rounded-xl text-sm text-white outline-none focus:border-violet-500" style="background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.1);" />
-                        </div>
-                    </div>
-                </div>
-
-                <div class="px-7 py-5 flex gap-3" style="border-top: 1px solid rgba(255,255,255,0.07);">
-                    <button type="button" data-close-form class="flex-1 py-3.5 rounded-2xl text-sm font-semibold hover:bg-white/5 transition-colors" style="border: 1.5px solid rgba(255,255,255,0.14); color: rgba(255,255,255,0.7);">Batal</button>
-                    <button type="submit" class="flex-[2] py-3.5 rounded-2xl text-sm font-bold text-white flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform" style="background: linear-gradient(135deg,#7c3aed,#6366f1); box-shadow: 0 6px 20px rgba(124,58,237,0.4);">
-                        <x-lucide-check class="w-4 h-4" /> <span id="packing-form-submit-label">Tambah Produk</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    {{-- ── MODAL DELETE ── --}}
-    <div id="packing-delete-modal" class="is-hidden fixed inset-0 z-50 flex items-center justify-center p-6" style="background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);">
-        <div data-modal-card class="w-full max-w-sm rounded-3xl overflow-hidden" style="background: rgba(15,7,32,0.99); border: 1px solid rgba(239,68,68,0.22); box-shadow: 0 24px 64px rgba(0,0,0,0.7);">
-            <div class="flex flex-col items-center px-6 pt-8 pb-5">
-                <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style="background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.25);">
-                    <x-lucide-trash-2 class="w-6 h-6" style="color: #f87171;" />
-                </div>
-                <h3 class="text-base font-extrabold text-white text-center font-display">Hapus Produk?</h3>
-                <p class="text-xs text-center mt-2 text-white/45 leading-relaxed">
-                    "<span id="packing-delete-name" class="text-white font-semibold"></span>" akan dihapus permanen.
-                </p>
-            </div>
-            <div class="px-6 pb-7 flex flex-col gap-2">
-                <form id="packing-delete-form" action="{{ url('/admin/toko-packing') }}" method="POST" data-base-url="{{ url('/admin/toko-packing') }}">
-                    @csrf @method('DELETE')
-                    <button type="submit" class="w-full py-3.5 rounded-2xl text-sm font-bold text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02]" style="background: linear-gradient(135deg,#dc2626,#ef4444); box-shadow: 0 6px 20px rgba(220,38,38,0.4);">
-                        <x-lucide-trash-2 class="w-4 h-4" /> Ya, Hapus
-                    </button>
-                </form>
-                <button type="button" data-close-delete class="w-full py-3.5 rounded-2xl text-sm font-semibold transition-all hover:bg-white/5" style="border: 1.5px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.7);">Batal</button>
-            </div>
-        </div>
-    </div>
-
-    <x-admin-wa-modal />
-
-    {{-- TOAST SUCCESS --}}
-    @if(session('success') || session('save_toast'))
-    <div id="packing-toast" class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl" style="background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.35); backdrop-filter: blur(12px); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-        <x-lucide-check class="w-4 h-4" style="color: #34d399;" />
-        <div>
-            <p class="text-xs font-bold text-white">Berhasil</p>
-            <p class="text-[10px]" style="color: rgba(255,255,255,0.5);">{{ session('success') ?? session('save_toast') }}</p>
-        </div>
-    </div>
-    @endif
-
+<div class="stats">
+  <div class="card stat {{ $lowItems->count() > 0 ? 'alert' : '' }}">
+    <div class="stat-top"><span class="stat-ico r">{!! \App\Support\Icons::svg('alert') !!}</span></div>
+    <small>Stok menipis</small>
+    <strong>{{ $lowItems->count() }} produk</strong>
+    <span class="sub">
+      @forelse ($lowItems->take(3) as $low)
+        {{ $low->name }} (sisa {{ $low->stock }} {{ $low->unit }}){{ !$loop->last ? ',' : '' }}
+      @empty
+        Semua stok aman
+      @endforelse
+    </span>
+  </div>
+  <div class="card stat">
+    <div class="stat-top"><span class="stat-ico g">{!! \App\Support\Icons::svg('trend') !!}</span></div>
+    <small>Terjual bulan ini</small>
+    <strong>{{ $totalSold }} item</strong>
+    <span class="sub">Kardus, lakban, dan pelindung</span>
+  </div>
+  <div class="card stat">
+    <div class="stat-top"><span class="stat-ico s">{!! \App\Support\Icons::svg('wallet') !!}</span></div>
+    <small>Pendapatan packing</small>
+    <strong>Rp {{ number_format($revenue, 0, ',', '.') }}</strong>
+    <span class="sub"><span class="pill g">Dari pesanan lunas</span></span>
+  </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const root = document.getElementById('packing-admin');
-    if (!root) return;
+<div class="seg" role="tablist" aria-label="Bagian halaman">
+  <a role="tab" aria-selected="{{ $tab === 'inventaris' ? 'true' : 'false' }}" href="{{ route('admin.packing.index', ['tab' => 'inventaris']) }}">
+    {!! \App\Support\Icons::svg('layers') !!}
+    <span>Inventaris<small>Stock opname dan master produk</small></span>
+  </a>
+  <a role="tab" aria-selected="{{ $tab === 'pesanan' ? 'true' : 'false' }}" href="{{ route('admin.packing.index', ['tab' => 'pesanan']) }}">
+    {!! \App\Support\Icons::svg('clipboard') !!}
+    <span>Pesanan packing<small>Transaksi dan pengiriman</small></span>
+  </a>
+</div>
 
-    const activeStyle = 'background: linear-gradient(135deg,#7c3aed,#6366f1); color: white; box-shadow: 0 2px 12px rgba(124,58,237,0.35);';
-    const inactiveStyle = 'color: rgba(255,255,255,0.45);';
-    const activeFilterStyle = 'background: rgba(124,58,237,0.2); border: 1px solid rgba(124,58,237,0.4); color: #c4b5fd;';
-    const inactiveFilterStyle = 'background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.4);';
+@if ($tab === 'pesanan')
+  <section class="card">
+    <div class="card-h"><div><h2>Pesanan packing</h2><p>{{ $orders->count() }} pesanan tercatat</p></div></div>
+    <div class="tbl-wrap">
+      @if ($orders->isEmpty())
+        {!! \App\Support\Icons::empty('clipboard', 'Tidak ada pesanan masuk', 'Pesanan dari pelanggan akan muncul di sini.') !!}
+      @else
+        <table>
+          <thead><tr><th>Kode pesanan</th><th>Pelanggan</th><th>Isi pesanan</th><th class="num">Total</th><th>Pembayaran</th><th>Status order</th><th>Tanggal</th><th><span class="sr">Aksi</span></th></tr></thead>
+          <tbody>
+            @foreach ($orders as $order)
+              @php
+                $payBadge = match ($order->payment_status) {
+                    'PAID' => ['Lunas', 'g'],
+                    'FAILED', 'EXPIRED' => ['Gagal', 'r'],
+                    default => ['Menunggu', 'y'],
+                };
+                $waNumber = rt_wa_number($order->user->phone ?? null);
+                $waCustomer = $order->user->name ?? 'Pelanggan';
+                $waTemplates = [
+                    ['key' => 'diproses', 'label' => 'Pesanan Sedang Diproses', 'text' => "Halo {$waCustomer}, pesanan packing-mu (kode {$order->order_code}) sedang kami proses. Mohon ditunggu ya! 📦"],
+                    ['key' => 'dikirim', 'label' => 'Pesanan Sudah Dikirim', 'text' => "Halo {$waCustomer}, pesanan packing-mu (kode {$order->order_code}) sudah dikirim. Terima kasih telah berbelanja di RuangTitip! 🚚"],
+                    ['key' => 'selesai', 'label' => 'Pesanan Sudah Diterima/Selesai', 'text' => "Halo {$waCustomer}, terima kasih! Pesanan packing-mu (kode {$order->order_code}) sudah selesai. 🙏"],
+                ];
+                $statusOpts = ['pending' => 'Pending', 'diproses' => 'Diproses', 'dikirim' => 'Dikirim', 'selesai' => 'Selesai'];
+                $statusTone = ['pending' => 'y', 'diproses' => 'n', 'dikirim' => 'o', 'selesai' => 'g'];
+                $orderStatus = $order->status ?? 'pending';
+              @endphp
+              <tr>
+                <td class="mono">{{ $order->order_code }}</td>
+                <td>{{ $order->user->name ?? '-' }}</td>
+                <td>{{ collect($order->items)->pluck('name')->implode(', ') }}</td>
+                <td class="num"><b>Rp {{ number_format($order->total, 0, ',', '.') }}</b></td>
+                <td><span class="pill {{ $payBadge[1] }}">{{ $payBadge[0] }}</span></td>
+                <td>
+                  <form action="{{ route('admin.packing.order.status', $order->id) }}" method="POST" style="display:flex;align-items:center;gap:6px">
+                    @csrf
+                    <span class="pill {{ $statusTone[$orderStatus] ?? 'n' }}">{{ $statusOpts[$orderStatus] ?? 'Pending' }}</span>
+                    <select name="status" class="select" style="min-height:32px;padding:2px 8px;font-size:12px" onchange="this.form.submit()">
+                      @foreach ($statusOpts as $val => $label)
+                        <option value="{{ $val }}" {{ $orderStatus === $val ? 'selected' : '' }}>{{ $label }}</option>
+                      @endforeach
+                    </select>
+                  </form>
+                </td>
+                <td>{{ $order->created_at->format('d M Y, H:i') }}</td>
+                <td>
+                  <div class="t-actions">
+                    <button type="button" class="btn btn-sm btn-green" {{ $waNumber ? '' : 'disabled' }}
+                      title="{{ $waNumber ? 'Kirim pesan WhatsApp ke ' . $waCustomer : 'Nomor WA pelanggan belum diisi' }}"
+                      onclick="openWaModal(@js($waNumber), @js($waTemplates), @js('Kirim ke ' . $waCustomer))">
+                      {!! \App\Support\Icons::svg('send', 'sm') !!} WA
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            @endforeach
+          </tbody>
+        </table>
+      @endif
+    </div>
+  </section>
+@else
+  <section class="card">
+    <div class="card-h">
+      <div class="chips" id="kFilter" role="group" aria-label="Filter kategori">
+        <button class="chip" type="button" aria-pressed="true" data-c="Semua">Semua</button>
+        @foreach ($categories as $c)
+          <button class="chip" type="button" aria-pressed="false" data-c="{{ $c }}">{{ $c }}</button>
+        @endforeach
+      </div>
+      <button class="btn btn-primary" type="button" id="btnTambahProduk">{!! \App\Support\Icons::svg('plus', 'sm') !!} Tambah produk</button>
+    </div>
+    <div class="tbl-wrap" id="kTable">
+      @if ($items->isEmpty())
+        {!! \App\Support\Icons::empty('box', 'Belum ada produk', 'Klik "Tambah produk" untuk mulai mengisi inventaris.') !!}
+      @else
+        <table>
+          <thead><tr><th>Produk</th><th>Kategori</th><th class="num">Harga</th><th>Stok sistem</th><th>Stok fisik (opname)</th><th><span class="sr">Aksi</span></th></tr></thead>
+          <tbody>
+            @foreach ($items as $item)
+              @php $isLow = $item->stock <= $item->low_threshold; @endphp
+              <tr data-category="{{ $item->category }}">
+                <td>
+                  <div class="who">
+                    <span class="thumb">
+                      @if ($item->primary_image)
+                        <img src="{{ asset('storage/' . $item->primary_image) }}" alt="{{ $item->name }}">
+                      @else
+                        {!! \App\Support\Icons::svg('box') !!}
+                      @endif
+                    </span>
+                    <div><b>{{ $item->name }}</b><small>{{ $item->category }}</small></div>
+                  </div>
+                </td>
+                <td><span class="pill n">{{ $item->category }}</span></td>
+                <td class="num"><b>Rp {{ number_format($item->price, 0, ',', '.') }}</b><br><small style="color:var(--muted)">per {{ $item->unit }}</small></td>
+                <td>
+                  <div class="stock">
+                    <b>{{ $item->stock }}</b>
+                    <span class="pill {{ $item->stock <= 0 ? 'r' : ($isLow ? 'y' : 'g') }}">{{ $item->stock <= 0 ? 'Habis' : ($isLow ? 'Menipis' : 'Aman') }}</span>
+                  </div>
+                </td>
+                <td>
+                  <form action="{{ route('admin.packing.update', $item->id) }}" method="POST" class="stock-form" data-original="{{ $item->stock }}" style="display:flex;align-items:center;gap:8px">
+                    @csrf @method('PUT')
+                    <input type="hidden" name="quick_stock" value="1">
+                    <div class="stepper">
+                      <button type="button" data-d="-1">−</button>
+                      <input type="number" min="0" name="stock" value="{{ $item->stock }}">
+                      <button type="button" data-d="1">+</button>
+                    </div>
+                    <button class="btn btn-sm btn-ghost save-stock-btn" type="submit" disabled>Simpan</button>
+                  </form>
+                </td>
+                <td>
+                  <div class="t-actions">
+                    <button class="btn btn-sm btn-ghost" type="button" data-edit-item="{{ e($item->toJson()) }}">{!! \App\Support\Icons::svg('edit', 'sm') !!}</button>
+                    <form action="{{ route('admin.packing.destroy', $item->id) }}" method="POST" data-confirm="Hapus {{ addslashes($item->name) }}?|Produk ini akan dihapus permanen dari katalog." data-confirm-ok="Hapus">
+                      @csrf @method('DELETE')
+                      <button class="btn btn-sm btn-danger" type="submit">{!! \App\Support\Icons::svg('trash', 'sm') !!}</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            @endforeach
+          </tbody>
+        </table>
+      @endif
+    </div>
+    <div class="card-f"><span>{{ $items->count() }} produk ditampilkan</span></div>
+  </section>
+@endif
 
-    const setTab = (tab) => {
-        root.querySelectorAll('[data-tab-button]').forEach((button) => {
-            const active = button.dataset.tabButton === tab;
-            button.style.cssText = active ? activeStyle : inactiveStyle;
-            const desc = button.querySelector('p');
-            if (desc) desc.style.color = active ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.28)';
-        });
+{{-- ── Modal Tambah/Edit Produk ── --}}
+<div class="modal" id="pkModal" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="pkModalT">
+    <form id="packing-product-form" action="{{ route('admin.packing.store') }}" method="POST" enctype="multipart/form-data"
+          data-store-url="{{ route('admin.packing.store') }}" data-base-url="{{ url('/admin/toko-packing') }}" style="display:contents">
+      @csrf
+      <input id="packing-form-method" type="hidden" name="_method" value="PUT" disabled>
+      <div class="d-head">
+        <div><h2 id="pkModalT">Tambah produk packing</h2><p id="packing-form-subtitle">Produk baru akan muncul di katalog Toko Packing.</p></div>
+        <button class="icon-btn" type="button" id="btnCloseProdukModal" aria-label="Tutup"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="d-body">
+        <div class="field"><label for="kName">Nama produk <span class="req">*</span></label><input class="input" id="kName" name="name" required placeholder="Contoh: Kardus ukuran M"></div>
+        <div class="field">
+          <span class="lbl">Foto <span style="color:var(--tape)">*</span></span>
+          <div class="drop" id="kDrop" role="button" tabindex="0" aria-describedby="kHelp">
+            <span class="thumb">{!! \App\Support\Icons::svg('image') !!}</span>
+            <span><b>Klik untuk pilih / tambah foto</b><small>JPG / PNG &middot; maks 5 MB per foto &middot; rasio 1:1, min. 500&times;500 px</small></span>
+          </div>
+          <input type="file" id="kFile" name="images[]" accept="image/png,image/jpeg" multiple hidden>
+          <div class="previews" id="kPrev"></div>
+          <span class="help" id="kHelp">Wajib minimal 1 foto, maksimal 10 foto per produk.</span>
+          @error('images')<span class="help" style="color:var(--danger)">{{ $message }}</span>@enderror
+        </div>
+        <div class="grid2">
+          <div class="field"><label for="kCat">Kategori</label>
+            <select class="select" id="kCat" name="category">
+              @foreach ($categories as $c)<option value="{{ $c }}">{{ $c }}</option>@endforeach
+            </select>
+          </div>
+          <div class="field"><label for="kUnit">Satuan</label>
+            <select class="select" id="kUnit" name="unit">
+              @foreach ($units as $u)<option value="{{ $u }}">{{ $u }}</option>@endforeach
+            </select>
+          </div>
+        </div>
+        <div class="field"><label for="kPrice">Harga jual <span class="req">*</span></label><div class="affix"><span>Rp</span><input id="kPrice" name="price" type="number" min="0" placeholder="6000" inputmode="numeric" required></div></div>
+        <div class="grid2">
+          <div class="field"><label for="kStock">Stok awal</label><input class="input" id="kStock" name="stock" type="number" min="0" value="0" inputmode="numeric"></div>
+          <div class="field"><label for="kMin">Ambang peringatan</label><input class="input" id="kMin" name="low_threshold" type="number" min="1" value="10" inputmode="numeric"><span class="help">Peringatan muncul kalau stok di bawah angka ini.</span></div>
+        </div>
+      </div>
+      <div class="d-foot">
+        <button class="btn btn-ghost" type="button" id="btnBatalProdukModal">Batal</button>
+        <button class="btn btn-primary" type="submit">{!! \App\Support\Icons::svg('check', 'sm') !!} <span id="packing-form-submit-label">Tambah produk</span></button>
+      </div>
+    </form>
+  </div>
+</div>
 
-        root.querySelectorAll('[data-tab-panel]').forEach((panel) => {
-            panel.classList.toggle('is-hidden', panel.dataset.tabPanel !== tab);
-        });
-    };
-
-    root.querySelectorAll('[data-tab-button]').forEach((button) => {
-        button.addEventListener('click', () => setTab(button.dataset.tabButton));
-    });
-    setTab(root.dataset.activeTab || 'inventaris');
-
-    const setCategory = (category) => {
-        root.querySelectorAll('[data-category-filter]').forEach((button) => {
-            button.style.cssText = button.dataset.categoryFilter === category ? activeFilterStyle : inactiveFilterStyle;
-        });
-
-        root.querySelectorAll('[data-category]').forEach((row) => {
-            row.classList.toggle('is-hidden', category !== 'Semua' && row.dataset.category !== category);
-        });
-    };
-
-    root.querySelectorAll('[data-category-filter]').forEach((button) => {
-        button.addEventListener('click', () => setCategory(button.dataset.categoryFilter));
-    });
-    setCategory('Semua');
-
-    root.querySelectorAll('[data-stock-control]').forEach((control) => {
-        const input = control.querySelector('[data-stock-input]');
-        const save = control.querySelector('[data-stock-save]');
-        const original = Number(control.dataset.original || 0);
-
-        const sync = () => {
-            const changed = Number(input.value || 0) !== original;
-            save.classList.toggle('is-hidden', !changed);
-            input.classList.toggle('text-white', !changed);
-            input.style.color = changed ? '#a78bfa' : 'white';
-        };
-
-        control.querySelector('[data-stock-minus]').addEventListener('click', () => {
-            input.value = Math.max(0, Number(input.value || 0) - 1);
-            sync();
-        });
-        control.querySelector('[data-stock-plus]').addEventListener('click', () => {
-            input.value = Number(input.value || 0) + 1;
-            sync();
-        });
-        input.addEventListener('input', sync);
-    });
-
-    const formModal = document.getElementById('packing-form-modal');
-    const productForm = document.getElementById('packing-product-form');
-    const methodInput = document.getElementById('packing-form-method');
-    const formTitle = document.getElementById('packing-form-title');
-    const formSubtitle = document.getElementById('packing-form-subtitle');
-    const submitLabel = document.getElementById('packing-form-submit-label');
-    const maxImages = 10;
-
-    const imagePicker = createMultiImagePicker({
-        inputId: 'packing-images-input',
-        previewId: 'packing-images-preview',
-        labelId: 'packing-images-label',
-        maxImages,
-        emptyText: 'Wajib minimal 1 foto, maksimal 10 foto asli per produk.',
-    });
-
-    const fillForm = (data) => {
-        ['name', 'category', 'unit', 'price', 'stock', 'low_threshold'].forEach((key) => {
-            const input = productForm.elements[key];
-            if (input) input.value = data[key] ?? '';
-        });
-    };
-
-    const openCreate = () => {
-        productForm.action = productForm.dataset.storeUrl;
-        methodInput.disabled = true;
-        formTitle.textContent = 'Tambah Produk Baru';
-        formSubtitle.textContent = 'Produk baru akan muncul di katalog packing';
-        submitLabel.textContent = 'Tambah Produk';
-        fillForm({ name: '', category: 'Kardus', unit: 'pcs', price: '', stock: 0, low_threshold: 10 });
-        imagePicker.reset(0);
-        formModal.classList.remove('is-hidden');
-    };
-
-    const openEdit = (item) => {
-        productForm.action = `${productForm.dataset.baseUrl}/${item.id}`;
-        methodInput.disabled = false;
-        formTitle.textContent = 'Edit Produk';
-        formSubtitle.textContent = item.name || '';
-        submitLabel.textContent = 'Simpan Perubahan';
-        fillForm(item);
-        imagePicker.reset(Array.isArray(item.images) ? item.images.length : 0);
-        formModal.classList.remove('is-hidden');
-    };
-
-    const closeForm = () => formModal.classList.add('is-hidden');
-
-    root.querySelector('[data-open-create]')?.addEventListener('click', openCreate);
-    root.querySelectorAll('[data-open-edit]').forEach((button) => {
-        button.addEventListener('click', () => openEdit(JSON.parse(button.dataset.item)));
-    });
-    formModal.querySelectorAll('[data-close-form]').forEach((button) => button.addEventListener('click', closeForm));
-    formModal.addEventListener('click', (event) => {
-        if (!event.target.closest('[data-modal-card]')) closeForm();
-    });
-
-    const deleteModal = document.getElementById('packing-delete-modal');
-    const deleteForm = document.getElementById('packing-delete-form');
-    const deleteName = document.getElementById('packing-delete-name');
-    const closeDelete = () => deleteModal.classList.add('is-hidden');
-
-    root.querySelectorAll('[data-open-delete]').forEach((button) => {
-        button.addEventListener('click', () => {
-            deleteForm.action = `${deleteForm.dataset.baseUrl}/${button.dataset.id}`;
-            deleteName.textContent = button.dataset.name || '';
-            deleteModal.classList.remove('is-hidden');
-        });
-    });
-    deleteModal.querySelector('[data-close-delete]').addEventListener('click', closeDelete);
-    deleteModal.addEventListener('click', (event) => {
-        if (!event.target.closest('[data-modal-card]')) closeDelete();
-    });
-
-    const toast = document.getElementById('packing-toast');
-    if (toast) setTimeout(() => toast.classList.add('is-hidden'), 3000);
-});
-</script>
+<x-admin-wa-modal />
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+  /* Filter kategori (client-side) */
+  var fEl = document.getElementById('kFilter');
+  if (fEl) {
+    fEl.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-c]'); if (!b) return;
+      fEl.querySelectorAll('.chip').forEach(function (c) { c.setAttribute('aria-pressed', String(c === b)); });
+      document.querySelectorAll('#kTable [data-category]').forEach(function (row) {
+        row.hidden = b.dataset.c !== 'Semua' && row.dataset.category !== b.dataset.c;
+      });
+    });
+  }
+
+  /* Stepper stok fisik */
+  document.querySelectorAll('.stock-form').forEach(function (form) {
+    var input = form.querySelector('input[name="stock"]');
+    var save = form.querySelector('.save-stock-btn');
+    var original = Number(form.dataset.original || 0);
+    function sync() { save.disabled = Number(input.value || 0) === original; }
+    form.querySelector('[data-d="-1"]').addEventListener('click', function () { input.value = Math.max(0, Number(input.value || 0) - 1); sync(); });
+    form.querySelector('[data-d="1"]').addEventListener('click', function () { input.value = Number(input.value || 0) + 1; sync(); });
+    input.addEventListener('input', sync);
+  });
+
+  /* Modal tambah/edit produk */
+  var modal = document.getElementById('pkModal');
+  var form = document.getElementById('packing-product-form');
+  var methodInput = document.getElementById('packing-form-method');
+  var title = document.getElementById('pkModalT');
+  var subtitle = document.getElementById('packing-form-subtitle');
+  var submitLabel = document.getElementById('packing-form-submit-label');
+  var photos = RA.photoInput('kDrop', 'kFile', 'kPrev', 10, 0);
+
+  function fillForm(data) {
+    ['name', 'category', 'unit', 'price', 'stock', 'low_threshold'].forEach(function (key) {
+      if (form.elements[key]) form.elements[key].value = data[key] ?? '';
+    });
+  }
+
+  function openCreate() {
+    form.action = form.dataset.storeUrl;
+    methodInput.disabled = true;
+    title.textContent = 'Tambah produk packing';
+    subtitle.textContent = 'Produk baru akan muncul di katalog Toko Packing.';
+    submitLabel.textContent = 'Tambah produk';
+    fillForm({ name: '', category: 'Kardus', unit: 'pcs', price: '', stock: 0, low_threshold: 10 });
+    photos.reset(0);
+    RA.open('pkModal');
+  }
+
+  function openEdit(item) {
+    form.action = form.dataset.baseUrl + '/' + item.id;
+    methodInput.disabled = false;
+    title.textContent = 'Ubah produk';
+    subtitle.textContent = item.name || '';
+    submitLabel.textContent = 'Simpan perubahan';
+    fillForm(item);
+    photos.reset(Array.isArray(item.images) ? item.images.length : 0);
+    RA.open('pkModal');
+  }
+
+  document.getElementById('btnTambahProduk')?.addEventListener('click', openCreate);
+  document.querySelectorAll('[data-edit-item]').forEach(function (btn) {
+    btn.addEventListener('click', function () { openEdit(JSON.parse(btn.dataset.editItem)); });
+  });
+  document.getElementById('btnCloseProdukModal')?.addEventListener('click', function () { RA.close(modal); });
+  document.getElementById('btnBatalProdukModal')?.addEventListener('click', function () { RA.close(modal); });
+})();
+</script>
+@endpush
