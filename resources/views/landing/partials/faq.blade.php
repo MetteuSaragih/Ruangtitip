@@ -6,19 +6,19 @@
     </div>
     <div class="faq-list">
       <details open>
-        <summary>Saya masih perlu bayar kos selama pulang kampung?<span class="ic" aria-hidden="true">+</span></summary>
+        <summary>Saya masih perlu bayar kos selama pulang kampung?<span class="ic" aria-hidden="true"></span></summary>
         <p>Nggak perlu. Barangmu kami simpan, jadi kamar kos bisa kamu lepas selama libur.</p>
       </details>
       <details>
-        <summary>Barang apa saja yang bisa dititipkan?<span class="ic" aria-hidden="true">+</span></summary>
+        <summary>Barang apa saja yang bisa dititipkan?<span class="ic" aria-hidden="true"></span></summary>
         <p>Kardus, koper, buku, kipas, rak, dan elektronik kecil. Lengkapi daftar barang yang tidak diterima di halaman pesanan.</p>
       </details>
       <details>
-        <summary>Apakah RuangTitip bisa jemput ke kos?<span class="ic" aria-hidden="true">+</span></summary>
+        <summary>Apakah RuangTitip bisa jemput ke kos?<span class="ic" aria-hidden="true"></span></summary>
         <p>Bisa, untuk area Malang. Pilih tanggal jemput saat memesan.</p>
       </details>
       <details>
-        <summary>Gimana saya tahu kondisi barang saya?<span class="ic" aria-hidden="true">+</span></summary>
+        <summary>Gimana saya tahu kondisi barang saya?<span class="ic" aria-hidden="true"></span></summary>
         <p>Tiap barang difoto saat diterima. Status dan fotonya bisa kamu cek di platform RuangTitip.</p>
       </details>
     </div>
