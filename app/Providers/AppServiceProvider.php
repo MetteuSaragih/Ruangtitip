@@ -24,5 +24,9 @@ class AppServiceProvider extends ServiceProvider
             URL::forceRootUrl($appUrl);
             URL::forceScheme(parse_url($appUrl, PHP_URL_SCHEME) ?: 'http');
         }
+
+        // BookShipmentOnOrderPaid terdaftar otomatis lewat auto-discovery
+        // Laravel (handle() di-type-hint ke App\Events\OrderPaid), tidak
+        // perlu didaftarkan manual di sini.
     }
 }

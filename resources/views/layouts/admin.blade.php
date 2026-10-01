@@ -20,10 +20,13 @@
     $navItems = [
         ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'href' => route('admin.dashboard'), 'icon' => 'home'],
         ['label' => 'Ruang Titip', 'route' => 'admin.ruang-titip', 'href' => route('admin.ruang-titip'), 'icon' => 'warehouse',
-            'badge' => \App\Models\TitipanOrder::whereIn('status', ['menunggu_pembayaran', 'penjadwalan_penjemputan'])->count()],
-        ['label' => 'Toko Preloved', 'route' => 'admin.preloved', 'href' => route('admin.preloved'), 'icon' => 'bag'],
+            'badge' => \App\Models\TitipanOrder::whereIn('status', ['menunggu_pembayaran', 'penjadwalan_penjemputan'])->count()
+                + \App\Models\TitipanOrder::where('needs_admin_attention', true)->count()],
+        ['label' => 'Toko Preloved', 'route' => 'admin.preloved', 'href' => route('admin.preloved'), 'icon' => 'bag',
+            'badge' => \App\Models\Order::where('needs_admin_attention', true)->count()],
         ['label' => 'Toko Packing', 'route' => 'admin.packing.index', 'href' => route('admin.packing.index'), 'icon' => 'box',
-            'badge' => \App\Models\PackingProduct::whereColumn('stock', '<=', 'low_threshold')->count()],
+            'badge' => \App\Models\PackingProduct::whereColumn('stock', '<=', 'low_threshold')->count()
+                + \App\Models\PackingOrder::where('needs_admin_attention', true)->count()],
         ['label' => 'Manajemen Akun', 'route' => 'admin.accounts', 'href' => route('admin.accounts'), 'icon' => 'users'],
     ];
     $adminUser = Auth::user();

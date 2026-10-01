@@ -469,16 +469,49 @@ class RuangTitipController extends Controller
     /* SCREEN 7 (POST) — simpan pesanan & buat transaksi Tripay */
     public function place(Request $r, TripayService $tripay)
     {
-        $r->validate([
+        $s = $this->state($r);
+        $requiresSchedule = ($s['logistic'] ?? null) !== 'self';
+        $minHours = (float) config('pickup_slots.min_hours_ahead');
+        $maxDays = (int) config('pickup_slots.max_days_ahead');
+        $slotMap = collect(config('pickup_slots.slots'))->keyBy('start');
+
+        $validator = \Illuminate\Support\Facades\Validator::make($r->all(), [
             'payment_method' => 'required|string',
             'agree'          => 'accepted',
-            'pickup_date'    => 'nullable|date|after_or_equal:today',
-            'pickup_time'    => 'nullable|string',
+            'pickup_date'    => [
+                $requiresSchedule ? 'required' : 'nullable', 'date', 'after_or_equal:today',
+                'before_or_equal:' . now('Asia/Jakarta')->addDays($maxDays)->toDateString(),
+            ],
+            'pickup_time'    => [$requiresSchedule ? 'required' : 'nullable', \Illuminate\Validation\Rule::in($slotMap->keys())],
         ], [
             'agree.accepted' => 'Kamu harus menyetujui Syarat & Ketentuan.',
+            'pickup_date.required' => 'Pilih tanggal penjemputan.',
+            'pickup_time.required' => 'Pilih jam penjemputan.',
+            'pickup_time.in' => 'Jam penjemputan tidak valid, pilih salah satu slot yang tersedia.',
         ]);
 
-        $s = $this->state($r);
+        $validator->after(function ($validator) use ($r, $requiresSchedule, $minHours) {
+            if (! $requiresSchedule || $validator->errors()->has('pickup_date') || $validator->errors()->has('pickup_time')) {
+                return;
+            }
+
+            try {
+                $dt = \Carbon\Carbon::parse($r->input('pickup_date') . ' ' . $r->input('pickup_time'), 'Asia/Jakarta');
+            } catch (\Throwable) {
+                $validator->errors()->add('pickup_time', 'Jam penjemputan tidak valid.');
+
+                return;
+            }
+
+            if ($dt->lt(now('Asia/Jakarta')->addMinutes((int) round($minHours * 60)))) {
+                $validator->errors()->add('pickup_time', "Slot jam minimal {$minHours} jam dari sekarang, pilih slot lain.");
+            }
+        });
+
+        $validator->validate();
+
+        $pickupTimeEnd = $requiresSchedule ? ($slotMap[$r->input('pickup_time')]['end'] ?? null) : null;
+
         $calc = $this->calc($s);
 
         $order = TitipanOrder::create([
@@ -490,6 +523,7 @@ class RuangTitipController extends Controller
             'date_end'       => $s['date_end'] ?? null,
             'pickup_date'    => $r->input('pickup_date'),
             'pickup_time'    => $r->input('pickup_time'),
+            'pickup_time_end' => $pickupTimeEnd,
             'logistic'       => $s['logistic'],
             'address'        => $s['address'] ?? null,
             'note'           => $s['note'] ?? null,

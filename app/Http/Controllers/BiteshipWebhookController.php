@@ -11,6 +11,14 @@ use Illuminate\Support\Facades\Log;
 class BiteshipWebhookController extends Controller
 {
     /**
+     * Status Biteship yang menandakan pengiriman gagal/batal — begitu
+     * webhook melaporkan salah satu ini, pesanan ditandai "perlu tindakan
+     * admin" supaya tidak diam-diam terbengkalai (mis. driver tidak
+     * ditemukan untuk kurir instan).
+     */
+    private const FAILED_STATUSES = ['cancelled', 'rejected', 'courier_not_found', 'on_hold', 'returned'];
+
+    /**
      * Webhook status pengiriman dari Biteship (event: order.status / order.waybill_id).
      * Daftarkan URL ini di dashboard Biteship: Settings → Webhook URL,
      * contoh: https://domainmu.com/biteship/webhook
@@ -36,6 +44,13 @@ class BiteshipWebhookController extends Controller
                 $update = [];
                 if ($trackingId) {
                     $update['biteship_tracking_id'] = $trackingId;
+                }
+                if ($status) {
+                    $update['biteship_status'] = $status;
+                    if (in_array($status, self::FAILED_STATUSES, true)) {
+                        $update['needs_admin_attention'] = true;
+                        $update['biteship_last_error'] = "Status pengiriman Biteship: {$status}";
+                    }
                 }
                 if ($update) {
                     $order->update($update);

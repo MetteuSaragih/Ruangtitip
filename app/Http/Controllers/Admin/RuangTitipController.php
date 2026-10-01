@@ -287,6 +287,8 @@ class RuangTitipController extends Controller
                     'returnMode' => $returnModeByLogistic[$order->logistic] ?? null,
                     'trackingId' => $order->biteship_tracking_id,
                     'rackCode' => null,
+                    'needsAttention' => $order->needs_admin_attention,
+                    'biteshipError' => $order->biteship_last_error,
                     'waTemplates' => $waNumber ? $this->waTemplates($customer, $order) : [],
                     'group' => match ($order->status) {
                         'penjadwalan_penjemputan' => 'inspeksi',

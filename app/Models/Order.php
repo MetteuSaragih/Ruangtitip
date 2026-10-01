@@ -34,12 +34,18 @@ class Order extends Model
         'tripay_payment_method',
         'biteship_order_id',
         'biteship_tracking_id',
+        'biteship_status',
+        'biteship_attempts',
+        'biteship_last_error',
+        'needs_admin_attention',
         'status',
     ];
 
     protected $casts = [
         'items' => 'array',
         'shipping_address' => 'array',
+        'biteship_attempts' => 'integer',
+        'needs_admin_attention' => 'boolean',
     ];
 
     const STATUS_PENDING = 'pending';

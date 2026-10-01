@@ -77,7 +77,12 @@ $totalItems = collect($orderData)->flatten(1)->sum('qty');
               <tbody>
                 @foreach ($rows as $row)
                   <tr>
-                    <td class="mono">{{ $row['id'] }}</td>
+                    <td class="mono">
+                      {{ $row['id'] }}
+                      @if ($row['needsAttention'])
+                        <span class="pill r" title="{{ $row['biteshipError'] ?? 'Pemesanan kurir Biteship gagal' }}" style="margin-top:4px">{!! \App\Support\Icons::svg('alert', 'sm') !!} Perlu tindakan</span>
+                      @endif
+                    </td>
                     <td>
                       <div class="who"><span class="avatar c{{ ($row['orderId'] % 4) + 1 }}">{{ \Illuminate\Support\Str::of($row['customer'])->trim()->explode(' ')->map(fn($w)=>mb_substr($w,0,1))->take(2)->implode('') }}</span><div><b>{{ $row['customer'] }}</b><small>{{ $row['wa'] }}</small></div></div>
                     </td>

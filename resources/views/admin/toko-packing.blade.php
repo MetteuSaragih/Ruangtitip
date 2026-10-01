@@ -87,7 +87,12 @@ $units = ['pcs', 'roll', 'meter', 'lembar'];
                 $orderStatus = $order->status ?? 'pending';
               @endphp
               <tr>
-                <td class="mono">{{ $order->order_code }}</td>
+                <td class="mono">
+                  {{ $order->order_code }}
+                  @if ($order->needs_admin_attention)
+                    <span class="pill r" title="{{ $order->biteship_last_error ?? 'Pemesanan kurir Biteship gagal' }}" style="margin-top:4px">{!! \App\Support\Icons::svg('alert', 'sm') !!} Perlu tindakan</span>
+                  @endif
+                </td>
                 <td>{{ $order->user->name ?? '-' }}</td>
                 <td>{{ collect($order->items)->pluck('name')->implode(', ') }}</td>
                 <td class="num"><b>Rp {{ number_format($order->total, 0, ',', '.') }}</b></td>

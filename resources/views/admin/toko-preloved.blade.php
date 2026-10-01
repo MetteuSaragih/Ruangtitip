@@ -91,7 +91,12 @@ $filterOptions = array_merge(['Semua'], array_values($orderStatusLabels));
                 ];
               @endphp
               <tr>
-                <td><span class="mono">{{ $order->order_number }}</span><br><small style="color:var(--muted)">{{ $order->created_at->format('d M Y') }}</small></td>
+                <td>
+                  <span class="mono">{{ $order->order_number }}</span><br><small style="color:var(--muted)">{{ $order->created_at->format('d M Y') }}</small>
+                  @if ($order->needs_admin_attention)
+                    <br><span class="pill r" title="{{ $order->biteship_last_error ?? 'Pemesanan kurir Biteship gagal' }}" style="margin-top:4px">{!! \App\Support\Icons::svg('alert', 'sm') !!} Perlu tindakan</span>
+                  @endif
+                </td>
                 <td><b>{{ $order->preloved_item_names ?: '-' }}</b><br><small style="color:var(--muted)">Rp {{ number_format($order->preloved_subtotal, 0, ',', '.') }}</small></td>
                 <td>{{ $order->customer_name }}<br><small style="color:var(--muted)">{{ $order->customer_phone }}</small></td>
                 <td><span class="pill n">{!! \App\Support\Icons::svg($order->shipping_method === 'biteship' ? 'truck' : 'warehouse', 'sm') !!}{{ $deliveryLabel[$order->shipping_method] ?? $order->shipping_method }}</span></td>

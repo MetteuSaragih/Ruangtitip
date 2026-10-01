@@ -17,6 +17,7 @@ class PackingOrder extends Model
         'tripay_reference', 'tripay_checkout_url', 'tripay_pay_code', 'tripay_payment_method',
         'address_area_id', 'address_postal_code', 'courier_service_code',
         'courier_company', 'biteship_order_id', 'biteship_tracking_id',
+        'biteship_status', 'biteship_attempts', 'biteship_last_error', 'needs_admin_attention',
         'pickup_date', 'pickup_time',
     ];
 
@@ -26,6 +27,8 @@ class PackingOrder extends Model
         'shipping_cost' => 'integer',
         'platform_fee'  => 'integer',
         'total'         => 'integer',
+        'biteship_attempts' => 'integer',
+        'needs_admin_attention' => 'boolean',
     ];
 
     public function user(): BelongsTo
