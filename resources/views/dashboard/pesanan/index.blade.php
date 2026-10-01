@@ -146,7 +146,7 @@
       </div>
     @else
       <div class="empty-orders">
-        <img src="{{ asset('assets/ruru.webp') }}" alt="" width="110" height="129">
+        <img src="{{ asset('assets/ruru/ruru-kosong.webp') }}" alt="" width="110" height="119">
         <h2>{{ $tab === 'selesai' ? 'Belum ada pesanan selesai' : 'Belum ada pesanan aktif' }}</h2>
         <p>{{ $tab === 'selesai' ? 'Pesanan yang sudah selesai akan tersimpan di sini sebagai riwayat.' : 'Ruru lagi nganggur nih. Mau titip barang, beli perlengkapan packing, atau cari barang preloved?' }}</p>
         @if ($tab !== 'selesai')

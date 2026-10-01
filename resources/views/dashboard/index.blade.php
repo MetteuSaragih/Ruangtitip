@@ -328,7 +328,7 @@ button{font:inherit;color:inherit}
     </div>
     <div class="hero-art" aria-hidden="true">
       <div class="disc"></div>
-      <img class="ruru" src="{{ asset('assets/ruru.webp') }}" alt="" width="769" height="900">
+      <img class="ruru" src="{{ asset('assets/ruru/ruru-halo.webp') }}" alt="" width="800" height="800">
       <p class="say">Barangmu mau dititip kapan?</p>
     </div>
   </section>

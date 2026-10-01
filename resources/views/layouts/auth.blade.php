@@ -148,7 +148,7 @@ p{margin:0}
       <div class="art">
         <div class="disc" aria-hidden="true"></div>
         <div class="shadow" aria-hidden="true"></div>
-        <img class="ruru" src="{{ asset('assets/ruru.webp') }}" alt="Ruru, maskot RuangTitip, melambaikan tangan" width="769" height="900">
+        <img class="ruru" src="{{ asset('assets/ruru/ruru-halo.webp') }}" alt="Ruru, maskot RuangTitip, melambaikan tangan" width="800" height="800">
         <div class="bubble">
           <strong id="bubble-title">@yield('bubble-title', 'Hii, ketemu lagi!')</strong>
           <span id="bubble-text">@yield('bubble-text', 'Barangmu aman sama aku. Yuk masuk dulu.')</span>
@@ -182,7 +182,7 @@ p{margin:0}
       <div class="mobile-head">
         <a class="logo" href="{{ route('home') }}" aria-label="RuangTitip, ke beranda"><img src="{{ asset('assets/logo-ruangtitip.svg') }}" alt="RuangTitip" width="220" height="56"></a>
         <div class="mini">
-          <img src="{{ asset('assets/ruru.webp') }}" alt="" width="78" height="91">
+          <img src="{{ asset('assets/ruru/ruru-halo.webp') }}" alt="" width="78" height="78">
           <p class="say">@yield('bubble-title', 'Hii, ketemu lagi!')</p>
         </div>
       </div>

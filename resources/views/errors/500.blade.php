@@ -106,7 +106,7 @@ h1 em{font-style:normal;color:var(--tape)}
         <div class="disc"></div>
         <div class="shadow"></div>
         <span class="stars">&#10038; &#10038;</span>
-        <img class="ruru" src="{{ asset('assets/ruru.webp') }}" alt="">
+        <img class="ruru" src="{{ asset('assets/ruru/ruru-pusing.webp') }}" alt="">
         <span class="fallen f1"></span>
         <span class="fallen f2"></span>
         <span class="fallen f3"></span>

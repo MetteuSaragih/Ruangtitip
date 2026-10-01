@@ -86,7 +86,7 @@
   @endif
 
   <aside class="help">
-    <img src="{{ asset('assets/ruru.webp') }}" alt="" width="84" height="98">
+    <img src="{{ asset('assets/ruru/ruru-tunjuk.webp') }}" alt="" width="84" height="79">
     <div>
       <strong>Bingung pilih ukuran kardus?</strong>
       <p>Chat tim Ruru, kirim foto barangmu, nanti kami bantu hitung butuh berapa kardus.</p>

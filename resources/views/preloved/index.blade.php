@@ -59,7 +59,7 @@
   </div>
 
   <aside class="sell">
-    <img src="{{ asset('assets/ruru.webp') }}" alt="" width="88" height="103">
+    <img src="{{ asset('assets/ruru/ruru-label-harga.webp') }}" alt="" width="88" height="88">
     <div class="txt">
       <small>Jual barang bekasmu</small>
       <strong>Mau lulus atau pindah kos? Barangmu bisa jadi uang.</strong>
@@ -100,7 +100,7 @@
 
   @if ($products->isEmpty())
     <div class="empty-cat">
-      <img src="{{ asset('assets/ruru.webp') }}" alt="" width="90" height="105">
+      <img src="{{ asset('assets/ruru/ruru-mencari.webp') }}" alt="" width="90" height="90">
       <p>Ruru belum nemu barang yang cocok. Coba ubah filter atau kata kunci.</p>
     </div>
   @else

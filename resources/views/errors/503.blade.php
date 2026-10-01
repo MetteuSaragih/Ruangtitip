@@ -182,7 +182,7 @@ h1 em{font-style:normal;color:var(--tape)}
         <i><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1C1B18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg></i>
       </div>
       <button class="ruru-btn" id="ruru" type="button" aria-label="Colek Ruru">
-        <img src="{{ asset('assets/ruru.webp') }}" alt="" width="769" height="900">
+        <img src="{{ asset('assets/ruru/ruru-tukang.webp') }}" alt="" width="769" height="900">
       </button>
       <p class="say" id="say" aria-live="polite">Lagi benerin rak gudang dulu, ya!</p>
       <p class="hint">Colek Ruru, deh</p>

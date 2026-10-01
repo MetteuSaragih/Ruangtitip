@@ -63,7 +63,7 @@
         @endforeach
       </ul>
     @else
-      <div class="empty"><img class="ruru" src="{{ asset('assets/ruru.webp') }}" alt=""><b>Semua tugas beres!</b><p>Tidak ada pesanan Ruang Titip yang butuh tindakan mendesak saat ini.</p></div>
+      <div class="empty"><img class="ruru" src="{{ asset('assets/ruru/ruru-rayakan.webp') }}" alt=""><b>Semua tugas beres!</b><p>Tidak ada pesanan Ruang Titip yang butuh tindakan mendesak saat ini.</p></div>
     @endif
   </section>
 

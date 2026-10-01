@@ -64,7 +64,7 @@ body.has-cart-items{padding-bottom:100px}
   </div>
 
   <aside class="help">
-    <img src="{{ asset('assets/ruru.webp') }}" alt="" width="64" height="75">
+    <img src="{{ asset('assets/ruru/ruru-troli.webp') }}" alt="" width="64" height="64">
     <div>
       <strong>Baru pertama kali packing?</strong>
       <p>Mulai dari kardus dan lakban, tim kami bantu hitung kebutuhanmu lewat WhatsApp kalau bingung.</p>

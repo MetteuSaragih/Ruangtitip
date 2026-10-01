@@ -39,7 +39,7 @@
 
   @if (empty($cart))
     <section class="empty-cart">
-      <img src="{{ asset('assets/ruru.webp') }}" alt="" width="110" height="129">
+      <img src="{{ asset('assets/ruru/ruru-kosong.webp') }}" alt="" width="110" height="119">
       <h1>Keranjangmu masih kosong</h1>
       <p>Pilih kardus, lakban, atau barang preloved dulu, ya.</p>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
@@ -117,7 +117,7 @@
           <div class="total"><span style="font-weight:700">Total</span><strong id="summaryTotal">{{ rp(array_sum(array_column($cart, 'subtotal'))) }}</strong></div>
           <button type="submit" form="cartForm" id="btnCheckout" class="btn btn-primary" style="width:100%;margin-top:16px">Checkout</button>
           <div class="ruru-tip">
-            <img src="{{ asset('assets/ruru.webp') }}" alt="">
+            <img src="{{ asset('assets/ruru/ruru-wajah-happy.webp') }}" alt="">
             <p>Tip dari Ruru: mau titip barang juga? Kardus bisa dibawakan tim saat jemput.</p>
           </div>
         </div>

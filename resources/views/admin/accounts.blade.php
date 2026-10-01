@@ -102,7 +102,7 @@
 @else
   <section class="card">
     <div class="empty" style="padding:64px 24px">
-      <img class="ruru" src="{{ asset('assets/ruru.webp') }}" alt="">
+      <img class="ruru" src="{{ asset('assets/ruru/ruru-kosong.webp') }}" alt="">
       <b>Belum ada ulasan</b>
       <p>Ulasan pelanggan akan muncul di sini setelah fitur review aktif. Kamu bisa menyetujui atau menyembunyikan ulasan sebelum tayang.</p>
     </div>

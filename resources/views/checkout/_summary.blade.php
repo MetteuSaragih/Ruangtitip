@@ -40,7 +40,7 @@
         </div>
         <div class="total"><span style="font-weight:700">Total</span><strong id="s-total">{{ rp($sumSubtotal + ($sumServiceFee ?? 0) + ($sumShipCost ?? 0)) }}</strong></div>
         <div class="ruru-tip">
-            <img src="{{ asset('assets/ruru.webp') }}" alt="">
+            <img src="{{ asset('assets/ruru/ruru-wajah-happy.webp') }}" alt="">
             <p id="s-tip">Tip dari Ruru: status pesanan bisa dicek di Pesanan Saya setelah bayar.</p>
         </div>
     </div>
