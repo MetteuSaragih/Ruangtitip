@@ -85,12 +85,7 @@ class BiteshipService
             $this->prefixed('destination', $destination),
             [
                 'couriers' => implode(',', $courierCodes),
-                'items' => array_map(fn ($item) => [
-                    'name' => $item['name'] ?? 'Barang',
-                    'value' => (int) ($item['value'] ?? 10000),
-                    'quantity' => (int) ($item['quantity'] ?? 1),
-                    'weight' => max(1, (int) ($item['weight'] ?? 1000)),
-                ], $items),
+                'items' => array_map([$this, 'mapItem'], $items),
             ]
         );
 
@@ -106,9 +101,77 @@ class BiteshipService
 
         return [
             'success' => (bool) ($body['success'] ?? false),
-            'pricing' => $body['pricing'] ?? [],
+            'pricing' => $this->filterOversizedMotorCouriers($body['pricing'] ?? [], $items),
             'message' => $body['message'] ?? null,
         ];
+    }
+
+    /**
+     * Kurir motor (GoSend/GrabBike) punya batas berat & dimensi fisik. Kalau
+     * total muatan melebihi batas itu (lihat config/item_sizes.php
+     * 'motor_limit'), opsi kurir motor disembunyikan dari hasil dan hanya
+     * Lalamove (yang otomatis menyesuaikan armada ke mobil/van) yang
+     * ditampilkan untuk grup kurir instan.
+     */
+    private function filterOversizedMotorCouriers(array $pricing, array $items): array
+    {
+        $limit = config('item_sizes.motor_limit', ['weight' => 20000, 'length' => 70, 'width' => 50, 'height' => 50]);
+
+        $totalWeight = collect($items)->sum(fn ($item) => (int) ($item['weight'] ?? 0) * (int) ($item['quantity'] ?? 1));
+        $oversizedItem = collect($items)->contains(fn ($item) => ($item['length'] ?? 0) > $limit['length']
+            || ($item['width'] ?? 0) > $limit['width']
+            || ($item['height'] ?? 0) > $limit['height']);
+
+        $exceedsMotorLimit = $totalWeight > $limit['weight'] || $oversizedItem;
+
+        if (! $exceedsMotorLimit) {
+            return $pricing;
+        }
+
+        return collect($pricing)
+            ->reject(fn ($p) => $this->isMotorTier($p))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Sebagian kurir instan (terutama Grab) punya beberapa tingkat layanan
+     * sekaligus dari penyedia yang sama — satu tier motor, satu tier mobil/van.
+     * Hanya tier motor yang disembunyikan; tier mobil/van/truk tetap tampil
+     * walaupun dari kurir yang sama.
+     */
+    private function isMotorTier(array $pricing): bool
+    {
+        $code = $pricing['courier_code'] ?? '';
+        $serviceText = mb_strtolower(($pricing['courier_service_name'] ?? '') . ' ' . ($pricing['courier_service_code'] ?? ''));
+
+        if (preg_match('/\b(car|van|truck|cargo|box)\b/', $serviceText)) {
+            return false;
+        }
+
+        if (in_array($code, ['gojek', 'grab'], true)) {
+            return true;
+        }
+
+        return str_contains($serviceText, 'motor') || str_contains($serviceText, 'bike') || str_contains($serviceText, 'ojek');
+    }
+
+    private function mapItem(array $item): array
+    {
+        $mapped = [
+            'name' => $item['name'] ?? 'Barang',
+            'value' => (int) ($item['value'] ?? 10000),
+            'quantity' => (int) ($item['quantity'] ?? 1),
+            'weight' => max(1, (int) ($item['weight'] ?? 1000)),
+        ];
+
+        foreach (['length', 'width', 'height'] as $dim) {
+            if (! empty($item[$dim])) {
+                $mapped[$dim] = (int) $item[$dim];
+            }
+        }
+
+        return $mapped;
     }
 
     /**
@@ -138,12 +201,7 @@ class BiteshipService
             'delivery_time' => $isScheduled ? $schedule['time'] : null,
             'order_note' => $referenceId ? "RuTip order {$referenceId}" : null,
             'reference_id' => $referenceId,
-            'items' => array_map(fn ($item) => [
-                'name' => $item['name'] ?? 'Barang',
-                'value' => (int) ($item['value'] ?? 10000),
-                'quantity' => (int) ($item['quantity'] ?? 1),
-                'weight' => max(1, (int) ($item['weight'] ?? 1000)),
-            ], $items),
+            'items' => array_map([$this, 'mapItem'], $items),
         ];
 
         $payload = array_merge($payload, $this->prefixed('origin', $origin));

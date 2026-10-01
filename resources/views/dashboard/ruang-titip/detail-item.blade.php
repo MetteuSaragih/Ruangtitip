@@ -70,6 +70,17 @@
                     <input type="hidden" name="items[{{ $sz->code }}]" value="{{ $qty }}" class="qty-input">
                     <button type="button" onclick="changeQty(this,1)" aria-label="Tambah {{ $sz->label }}">+</button>
                   </div>
+                  @if ($sz->code === 'dimensi_lain')
+                    @php $dimLainCfg = config('item_sizes.dimensi_lain'); @endphp
+                    <div class="field" style="margin-top:10px">
+                      <label for="dimensiLainWeight">Perkiraan berat per item (kg)</label>
+                      <input type="number" id="dimensiLainWeight" name="items_weight[dimensi_lain]"
+                        min="{{ $dimLainCfg['weight_min'] / 1000 }}" max="{{ $dimLainCfg['weight_max'] / 1000 }}"
+                        placeholder="Contoh: {{ $dimLainCfg['weight_default'] / 1000 }}"
+                        value="{{ old('items_weight.dimensi_lain', $s['dimensi_lain_weight_kg'] ?? '') }}">
+                      <small class="hint">Dipakai untuk menghitung ongkir. Kosongkan untuk pakai perkiraan default ({{ $dimLainCfg['weight_default'] / 1000 }} kg).</small>
+                    </div>
+                  @endif
                 </div>
               @endforeach
             </div>

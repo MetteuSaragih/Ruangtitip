@@ -126,7 +126,10 @@ class CartController extends Controller
                 'price' => (int) $product->price,
                 'image' => $product->primary_image,
                 'unit' => $product->unit,
-                'weight' => 500,
+                'weight' => (int) $product->weight,
+                'length' => (int) $product->length,
+                'width' => (int) $product->width,
+                'height' => (int) $product->height,
                 'qty' => $qty,
                 'subtotal' => (int) $product->price * $qty,
             ];
@@ -139,7 +142,10 @@ class CartController extends Controller
             'price' => (int) $product->price,
             'image' => $product->primary_photo,
             'condition_label' => $product->condition . '%',
-            'weight' => 1000,
+            'weight' => (int) $product->weight,
+            'length' => (int) $product->length,
+            'width' => (int) $product->width,
+            'height' => (int) $product->height,
             'qty' => $qty,
             'subtotal' => (int) $product->price * $qty,
         ];

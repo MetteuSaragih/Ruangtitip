@@ -233,6 +233,16 @@ $units = ['pcs', 'roll', 'meter', 'lembar'];
           <div class="field"><label for="kStock">Stok awal</label><input class="input" id="kStock" name="stock" type="number" min="0" value="0" inputmode="numeric"></div>
           <div class="field"><label for="kMin">Ambang peringatan</label><input class="input" id="kMin" name="low_threshold" type="number" min="1" value="10" inputmode="numeric"><span class="help">Peringatan muncul kalau stok di bawah angka ini.</span></div>
         </div>
+        <div class="field">
+          <span class="lbl">Berat &amp; dimensi <span style="color:var(--tape)">*</span></span>
+          <span class="help">Dipakai untuk menghitung ongkir Biteship secara akurat.</span>
+        </div>
+        <div class="grid2">
+          <div class="field"><label for="kWeight">Berat (gram)</label><input class="input" id="kWeight" name="weight" type="number" min="1" value="500" inputmode="numeric" required></div>
+          <div class="field"><label for="kLength">Panjang (cm)</label><input class="input" id="kLength" name="length" type="number" min="1" value="30" inputmode="numeric" required></div>
+          <div class="field"><label for="kWidth">Lebar (cm)</label><input class="input" id="kWidth" name="width" type="number" min="1" value="20" inputmode="numeric" required></div>
+          <div class="field"><label for="kHeight">Tinggi (cm)</label><input class="input" id="kHeight" name="height" type="number" min="1" value="15" inputmode="numeric" required></div>
+        </div>
       </div>
       <div class="d-foot">
         <button class="btn btn-ghost" type="button" id="btnBatalProdukModal">Batal</button>
@@ -281,7 +291,7 @@ $units = ['pcs', 'roll', 'meter', 'lembar'];
   var photos = RA.photoInput('kDrop', 'kFile', 'kPrev', 10, 0);
 
   function fillForm(data) {
-    ['name', 'category', 'unit', 'price', 'stock', 'low_threshold'].forEach(function (key) {
+    ['name', 'category', 'unit', 'price', 'stock', 'low_threshold', 'weight', 'length', 'width', 'height'].forEach(function (key) {
       if (form.elements[key]) form.elements[key].value = data[key] ?? '';
     });
   }
@@ -292,7 +302,7 @@ $units = ['pcs', 'roll', 'meter', 'lembar'];
     title.textContent = 'Tambah produk packing';
     subtitle.textContent = 'Produk baru akan muncul di katalog Toko Packing.';
     submitLabel.textContent = 'Tambah produk';
-    fillForm({ name: '', category: 'Kardus', unit: 'pcs', price: '', stock: 0, low_threshold: 10 });
+    fillForm({ name: '', category: 'Kardus', unit: 'pcs', price: '', stock: 0, low_threshold: 10, weight: 500, length: 30, width: 20, height: 15 });
     photos.reset(0);
     RA.open('pkModal');
   }

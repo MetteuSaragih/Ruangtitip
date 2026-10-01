@@ -8,10 +8,15 @@ class PrelovedItem extends Model
 {
     protected $fillable = [
         'name', 'category', 'condition', 'price', 'status', 'photo', 'photos', 'seller',
+        'weight', 'length', 'width', 'height',
     ];
 
     protected $casts = [
         'photos' => 'array',
+        'weight' => 'integer',
+        'length' => 'integer',
+        'width' => 'integer',
+        'height' => 'integer',
     ];
 
     public function getPrimaryPhotoAttribute(): ?string
