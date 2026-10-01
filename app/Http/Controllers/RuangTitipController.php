@@ -123,7 +123,7 @@ class RuangTitipController extends Controller
     {
         $lat = $s['address_lat'] ?? null;
         $lng = $s['address_lng'] ?? null;
-        $warehouse = $this->warehouseCoords();
+        $warehouse = $this->distance->warehouseCoords();
 
         if (! $lat || ! $lng || ! $warehouse) {
             return self::DEFAULT_KM;
@@ -132,25 +132,6 @@ class RuangTitipController extends Controller
         $km = $this->distance->distanceKm((float) $lat, (float) $lng, $warehouse['lat'], $warehouse['lng']);
 
         return max(1, (int) ceil($km));
-    }
-
-    /** Koordinat gudang RuTip: pakai config manual kalau ada, kalau tidak geocode dari alamatnya. */
-    private function warehouseCoords(): ?array
-    {
-        $lat = config('biteship.warehouse.latitude');
-        $lng = config('biteship.warehouse.longitude');
-        if ($lat && $lng) {
-            return ['lat' => (float) $lat, 'lng' => (float) $lng];
-        }
-
-        $address = config('biteship.warehouse.address');
-        if (! $address) {
-            return null;
-        }
-
-        $geo = $this->distance->geocode($address);
-
-        return $geo ? ['lat' => $geo['lat'], 'lng' => $geo['lng']] : null;
     }
 
     /* ═══ SCREEN 1 — Daftar gudang ═══ */
@@ -187,13 +168,17 @@ class RuangTitipController extends Controller
     /* SCREEN 3 (POST) — simpan item + tanggal sekaligus */
     public function detailStore(Request $r)
     {
+        $weightLimits = config('item_sizes.dimensi_lain');
+
         $data = $r->validate([
             'items'      => 'required|array',
             'items.*'    => 'nullable|integer|min:0',
+            'items_weight.dimensi_lain' => 'nullable|integer|min:' . ($weightLimits['weight_min'] / 1000) . '|max:' . ($weightLimits['weight_max'] / 1000),
             'date_start' => 'required|date',
             'date_end'   => 'required|date|after:date_start',
         ], [
             'date_end.after' => 'Tanggal selesai harus setelah tanggal mulai.',
+            'items_weight.dimensi_lain.max' => 'Berat barang dimensi lain maksimal ' . ($weightLimits['weight_max'] / 1000) . ' kg per item.',
         ]);
 
         $items = array_map('intval', $data['items']);
@@ -219,6 +204,7 @@ class RuangTitipController extends Controller
         $this->setState($r, [
             'item_type'  => $itemType,
             'items'      => $items,
+            'dimensi_lain_weight_kg' => $data['items_weight']['dimensi_lain'] ?? null,
             'date_start' => $data['date_start'],
             'date_end'   => $data['date_end'],
         ]);
@@ -350,8 +336,8 @@ class RuangTitipController extends Controller
         }
 
         $result = $biteship->getRates(
-            ['area_id' => $s['address_area_id'], 'postal_code' => $s['address_postal_code'] ?? null],
-            ['area_id' => config('biteship.warehouse.area_id'), 'postal_code' => config('biteship.warehouse.postal_code')],
+            $this->originFromAddress($s),
+            $this->destinationWarehouse(),
             $this->itemsToBiteship($s),
             config('biteship.checkout_couriers')
         );
@@ -369,8 +355,8 @@ class RuangTitipController extends Controller
 
         $s = $this->state($r);
         $rates = $biteship->getRates(
-            ['area_id' => $s['address_area_id'] ?? null, 'postal_code' => $s['address_postal_code'] ?? null],
-            ['area_id' => config('biteship.warehouse.area_id'), 'postal_code' => config('biteship.warehouse.postal_code')],
+            $this->originFromAddress($s),
+            $this->destinationWarehouse(),
             $this->itemsToBiteship($s),
             config('biteship.checkout_couriers')
         );
@@ -392,13 +378,18 @@ class RuangTitipController extends Controller
         return redirect()->route('ruang-titip.checkout');
     }
 
-    /** Estimasi berat barang titipan untuk kebutuhan kalkulasi ongkir Biteship. */
+    /**
+     * Item asli yang dipilih pelanggan (jenis + jumlah), dengan berat dan
+     * dimensi per ukuran dari config/item_sizes.php — dipakai untuk
+     * menghitung ongkir Biteship secara akurat (bukan nilai pukul rata).
+     */
     private function itemsToBiteship(array $s): array
     {
-        $weights = ['kardus' => 3000, 'koper' => 5000, 'dimensi' => 6000];
         $items = $s['items'] ?? [];
         $storage = StorageRoom::find($s['storage_id'] ?? null);
         $sizes = $this->itemSizesFromStorage($storage)->keyBy('code');
+        $fallback = config('item_sizes.fallback');
+        $dimensiLainCfg = config('item_sizes.dimensi_lain');
 
         $result = [];
         foreach ($items as $code => $qty) {
@@ -406,16 +397,58 @@ class RuangTitipController extends Controller
             if ($qty <= 0) {
                 continue;
             }
+
             $type = $sizes[$code]->type ?? 'kardus';
+            $label = config("item_sizes.{$type}.{$code}.label") ?? $sizes[$code]->label ?? 'Barang titipan';
+
+            if ($code === 'dimensi_lain') {
+                $weightKg = (int) ($s['dimensi_lain_weight_kg'] ?? 0);
+                $size = [
+                    'length' => $dimensiLainCfg['length'],
+                    'width' => $dimensiLainCfg['width'],
+                    'height' => $dimensiLainCfg['height'],
+                    'weight' => $weightKg > 0 ? $weightKg * 1000 : $dimensiLainCfg['weight_default'],
+                ];
+            } else {
+                $size = config("item_sizes.{$type}.{$code}", $fallback);
+            }
+
             $result[] = [
-                'name' => $sizes[$code]->label ?? 'Barang titipan',
+                'name' => $label,
                 'value' => 50000,
                 'quantity' => $qty,
-                'weight' => $weights[$type] ?? 3000,
+                'weight' => $size['weight'],
+                'length' => $size['length'],
+                'width' => $size['width'],
+                'height' => $size['height'],
             ];
         }
 
-        return $result ?: [['name' => 'Barang titipan', 'value' => 50000, 'quantity' => 1, 'weight' => 3000]];
+        return $result ?: [['name' => 'Barang titipan', 'value' => 50000, 'quantity' => 1] + $fallback];
+    }
+
+    /** Titik asal Biteship: alamat pelanggan, lengkap dengan koordinat kalau sudah ter-geocode. */
+    private function originFromAddress(array $s): array
+    {
+        return array_filter([
+            'area_id' => $s['address_area_id'] ?? null,
+            'postal_code' => $s['address_postal_code'] ?? null,
+            'latitude' => $s['address_lat'] ?? null,
+            'longitude' => $s['address_lng'] ?? null,
+        ]);
+    }
+
+    /** Titik tujuan Biteship: gudang pusat RuTip, lengkap dengan koordinat. */
+    private function destinationWarehouse(): array
+    {
+        $warehouse = $this->distance->warehouseCoords();
+
+        return array_filter([
+            'area_id' => config('biteship.warehouse.area_id'),
+            'postal_code' => config('biteship.warehouse.postal_code'),
+            'latitude' => $warehouse['lat'] ?? null,
+            'longitude' => $warehouse['lng'] ?? null,
+        ]);
     }
 
     /* ═══ SCREEN 7 — Checkout (GET) ═══ */
@@ -436,16 +469,49 @@ class RuangTitipController extends Controller
     /* SCREEN 7 (POST) — simpan pesanan & buat transaksi Tripay */
     public function place(Request $r, TripayService $tripay)
     {
-        $r->validate([
+        $s = $this->state($r);
+        $requiresSchedule = ($s['logistic'] ?? null) !== 'self';
+        $minHours = (float) config('pickup_slots.min_hours_ahead');
+        $maxDays = (int) config('pickup_slots.max_days_ahead');
+        $slotMap = collect(config('pickup_slots.slots'))->keyBy('start');
+
+        $validator = \Illuminate\Support\Facades\Validator::make($r->all(), [
             'payment_method' => 'required|string',
             'agree'          => 'accepted',
-            'pickup_date'    => 'nullable|date|after_or_equal:today',
-            'pickup_time'    => 'nullable|string',
+            'pickup_date'    => [
+                $requiresSchedule ? 'required' : 'nullable', 'date', 'after_or_equal:today',
+                'before_or_equal:' . now('Asia/Jakarta')->addDays($maxDays)->toDateString(),
+            ],
+            'pickup_time'    => [$requiresSchedule ? 'required' : 'nullable', \Illuminate\Validation\Rule::in($slotMap->keys())],
         ], [
             'agree.accepted' => 'Kamu harus menyetujui Syarat & Ketentuan.',
+            'pickup_date.required' => 'Pilih tanggal penjemputan.',
+            'pickup_time.required' => 'Pilih jam penjemputan.',
+            'pickup_time.in' => 'Jam penjemputan tidak valid, pilih salah satu slot yang tersedia.',
         ]);
 
-        $s = $this->state($r);
+        $validator->after(function ($validator) use ($r, $requiresSchedule, $minHours) {
+            if (! $requiresSchedule || $validator->errors()->has('pickup_date') || $validator->errors()->has('pickup_time')) {
+                return;
+            }
+
+            try {
+                $dt = \Carbon\Carbon::parse($r->input('pickup_date') . ' ' . $r->input('pickup_time'), 'Asia/Jakarta');
+            } catch (\Throwable) {
+                $validator->errors()->add('pickup_time', 'Jam penjemputan tidak valid.');
+
+                return;
+            }
+
+            if ($dt->lt(now('Asia/Jakarta')->addMinutes((int) round($minHours * 60)))) {
+                $validator->errors()->add('pickup_time', "Slot jam minimal {$minHours} jam dari sekarang, pilih slot lain.");
+            }
+        });
+
+        $validator->validate();
+
+        $pickupTimeEnd = $requiresSchedule ? ($slotMap[$r->input('pickup_time')]['end'] ?? null) : null;
+
         $calc = $this->calc($s);
 
         $order = TitipanOrder::create([
@@ -457,6 +523,7 @@ class RuangTitipController extends Controller
             'date_end'       => $s['date_end'] ?? null,
             'pickup_date'    => $r->input('pickup_date'),
             'pickup_time'    => $r->input('pickup_time'),
+            'pickup_time_end' => $pickupTimeEnd,
             'logistic'       => $s['logistic'],
             'address'        => $s['address'] ?? null,
             'note'           => $s['note'] ?? null,

@@ -50,7 +50,11 @@
 
         @if ($s['logistic'] !== 'self')
           <div class="panel">
-            <x-pickup-schedule theme="light" :old-date="old('pickup_date')" :old-time="old('pickup_time')" />
+            <h2>Waktu penjemputan</h2>
+            <x-pickup-slot-picker
+              :old-date="old('pickup_date')"
+              :old-start="old('pickup_time')"
+              :old-end="old('pickup_time_end')" />
           </div>
         @endif
 

@@ -238,6 +238,11 @@ button,input,select,textarea{font:inherit;color:inherit}
 .pickup-input:focus{outline:none;border-color:var(--ink);background:var(--paper)}
 .pickup-hint{font-size:12px;color:var(--muted);margin-top:6px}
 
+.slot-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.slot-btn{min-height:48px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;background:var(--paper);border:1.5px solid var(--line-strong);color:var(--ink)}
+.slot-btn.on{background:var(--tape-soft);border-color:var(--tape);color:var(--tape-dark)}
+.slot-btn:disabled{opacity:.4;cursor:not-allowed;text-decoration:line-through}
+
 .footer{margin-top:96px;background:var(--ink);color:#A39C8D;padding:32px 0;font-size:14px}
 .footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
 .footer a{color:#D6D0C3;text-decoration:none;margin-left:16px}

@@ -48,7 +48,7 @@
         </form>
 
         <div class="thanks" id="thanks" role="status" aria-live="polite">
-          <img src="{{ asset('assets/ruru.webp') }}" alt="" width="110" height="129">
+          <img src="{{ asset('assets/ruru/ruru-terima-kasih.webp') }}" alt="" width="110" height="110">
           <div>
             <h3 id="thanks-title">Makasih!</h3>
             <p id="thanks-body"></p>

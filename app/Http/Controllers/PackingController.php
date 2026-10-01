@@ -6,12 +6,16 @@ use App\Models\PackingOrder;
 use App\Models\PackingProduct;
 use App\Models\UserAddress;
 use App\Services\BiteshipService;
+use App\Services\DistanceService;
 use App\Services\TripayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class PackingController extends Controller
 {
+    public function __construct(private DistanceService $distance)
+    {
+    }
 
     public function index(Request $request)
     {
@@ -60,6 +64,9 @@ class PackingController extends Controller
                     'name' => $product->name,
                     'price' => $product->price,
                     'weight' => $product->weight,
+                    'length' => $product->length,
+                    'width' => $product->width,
+                    'height' => $product->height,
                     'image' => $product->primary_image,
                     'qty' => $qty,
                 ]],
@@ -127,12 +134,15 @@ class PackingController extends Controller
         if (! $address->area_id) {
             return back()->withErrors(['address' => 'Pilih kecamatan/kota tujuan terlebih dahulu.'])->withInput();
         }
+        $address = $this->distance->ensureAddressCoords($address);
 
         $checkout = $this->guardCheckout();
         $checkout['address'] = $address->address;
         $checkout['address_id'] = $address->id;
         $checkout['address_area_id'] = $address->area_id;
         $checkout['address_postal_code'] = $address->postal_code;
+        $checkout['address_lat'] = $address->latitude;
+        $checkout['address_lng'] = $address->longitude;
         session(['packing.checkout' => $checkout]);
 
         return redirect()->route('packing.courier');
@@ -156,8 +166,8 @@ class PackingController extends Controller
         }
 
         $result = $biteship->getRates(
-            ['area_id' => config('biteship.warehouse.area_id'), 'postal_code' => config('biteship.warehouse.postal_code')],
-            ['area_id' => $checkout['address_area_id'], 'postal_code' => $checkout['address_postal_code'] ?? null],
+            $this->originWarehouse(),
+            $this->destinationFromCheckout($checkout),
             $this->itemsToBiteship($checkout['items']),
             config('biteship.checkout_couriers')
         );
@@ -174,8 +184,8 @@ class PackingController extends Controller
 
         $checkout = $this->guardCheckout();
         $rates = $biteship->getRates(
-            ['area_id' => config('biteship.warehouse.area_id'), 'postal_code' => config('biteship.warehouse.postal_code')],
-            ['area_id' => $checkout['address_area_id'] ?? null, 'postal_code' => $checkout['address_postal_code'] ?? null],
+            $this->originWarehouse(),
+            $this->destinationFromCheckout($checkout),
             $this->itemsToBiteship($checkout['items']),
             config('biteship.checkout_couriers')
         );
@@ -342,7 +352,34 @@ class PackingController extends Controller
             'value' => (int) $item['price'],
             'quantity' => (int) $item['qty'],
             'weight' => (int) ($item['weight'] ?? 500),
+            'length' => (int) ($item['length'] ?? 30),
+            'width' => (int) ($item['width'] ?? 20),
+            'height' => (int) ($item['height'] ?? 15),
         ])->values()->all();
+    }
+
+    /** Titik asal Biteship: gudang pusat RuTip, lengkap dengan koordinat. */
+    private function originWarehouse(): array
+    {
+        $warehouse = $this->distance->warehouseCoords();
+
+        return array_filter([
+            'area_id' => config('biteship.warehouse.area_id'),
+            'postal_code' => config('biteship.warehouse.postal_code'),
+            'latitude' => $warehouse['lat'] ?? null,
+            'longitude' => $warehouse['lng'] ?? null,
+        ]);
+    }
+
+    /** Titik tujuan Biteship: alamat pelanggan, lengkap dengan koordinat kalau sudah ter-geocode. */
+    private function destinationFromCheckout(array $checkout): array
+    {
+        return array_filter([
+            'area_id' => $checkout['address_area_id'] ?? null,
+            'postal_code' => $checkout['address_postal_code'] ?? null,
+            'latitude' => $checkout['address_lat'] ?? null,
+            'longitude' => $checkout['address_lng'] ?? null,
+        ]);
     }
 
     private function calcTotals(array $checkout): array

@@ -135,6 +135,29 @@ class DistanceService
     }
 
     /**
+     * Koordinat gudang/toko RuTip: pakai config manual kalau ada, kalau tidak
+     * geocode dari alamatnya (di-cache). Dipakai bersama oleh Ruang Titip,
+     * Toko Packing, dan Toko Preloved sebagai titik asal/tujuan Biteship.
+     */
+    public function warehouseCoords(): ?array
+    {
+        $lat = config('biteship.warehouse.latitude');
+        $lng = config('biteship.warehouse.longitude');
+        if ($lat && $lng) {
+            return ['lat' => (float) $lat, 'lng' => (float) $lng];
+        }
+
+        $address = config('biteship.warehouse.address');
+        if (! $address) {
+            return null;
+        }
+
+        $geo = $this->geocode($address);
+
+        return $geo ? ['lat' => $geo['lat'], 'lng' => $geo['lng']] : null;
+    }
+
+    /**
      * Jarak antar dua koordinat dalam km (formula haversine, garis lurus),
      * dikali 1.3 sebagai faktor koreksi supaya lebih mendekati jarak tempuh jalan raya.
      */

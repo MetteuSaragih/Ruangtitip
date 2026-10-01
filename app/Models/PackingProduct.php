@@ -12,6 +12,7 @@ class PackingProduct extends Model
     protected $fillable = [
         'name', 'category', 'price', 'stock',
         'unit', 'low_threshold', 'discount', 'emoji', 'description', 'images', 'is_active',
+        'weight', 'length', 'width', 'height',
     ];
 
     protected $casts = [
@@ -21,6 +22,10 @@ class PackingProduct extends Model
         'discount'  => 'integer',
         'images'    => 'array',
         'is_active' => 'boolean',
+        'weight'    => 'integer',
+        'length'    => 'integer',
+        'width'     => 'integer',
+        'height'    => 'integer',
     ];
 
     public function getPrimaryImageAttribute(): ?string

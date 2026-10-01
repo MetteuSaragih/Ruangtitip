@@ -5,12 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\UserAddress;
 use App\Services\BiteshipService;
+use App\Services\DistanceService;
 use App\Services\TripayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CheckoutController extends Controller
 {
+    public function __construct(private DistanceService $distance)
+    {
+    }
+
     public function shipping()
     {
         $cart = $this->checkoutCart();
@@ -109,6 +114,7 @@ class CheckoutController extends Controller
         if (! $address || ! $address->area_id) {
             return back()->withErrors(['address' => 'Pilih kecamatan/kota tujuan terlebih dahulu.'])->withInput();
         }
+        $address = $this->distance->ensureAddressCoords($address);
 
         session(['checkout_shipping' => [
             'method' => 'biteship',
@@ -119,6 +125,8 @@ class CheckoutController extends Controller
                 'area_id' => $address->area_id,
                 'area_name' => $address->area_name,
                 'postal_code' => $address->postal_code,
+                'latitude' => $address->latitude,
+                'longitude' => $address->longitude,
             ],
         ]]);
         session()->forget('checkout_shipping_method');
@@ -146,8 +154,8 @@ class CheckoutController extends Controller
         }
 
         $result = $biteship->getRates(
-            ['area_id' => config('biteship.warehouse.area_id'), 'postal_code' => config('biteship.warehouse.postal_code')],
-            ['area_id' => $shipping['address']['area_id'], 'postal_code' => $shipping['address']['postal_code'] ?? null],
+            $this->originWarehouse(),
+            $this->destinationFromShipping($shipping),
             $this->cartToItems($cart),
             config('biteship.checkout_couriers')
         );
@@ -166,8 +174,8 @@ class CheckoutController extends Controller
         $shipping = session('checkout_shipping', []);
 
         $rates = $biteship->getRates(
-            ['area_id' => config('biteship.warehouse.area_id'), 'postal_code' => config('biteship.warehouse.postal_code')],
-            ['area_id' => $shipping['address']['area_id'] ?? null, 'postal_code' => $shipping['address']['postal_code'] ?? null],
+            $this->originWarehouse(),
+            $this->destinationFromShipping($shipping),
             $this->cartToItems($cart),
             config('biteship.checkout_couriers')
         );
@@ -331,6 +339,35 @@ class CheckoutController extends Controller
             'value' => (int) $item['price'],
             'quantity' => (int) $item['qty'],
             'weight' => (int) ($item['weight'] ?? 1000),
+            'length' => (int) ($item['length'] ?? 30),
+            'width' => (int) ($item['width'] ?? 20),
+            'height' => (int) ($item['height'] ?? 15),
         ])->values()->all();
+    }
+
+    /** Titik asal Biteship: gudang pusat RuTip, lengkap dengan koordinat. */
+    private function originWarehouse(): array
+    {
+        $warehouse = $this->distance->warehouseCoords();
+
+        return array_filter([
+            'area_id' => config('biteship.warehouse.area_id'),
+            'postal_code' => config('biteship.warehouse.postal_code'),
+            'latitude' => $warehouse['lat'] ?? null,
+            'longitude' => $warehouse['lng'] ?? null,
+        ]);
+    }
+
+    /** Titik tujuan Biteship: alamat pelanggan, lengkap dengan koordinat kalau sudah ter-geocode. */
+    private function destinationFromShipping(array $shipping): array
+    {
+        $address = $shipping['address'] ?? [];
+
+        return array_filter([
+            'area_id' => $address['area_id'] ?? null,
+            'postal_code' => $address['postal_code'] ?? null,
+            'latitude' => $address['latitude'] ?? null,
+            'longitude' => $address['longitude'] ?? null,
+        ]);
     }
 }

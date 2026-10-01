@@ -91,7 +91,12 @@ $filterOptions = array_merge(['Semua'], array_values($orderStatusLabels));
                 ];
               @endphp
               <tr>
-                <td><span class="mono">{{ $order->order_number }}</span><br><small style="color:var(--muted)">{{ $order->created_at->format('d M Y') }}</small></td>
+                <td>
+                  <span class="mono">{{ $order->order_number }}</span><br><small style="color:var(--muted)">{{ $order->created_at->format('d M Y') }}</small>
+                  @if ($order->needs_admin_attention)
+                    <br><span class="pill r" title="{{ $order->biteship_last_error ?? 'Pemesanan kurir Biteship gagal' }}" style="margin-top:4px">{!! \App\Support\Icons::svg('alert', 'sm') !!} Perlu tindakan</span>
+                  @endif
+                </td>
                 <td><b>{{ $order->preloved_item_names ?: '-' }}</b><br><small style="color:var(--muted)">Rp {{ number_format($order->preloved_subtotal, 0, ',', '.') }}</small></td>
                 <td>{{ $order->customer_name }}<br><small style="color:var(--muted)">{{ $order->customer_phone }}</small></td>
                 <td><span class="pill n">{!! \App\Support\Icons::svg($order->shipping_method === 'biteship' ? 'truck' : 'warehouse', 'sm') !!}{{ $deliveryLabel[$order->shipping_method] ?? $order->shipping_method }}</span></td>
@@ -223,6 +228,16 @@ $filterOptions = array_merge(['Semua'], array_values($orderStatusLabels));
           <div class="field"><label for="field-price">Harga jual <span class="req">*</span></label><div class="affix"><span>Rp</span><input id="field-price" name="price" type="number" min="1000" placeholder="150000" inputmode="numeric" required></div></div>
           <div class="field"><label for="field-seller">Pemilik titipan</label><input class="input" id="field-seller" name="seller" placeholder="Nama mahasiswa"></div>
         </div>
+        <div class="field">
+          <span class="lbl">Berat &amp; dimensi <span style="color:var(--tape)">*</span></span>
+          <span class="help">Dipakai untuk menghitung ongkir Biteship secara akurat.</span>
+        </div>
+        <div class="grid2">
+          <div class="field"><label for="field-weight">Berat (gram)</label><input class="input" id="field-weight" name="weight" type="number" min="1" value="1000" inputmode="numeric" required></div>
+          <div class="field"><label for="field-length">Panjang (cm)</label><input class="input" id="field-length" name="length" type="number" min="1" value="30" inputmode="numeric" required></div>
+          <div class="field"><label for="field-width">Lebar (cm)</label><input class="input" id="field-width" name="width" type="number" min="1" value="20" inputmode="numeric" required></div>
+          <div class="field"><label for="field-height">Tinggi (cm)</label><input class="input" id="field-height" name="height" type="number" min="1" value="15" inputmode="numeric" required></div>
+        </div>
       </div>
       <div class="d-foot">
         <button class="btn btn-ghost" type="button" id="btnBatalPlModal">Batal</button>
@@ -291,6 +306,10 @@ $filterOptions = array_merge(['Semua'], array_values($orderStatusLabels));
     form.elements['category'].value = item.category || '';
     form.elements['price'].value = item.price || '';
     form.elements['seller'].value = item.seller || '';
+    form.elements['weight'].value = item.weight || 1000;
+    form.elements['length'].value = item.length || 30;
+    form.elements['width'].value = item.width || 20;
+    form.elements['height'].value = item.height || 15;
     selectCondition(item.condition || 90);
     photos.reset(countItemImages(item));
     RA.open('plModal');

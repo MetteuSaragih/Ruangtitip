@@ -266,7 +266,7 @@
         <p class="no-faq" id="no-faq" hidden>Belum ada jawaban untuk itu. Tanya langsung ke tim Ruru di bawah, ya.</p>
 
         <div class="cs">
-          <img src="{{ asset('assets/ruru.webp') }}" alt="" width="92" height="108">
+          <img src="{{ asset('assets/ruru/ruru-tunjuk.webp') }}" alt="" width="92" height="86">
           <div class="t">
             <strong>Masih bingung? Tanya Ruru aja.</strong>
             <p>Tim RuangTitip membalas lewat WhatsApp setiap hari, 08.00–21.00 WIB.</p>

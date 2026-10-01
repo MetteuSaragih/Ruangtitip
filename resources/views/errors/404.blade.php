@@ -104,7 +104,7 @@ h1 em{font-style:normal;color:var(--tape)}
         <div class="box b2" aria-hidden="true"><span>0</span></div>
         <div class="box b3" aria-hidden="true"><span>4</span></div>
         <p class="bubble" id="bubble" aria-live="polite">Hmm, rak ini kosong. Aku udah cari ke mana-mana&hellip;</p>
-        <button class="ruru" type="button" id="ruru" aria-label="Tanya Ruru"><img src="{{ asset('assets/ruru.webp') }}" alt=""></button>
+        <button class="ruru" type="button" id="ruru" aria-label="Tanya Ruru"><img src="{{ asset('assets/ruru/ruru-mencari.webp') }}" alt=""></button>
       </div>
       <p class="hint">Klik Ruru kalau mau ngobrol sebentar.</p>
     </div>

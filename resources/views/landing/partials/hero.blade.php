@@ -18,7 +18,7 @@
     <div class="hero-art">
       <div class="disc" aria-hidden="true"></div>
       <div class="shadow" aria-hidden="true"></div>
-      <img class="ruru" src="{{ asset('assets/ruru.webp') }}" alt="Ruru, maskot RuangTitip berbentuk kardus, melambaikan tangan" width="769" height="900">
+      <img class="ruru" src="{{ asset('assets/ruru/ruru-halo.webp') }}" alt="Ruru, maskot RuangTitip berbentuk kardus, melambaikan tangan" width="800" height="800">
       <div class="bubble"><strong id="ruru-bubble-text">Hii, aku Ruru!</strong></div>
       <div class="chip-ok">
         <span class="dot" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
