@@ -9,16 +9,18 @@
     $rtUnread = \App\Support\UserNotifications::unreadCount($rtNotifs);
     $rtCart = count(session('cart', []));
     $rtActive = fn (...$patterns) => request()->routeIs(...$patterns) ? 'page' : null;
+    $rtActionCount = \App\Support\UserNotifications::actionCount($rtUser);
     $rtMenu = [
         'Menu' => [
             ['Beranda', 'dashboard', 'n-home', $rtActive('dashboard'), null],
             ['Ruang Titip', 'ruang-titip.index', 'n-ware', $rtActive('ruang-titip.*'), null],
-            ['Pesanan Saya', 'pesanan.index', 'n-receipt', $rtActive('pesanan.*'), null],
+            ['Pesanan Saya', 'pesanan.index', 'n-receipt', $rtActive('pesanan.*'), $rtActionCount ?: null],
+            ['Notifikasi', 'notifikasi.index', 'n-bell', $rtActive('notifikasi.*'), $rtUnread ?: null],
         ],
-        'Toko' => [
-            ['Toko Packing', 'packing.index', 'n-tape', $rtActive('packing.*'), null],
-            ['Toko Preloved', 'preloved.index', 'n-tag', $rtActive('preloved.index', 'preloved.show', 'preloved.cara-jual'), null],
+        'Toko Preloved' => [
+            ['Katalog', 'preloved.index', 'n-tag', $rtActive('preloved.index', 'preloved.show'), null],
             ['Keranjang', 'preloved.cart.index', 'n-cart', $rtActive('preloved.cart.*', 'checkout.*'), $rtCart ?: null],
+            ['Jual Barang', 'preloved.cara-jual', 'n-coin', $rtActive('preloved.cara-jual'), null],
         ],
     ];
     $rtOnProfile = request()->routeIs('profile.*');
@@ -44,6 +46,7 @@
 </head>
 <body>
 @include('partials.rt-icons')
+@include('landing.partials.symbols')
 
 <div class="rt-app">
     {{-- ===== Sidebar ===== --}}
@@ -129,27 +132,10 @@
                     <h1>@yield('title', 'RuangTitip')</h1>
                 </div>
                 <div class="rt-top-acts">
-                    <a class="rt-icon-btn" href="{{ route('preloved.cart.index') }}" aria-label="Keranjang{{ $rtCart ? ', ' . $rtCart . ' produk' : '' }}">
-                        <svg class="ic" aria-hidden="true"><use href="#n-cart"/></svg>
-                        @if ($rtCart)<span class="num">{{ $rtCart }}</span>@endif
+                    <a class="rt-icon-btn" href="{{ route('notifikasi.index') }}" aria-label="Notifikasi{{ $rtUnread ? ', ' . $rtUnread . ' baru' : '' }}">
+                        <svg class="ic" aria-hidden="true"><use href="#n-bell"/></svg>
+                        @if ($rtUnread)<span class="dot"></span>@endif
                     </a>
-                    <details class="rt-pop">
-                        <summary class="rt-icon-btn" aria-label="Notifikasi{{ $rtUnread ? ', ' . $rtUnread . ' baru' : '' }}">
-                            <svg class="ic" aria-hidden="true"><use href="#n-bell"/></svg>
-                            @if ($rtUnread)<span class="dot"></span>@endif
-                        </summary>
-                        <div class="rt-pop-box">
-                            <p class="rt-pop-title">Notifikasi</p>
-                            @forelse ($rtNotifs as $n)
-                                <a class="rt-pop-item" href="{{ $n['link'] }}">
-                                    <b>{{ $n['text'] }}</b>
-                                    @if ($n['at'])<small>{{ $n['at']->locale('id')->diffForHumans() }}</small>@endif
-                                </a>
-                            @empty
-                                <p class="rt-pop-empty">Belum ada notifikasi.</p>
-                            @endforelse
-                        </div>
-                    </details>
                     @if ($rtUser)
                         <a class="av" href="{{ route('profile.index') }}" aria-label="Akun saya">
                             @if ($rtUser->avatar)<img src="{{ \Illuminate\Support\Facades\Storage::url($rtUser->avatar) }}" alt="">@else{{ $rtUser->initials }}@endif
@@ -169,8 +155,8 @@
 <nav class="rt-tabbar" aria-label="Navigasi">
     <a href="{{ route('dashboard') }}" @if ($rtActive('dashboard')) aria-current="page" @endif><svg class="ic" aria-hidden="true"><use href="#n-home"/></svg>Beranda</a>
     <a href="{{ route('ruang-titip.index') }}" @if ($rtActive('ruang-titip.*')) aria-current="page" @endif><svg class="ic" aria-hidden="true"><use href="#n-ware"/></svg>Titip</a>
-    <a href="{{ route('pesanan.index') }}" @if ($rtActive('pesanan.*')) aria-current="page" @endif><svg class="ic" aria-hidden="true"><use href="#n-receipt"/></svg>Pesanan</a>
-    <a href="{{ route('preloved.index') }}" @if ($rtActive('preloved.*', 'packing.*', 'checkout.*')) aria-current="page" @endif><svg class="ic" aria-hidden="true"><use href="#n-tag"/></svg>Toko @if ($rtCart)<span class="rt-cnt">{{ $rtCart }}</span>@endif</a>
+    <a href="{{ route('pesanan.index') }}" @if ($rtActive('pesanan.*')) aria-current="page" @endif><svg class="ic" aria-hidden="true"><use href="#n-receipt"/></svg>Pesanan @if ($rtActionCount)<span class="rt-cnt">{{ $rtActionCount }}</span>@endif</a>
+    <a href="{{ route('preloved.index') }}" @if ($rtActive('preloved.*', 'packing.*', 'checkout.*')) aria-current="page" @endif><svg class="ic" aria-hidden="true"><use href="#n-tag"/></svg>Preloved @if ($rtCart)<span class="rt-cnt">{{ $rtCart }}</span>@endif</a>
     <a href="{{ route('profile.index') }}" @if ($rtOnProfile) aria-current="page" @endif><svg class="ic" aria-hidden="true"><use href="#n-user"/></svg>Akun</a>
 </nav>
 

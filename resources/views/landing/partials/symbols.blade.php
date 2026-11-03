@@ -11,6 +11,16 @@
             <circle cx="40" cy="22" r="12" fill="#FFC93C" stroke="#0C2B2A" stroke-width="2.5"/>
             <path d="M37 17.5h4.5a2.5 2.5 0 0 1 0 5H37v5M37 22.5h5" fill="none" stroke="#0C2B2A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         </symbol>
+        <symbol id="st-tape" viewBox="0 0 64 64">
+            <path d="M8 32c0-14 11-24 25-24s23 10 22 24-11 24-25 24S8 46 8 32z" fill="#fff" opacity=".7"/>
+            <path d="M26 49 H58 V41 H26 Z" fill="#F2B705" stroke="#0C2B2A" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M58 41 l-3 4 3 4" fill="none" stroke="#0C2B2A" stroke-width="2"/>
+            <circle cx="26" cy="32" r="17" fill="#FFC93C" stroke="#0C2B2A" stroke-width="2.5"/>
+            <circle cx="26" cy="32" r="10" fill="#F2B705" stroke="#0C2B2A" stroke-width="2"/>
+            <circle cx="26" cy="32" r="6" fill="#D7F2EE" stroke="#0C2B2A" stroke-width="2.5"/>
+            <path d="M14 26a13 13 0 0 1 6-7" stroke="#fff" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        </symbol>
+
         <symbol id="st-phone" viewBox="0 0 64 64">
             <path d="M8 32c0-14 11-24 25-24s23 10 22 24-11 24-25 24S8 46 8 32z" fill="#D7F2EE"/>
             <rect x="19" y="8" width="26" height="46" rx="6" fill="#fff" stroke="#0C2B2A" stroke-width="2.5"/>
