@@ -64,6 +64,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [OtpController::class, 'logout'])->name('logout');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/notifikasi', [DashboardController::class, 'notifications'])->name('notifikasi.index');
+    Route::post('/notifikasi/baca', [DashboardController::class, 'markNotificationsRead'])->name('notifikasi.read');
     Route::get('/profil', [ProfileController::class, 'index'])->name('profile.index');
     Route::post('/profil/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profil/avatar', [ProfileController::class, 'uploadAvatar'])->name('profile.avatar');
