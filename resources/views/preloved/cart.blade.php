@@ -1,38 +1,39 @@
-@extends('layouts.ruang-titip')
+@extends('layouts.rt')
 @section('title', 'Keranjang')
 
-@php function rp($n){ return 'Rp'.number_format($n,0,',','.'); } @endphp
+@php
+    if (! function_exists('rp')) {
+        function rp($n) { return 'Rp' . number_format($n, 0, ',', '.'); }
+    }
+@endphp
 
 @push('styles')
 <style>
-.empty-cart{margin:40px auto 0;max-width:520px;text-align:center;padding:40px 24px;background:var(--paper);border:1.5px dashed var(--line-strong);border-radius:20px}
-.empty-cart img{width:110px;margin:0 auto 16px}
-.empty-cart h1{font-size:28px;font-weight:800}
-.empty-cart p{color:var(--body);margin:8px 0 20px}
-.cart-item{display:flex;align-items:flex-start;gap:14px;padding:16px;border-radius:16px;background:var(--paper);border:1.5px solid var(--line-strong);margin-bottom:12px;transition:border-color .15s,background .15s}
-.cart-item.off{background:var(--cream);border-color:var(--line)}
-.cart-item input[type="checkbox"]{width:19px;height:19px;margin-top:6px;accent-color:var(--tape);flex-shrink:0}
-.cart-item .th{width:68px;height:68px;border-radius:12px;background:var(--sand);display:grid;place-items:center;overflow:hidden;flex-shrink:0}
-.cart-item .th img{width:100%;height:100%;object-fit:cover}
-.cart-item .t{flex:1;min-width:0}
-.cart-item .tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--depot-light);color:#1F4535;margin-bottom:6px}
-.cart-item .tag.packing{background:#E1F0FB;color:#1E5A85}
-.cart-item strong{display:block;font-size:15px;line-height:1.3}
-.cart-item .sub{font-size:12px;color:var(--muted);margin-top:2px}
-.cart-item .price{font-weight:700;color:var(--tape-dark);margin-top:6px}
-.cart-item .qty{margin-top:10px}
-.cart-item .qty button{width:30px;height:30px;font-size:15px}
-.cart-item .qty output{min-width:22px;font-size:14px}
-.cart-item .rm{background:none;border:0;color:var(--muted);cursor:pointer;padding:4px;flex-shrink:0}
-.cart-item .rm:hover{color:var(--tape)}
-.select-all{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:14px;background:var(--sand);margin-bottom:16px;font-weight:700;font-size:14px}
-.select-all label{display:flex;align-items:center;gap:10px;cursor:pointer}
-.select-all input{width:19px;height:19px;accent-color:var(--tape)}
+.select-all { display: flex; justify-content: space-between; align-items: center; padding: 12px 4px; font-weight: 700; font-size: 14.5px; }
+.select-all label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.select-all input, .cart-item > input { width: 20px; height: 20px; flex: none; }
+#cartItems { display: grid; gap: 12px; }
+.cart-item { display: grid; grid-template-columns: auto 72px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; }
+.cart-item.off { opacity: .55; }
+.cart-item .th { width: 72px; height: 72px; border-radius: 16px; background: var(--alt); display: grid; place-items: center; overflow: hidden; }
+.cart-item .th img { width: 100%; height: 100%; object-fit: cover; }
+.cart-item .th svg { color: var(--muted); }
+.cart-item .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: var(--ok-bg); color: var(--ok-ink); margin-bottom: 6px; }
+.cart-item .tag.packing { background: var(--info-bg); color: var(--info-ink); }
+.cart-item strong { display: block; font-size: 15.5px; line-height: 1.3; }
+.cart-item .sub { font-size: 13px; color: var(--muted); }
+.cart-item .price { font-family: var(--display); font-weight: 700; color: var(--tape-dark); margin: 4px 0 8px; }
+.cart-item .rm { width: 40px; height: 40px; border: 0; background: none; border-radius: 12px; color: var(--muted); display: grid; place-items: center; }
+.cart-item .rm:hover { background: var(--alt); color: var(--err-ink); }
+.empty-cart { display: grid; justify-items: center; text-align: center; gap: 10px; padding: 48px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+.empty-cart img { width: 110px; height: auto; }
+.empty-cart p { color: var(--muted); }
+@media (max-width: 560px) { .cart-item { grid-template-columns: auto 56px minmax(0, 1fr); } .cart-item .rm { grid-column: 3; justify-self: end; } .cart-item .th { width: 56px; height: 56px; } }
 </style>
 @endpush
 
 @section('content')
-<main class="wrap">
+<div class="wrap">
   @if ($errors->any())
     <p class="err" style="margin-top:20px">{{ $errors->first() }}</p>
   @endif
@@ -48,7 +49,7 @@
       </div>
     </section>
   @else
-    <div class="layout" style="margin-top:32px">
+    <div class="layout">
       <div>
         <div class="step-head" style="margin-bottom:16px">
           <h1>Keranjang</h1>
@@ -78,7 +79,7 @@
                       <img src="{{ \Illuminate\Support\Facades\Storage::url($item['image']) }}" alt="{{ $item['name'] }}">
                     @endif
                   @else
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--tape-dark)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>
                   @endif
                 </span>
                 <div class="t">
@@ -124,7 +125,7 @@
       </aside>
     </div>
   @endif
-</main>
+</div>
 
 @push('scripts')
 <script>

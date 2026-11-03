@@ -27,9 +27,9 @@
                             </p>
 
                             <div style="text-align:center; margin:0 0 24px;">
-                                <span style="display:inline-block; background:#F6E3D3; color:#9A4415;
+                                <span style="display:inline-block; background:#F6E3D3; color:#0B5D57;
                                              font-size:34px; font-weight:800; letter-spacing:10px;
-                                             padding:16px 20px 16px 30px; border-radius:14px; border:1.5px solid #B4531D;">
+                                             padding:16px 20px 16px 30px; border-radius:14px; border:1.5px solid #0F766E;">
                                     {{ $code }}
                                 </span>
                             </div>

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
+use App\Models\PackingOrder;
+use App\Models\TitipanOrder;
 use App\Models\UserAddress;
 use App\Services\DistanceService;
 use Illuminate\Http\Request;
@@ -37,7 +40,14 @@ class ProfileController extends Controller
         $currentTab = $request->query('tab', 'profil');
         $redirectAfter = session('profile_redirect_after');
 
-        return view('profile.index', compact('user', 'addresses', 'currentTab', 'redirectAfter'));
+        $stats = [
+            'titip' => TitipanOrder::where('user_id', $user->id)->where('status', '!=', 'selesai')->count(),
+            'belanja' => PackingOrder::where('user_id', $user->id)->count()
+                + Order::where('user_id', $user->id)->count(),
+            'alamat' => $addresses->count(),
+        ];
+
+        return view('profile.index', compact('user', 'addresses', 'currentTab', 'redirectAfter', 'stats'));
     }
 
     public function update(Request $request)

@@ -11,10 +11,10 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
 <style>
 :root{
-  --ink:#1C1B18;--cream:#F5F1E8;--paper:#FFFDF8;--sand:#E8DFCD;--kraft:#C9A27A;
-  --tape:#B4531D;--tape-dark:#9A4415;--tape-light:#E8A677;--tape-soft:#F6E3D3;
-  --depot:#2E5A45;--depot-light:#EAF1EC;--danger:#A3321A;
-  --body:#4F4A40;--muted:#5C574D;--line:#DDD5C4;--line-strong:#CFC6B3;
+  --ink:#E6F5F3;--deep:#0C2B2A;--cream:#0A2423;--paper:#11332F;--sand:#163C38;--kraft:#C9A27A;
+  --tape:#FFC93C;--tape-dark:#FFD86B;--tape-light:#FFC93C;--tape-soft:#1E3B37;
+  --depot:#2DD4BF;--depot-light:#173F2A;--danger:#F08A80;
+  --body:#A5C6C2;--muted:#A5C6C2;--line:#24504B;--line-strong:#24504B;
   --font-display:'Bricolage Grotesque','Figtree',system-ui,sans-serif;
   --font-body:'Figtree',system-ui,sans-serif;
 }
@@ -55,7 +55,7 @@ button,input{font:inherit;color:inherit}
 .ruru-btn.poke img{animation:poke .5s cubic-bezier(.3,1.6,.5,1)}
 @keyframes bob{0%,100%{translate:0 0}50%{translate:0 -10px}}
 @keyframes poke{0%{transform:scale(1,1)}30%{transform:scale(1.08,.9)}60%{transform:scale(.95,1.06) translateY(-14px)}100%{transform:scale(1,1)}}
-.say{position:absolute;top:10px;left:0;max-width:280px;background:var(--paper);border:2px solid var(--ink);border-radius:20px;box-shadow:5px 5px 0 var(--ink);padding:14px 18px;font-family:var(--font-display);font-weight:800;font-size:20px;line-height:1.2;transition:transform .2s}
+.say{position:absolute;top:10px;left:0;max-width:280px;background:var(--paper);border:2px solid var(--ink);border-radius:20px;box-shadow:none;padding:14px 18px;font-family:var(--font-display);font-weight:800;font-size:20px;line-height:1.2;transition:transform .2s}
 .say::after{content:"";position:absolute;right:34px;bottom:-11px;width:18px;height:18px;background:var(--paper);border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(45deg)}
 .say.pop{animation:pop .3s ease}
 @keyframes pop{50%{transform:scale(1.06)}}
@@ -75,14 +75,14 @@ h1{font-size:clamp(42px,5.4vw,68px);font-weight:800;letter-spacing:-2px;margin-t
 h1 em{font-style:normal;color:var(--tape)}
 .lead{font-size:18px;color:var(--body);margin-top:14px;max-width:520px}
 
-.card{margin-top:26px;background:var(--paper);border:2px solid var(--ink);border-radius:20px;box-shadow:6px 6px 0 var(--ink);overflow:hidden}
+.card{margin-top:26px;background:var(--paper);border:2px solid var(--ink);border-radius:20px;box-shadow:none;overflow:hidden}
 .eta{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 22px;background:var(--sand);border-bottom:2px solid var(--ink);flex-wrap:wrap}
 .eta small{display:block;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
 .eta strong{font-family:var(--font-display);font-size:18px}
 .clock{display:flex;gap:6px}
 .clock div{min-width:62px;text-align:center;padding:6px 8px;background:var(--ink);color:var(--cream);border-radius:10px}
 .clock b{display:block;font-family:var(--font-display);font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
-.clock span{font-size:11px;color:#C9C2B3;font-weight:600}
+.clock span{font-size:11px;color:var(--muted);font-weight:600}
 .steps{list-style:none;margin:0;padding:18px 22px;display:flex;flex-direction:column;gap:12px}
 .steps li{display:flex;align-items:center;gap:12px;font-weight:600}
 .steps .ic{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;border:2px solid var(--line-strong);background:var(--paper)}
@@ -101,19 +101,19 @@ h1 em{font-style:normal;color:var(--tape)}
 .notify input{flex:1;min-width:0;height:52px;border-radius:999px;border:2px solid var(--line-strong);background:var(--paper);padding:0 20px;font-size:16px}
 .notify input:focus{outline:none;border-color:var(--ink)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 22px;border-radius:999px;font-weight:700;font-size:15px;text-decoration:none;border:2px solid var(--ink);cursor:pointer;white-space:nowrap;transition:transform .12s}
-.btn-primary{background:var(--tape);color:#fff;box-shadow:3px 3px 0 var(--ink)}
-.btn-primary:hover{background:var(--tape-dark);color:#fff}
-.btn-primary:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn-primary{background:var(--tape);color:var(--deep);box-shadow:none}
+.btn-primary:hover{background:var(--tape-dark);color:var(--deep)}
+.btn-primary:active{transform:translate(2px,2px);box-shadow:none}
 .btn-outline{background:var(--paper);color:var(--ink)}
 .btn-outline:hover{background:var(--sand);color:var(--ink)}
 .msg{font-size:14px;font-weight:600;margin-top:8px;min-height:1.4em}
 .msg.ok{color:var(--depot)}.msg.bad{color:var(--danger)}
 .links{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
-.btn-wa{background:var(--depot);color:#fff;box-shadow:3px 3px 0 var(--ink)}
-.btn-wa:hover{background:#244A38;color:#fff}
+.btn-wa{background:var(--depot);color:var(--deep);box-shadow:none}
+.btn-wa:hover{background:var(--bright);color:var(--deep)}
 
 /* ===== Mini game ===== */
-.game{margin-top:72px;background:var(--paper);border:2px solid var(--ink);border-radius:24px;box-shadow:6px 6px 0 var(--ink);overflow:hidden}
+.game{margin-top:72px;background:var(--paper);border:2px solid var(--ink);border-radius:24px;box-shadow:none;overflow:hidden}
 .game-head{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 24px;border-bottom:2px solid var(--ink);flex-wrap:wrap}
 .game-head h2{font-size:26px;letter-spacing:-.5px}
 .game-head p{color:var(--body);font-size:15px}
@@ -164,7 +164,7 @@ h1 em{font-style:normal;color:var(--tape)}
 
 <div class="page">
   <header class="top">
-    <img src="{{ asset('assets/logo-ruangtitip.svg') }}" alt="RuangTitip" width="200" height="50">
+    <img src="{{ asset('assets/logo-ruangtitip-putih.svg') }}" alt="RuangTitip" width="200" height="50">
     <a class="btn btn-outline" href="https://instagram.com/ruangtitip" target="_blank" rel="noopener">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor"/></svg>
       <span>Update di Instagram</span>
@@ -177,9 +177,9 @@ h1 em{font-style:normal;color:var(--tape)}
       <div class="disc" aria-hidden="true"></div>
       <div class="shadow" id="shadow" aria-hidden="true"></div>
       <div class="tools" aria-hidden="true">
-        <i><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1C1B18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg></i>
-        <i><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1C1B18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></i>
-        <i><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1C1B18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg></i>
+        <i><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg></i>
+        <i><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></i>
+        <i><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg></i>
       </div>
       <button class="ruru-btn" id="ruru" type="button" aria-label="Colek Ruru">
         <img src="{{ asset('assets/ruru/ruru-tukang.webp') }}" alt="" width="769" height="900">

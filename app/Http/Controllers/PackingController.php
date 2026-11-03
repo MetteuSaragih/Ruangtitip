@@ -113,7 +113,10 @@ class PackingController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        return view('packing.address', compact('addresses'));
+        return view('packing.address', [
+            'addresses' => $addresses,
+            'items' => $checkout['items'] ?? [],
+        ]);
     }
 
     public function saveAddress(Request $request)
@@ -155,7 +158,10 @@ class PackingController extends Controller
             return redirect()->route('packing.address');
         }
 
-        return view('packing.courier', ['address' => $checkout['address'] ?? '']);
+        return view('packing.courier', [
+            'address' => $checkout['address'] ?? '',
+            'items' => $checkout['items'] ?? [],
+        ]);
     }
 
     public function courierRates(BiteshipService $biteship)

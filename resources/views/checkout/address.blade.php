@@ -4,7 +4,7 @@
 @php function rp($n){ return 'Rp'.number_format($n,0,',','.'); } @endphp
 
 @section('content')
-<main class="wrap">
+<div class="wrap">
   <a class="back-link" href="{{ route('checkout.shipping') }}">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
     Kembali
@@ -98,7 +98,7 @@
 
     @include('checkout._summary', ['cart' => $cart, 'shipping' => $shipping])
   </div>
-</main>
+</div>
 
 @push('scripts')
 <script>

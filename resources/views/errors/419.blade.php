@@ -6,9 +6,9 @@
 <title>Sesi Kedaluwarsa - RUTIP</title>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{min-height:100vh;background:#080212;color:#fff;font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;position:relative;}
+  body{min-height:100vh;background:#0A2423;color:#fff;font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;position:relative;}
   .bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(245,158,11,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(245,158,11,.04) 1px,transparent 1px);background-size:40px 40px;}
-  .bg-orb-1{position:fixed;width:400px;height:400px;background:radial-gradient(circle,rgba(124,58,237,.18),transparent 70%);top:-80px;left:-60px;border-radius:50%;filter:blur(80px);}
+  .bg-orb-1{position:fixed;width:400px;height:400px;background:radial-gradient(circle,rgba(15,118,110,.18),transparent 70%);top:-80px;left:-60px;border-radius:50%;filter:blur(80px);}
   .bg-orb-2{position:fixed;width:350px;height:350px;background:radial-gradient(circle,rgba(245,158,11,.1),transparent 70%);bottom:-60px;right:-60px;border-radius:50%;filter:blur(80px);}
   .card{position:relative;z-index:10;text-align:center;max-width:440px;padding:0 20px;width:100%;}
   @media(max-width:480px){body{padding:24px 16px;}.btn{width:100%;justify-content:center;}}
@@ -19,7 +19,7 @@
   .badge{display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);color:#fcd34d;font-size:11px;font-weight:700;padding:5px 14px;border-radius:20px;margin-bottom:16px;}
   h1{font-size:24px;font-weight:800;margin-bottom:10px;}
   p{font-size:14px;line-height:1.7;color:rgba(255,255,255,.45);margin-bottom:28px;max-width:310px;margin-left:auto;margin-right:auto;}
-  .btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#7c3aed,#6366f1);color:#fff;font-size:13px;font-weight:700;padding:12px 28px;border-radius:14px;text-decoration:none;box-shadow:0 6px 20px rgba(124,58,237,.35);transition:opacity .2s,transform .2s;cursor:pointer;border:none;}
+  .btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#0F766E,#2DD4BF);color:#fff;font-size:13px;font-weight:700;padding:12px 28px;border-radius:14px;text-decoration:none;box-shadow:0 6px 20px rgba(15,118,110,.35);transition:opacity .2s,transform .2s;cursor:pointer;border:none;}
   .btn:hover{opacity:.9;transform:translateY(-1px);}
   footer{position:relative;z-index:10;margin-top:40px;font-size:11px;color:rgba(255,255,255,.2);}
   @keyframes rotate{to{transform:rotate(360deg);}}
@@ -32,7 +32,7 @@
 <div class="bg-orb-2"></div>
 <div class="card">
   <a href="/" style="display:inline-block;margin-bottom:32px;">
-    <img src="/images/logo-rutip-putih.png" alt="RUTIP" style="height:46px;width:auto;filter:drop-shadow(0 4px 16px rgba(124,58,237,.3));">
+    <img src="/assets/logo-ruangtitip-putih.svg" alt="RUTIP" style="height:46px;width:auto;filter:drop-shadow(0 4px 16px rgba(15,118,110,.3));">
   </a>
   <div class="illus">
     <svg class="timer-ring" viewBox="0 0 100 100">
