@@ -1,0 +1,233 @@
+/* ==========================================================================
+   Pola halaman bersama (header halaman, statistik, daftar pesanan,
+   katalog produk, layout dua kolom). Dipakai halaman pengguna yang ditulis
+   ulang mengikuti desain terbaru.
+   ========================================================================== */
+.pg { display: grid; gap: 20px; align-content: start; min-width: 0; }
+
+.pg-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.pg-head h2 { font-size: clamp(25px, 2.5vw, 32px); letter-spacing: -0.03em; line-height: 1.12; }
+.pg-head p { color: var(--muted); margin-top: 6px; max-width: 62ch; }
+.pg-acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.crumbs { display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; color: var(--muted); font-weight: 600; }
+.crumbs a { color: var(--link); text-decoration: none; }
+.crumbs a:hover { text-decoration: underline; }
+
+.pg-two { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 20px; align-items: start; }
+.pg-aside { position: sticky; top: 92px; display: grid; gap: 16px; }
+
+/* ----- Statistik ----- */
+.pg-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+
+.pg-stat { display: grid; gap: 4px; padding: 20px; }
+.pg-stat small { font-size: 13px; color: var(--muted); font-weight: 600; }
+.pg-stat b { font-family: var(--display); font-size: 28px; line-height: 1; }
+.pg-stat.warn b { color: var(--warn-ink); }
+
+/* ----- Filter ----- */
+.pg-filters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.pg-filters .sep { width: 1px; height: 22px; background: var(--line); margin: 0 6px; }
+a.chip { text-decoration: none; color: var(--text); }
+a.chip[aria-selected='true'], a.chip[aria-pressed='true'] { color: var(--deep); }
+
+/* ----- Daftar pesanan ----- */
+.po-list { display: grid; gap: 12px; }
+
+.po-card { display: grid; gap: 14px; padding: 20px 22px; }
+.po-card.attn { box-shadow: inset 3px 0 0 var(--sun); }
+
+.po-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.po-thumb {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: var(--alt);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    flex: none;
+    color: var(--bright);
+    --acc: var(--sun);
+}
+
+.po-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.po-thumb svg { width: 26px; height: 26px; }
+.po-who { min-width: 0; flex: 1; }
+.po-who strong { display: block; font-family: var(--display); font-size: 17px; line-height: 1.25; }
+.po-who small { color: var(--muted); font-size: 13px; }
+
+.po-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13.5px; color: var(--muted); }
+
+.po-period { display: grid; gap: 6px; }
+.po-period .row { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; }
+.po-period .row span { color: var(--muted); }
+.po-bar { height: 8px; border-radius: 8px; background: var(--alt); overflow: hidden; }
+.po-bar i { display: block; height: 100%; background: var(--teal); border-radius: 8px; }
+.po-period.soon .po-bar i { background: var(--sun); }
+.po-period.soon .row b { color: var(--warn-ink); }
+
+.po-pay { font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: var(--warn-ink); }
+.po-pay svg { width: 18px; height: 18px; flex: none; }
+.po-pay.ok { color: var(--ok-ink); }
+
+.po-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+}
+
+.po-total small { display: block; font-size: 12.5px; color: var(--muted); }
+.po-total strong { font-family: var(--display); font-size: 20px; }
+.po-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ----- Daftar item ----- */
+.it-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+
+.it {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: start;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+}
+
+.it-pic { width: 56px; height: 56px; border-radius: 14px; background: var(--alt); display: grid; place-items: center; overflow: hidden; }
+.it-pic img { width: 100%; height: 100%; object-fit: cover; }
+.it-pic svg { width: 32px; height: 32px; }
+.it b { font-size: 15px; }
+.it small { display: block; color: var(--muted); font-size: 13px; }
+.it-r { text-align: right; font-weight: 700; }
+
+/* ----- Timeline aktivitas ----- */
+.tl { list-style: none; margin: 0; padding: 0; }
+
+.tl li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 14px 1fr;
+    gap: 12px;
+    padding-bottom: 16px;
+}
+
+.tl li::before { content: ''; position: absolute; left: 6px; top: 18px; bottom: 0; width: 2px; background: var(--line); }
+.tl li:last-child::before { display: none; }
+.tl .dt { width: 14px; height: 14px; border-radius: 50%; margin-top: 4px; background: var(--teal); }
+.tl .dt.now { background: var(--sun); }
+.tl b { display: block; font-size: 14px; font-weight: 600; }
+.tl small { font-size: 12.5px; color: var(--muted); }
+
+/* ----- Katalog produk ----- */
+.pc-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.pc-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.pc {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: border-color 0.15s, transform 0.15s;
+    color: var(--text);
+}
+
+.pc:hover { border-color: var(--bright); transform: translateY(-2px); }
+
+.pc-pic {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    background: var(--alt);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    text-decoration: none;
+}
+
+.pc-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pc-pic > svg { width: 44px; height: 44px; color: var(--muted); }
+.pc-pic .badge { position: absolute; top: 12px; left: 12px; }
+.pc-pic .badge.r { left: auto; right: 12px; }
+.pc-body { padding: 14px 16px 16px; display: grid; gap: 4px; flex: 1; align-content: start; }
+.pc-body h3 { font-family: var(--body); font-size: 15.5px; font-weight: 700; letter-spacing: 0; line-height: 1.35; }
+.pc-body h3 a { color: var(--text); text-decoration: none; }
+.pc-body h3 a:hover { color: var(--bright); }
+.pc-body .meta { font-size: 13px; color: var(--muted); }
+.pc-price { font-family: var(--display); font-size: 19px; font-weight: 700; color: var(--tape-dark); }
+.pc-price s { font-family: var(--body); font-size: 13px; color: var(--muted); font-weight: 500; margin-left: 6px; }
+.pc-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+
+.pg-empty { display: grid; justify-items: center; text-align: center; gap: 10px; padding: 40px 20px; }
+.pg-empty img { width: 110px; height: auto; }
+.pg-empty h3 { font-size: 22px; }
+.pg-empty p { color: var(--muted); max-width: 48ch; }
+
+@media (max-width: 1180px) {
+    .pg-two { grid-template-columns: 1fr; }
+    .pg-aside { position: static; }
+    .pc-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 800px) {
+    .pc-grid,
+    .pc-grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+}
+
+@media (max-width: 640px) {
+    .pg-stats { grid-template-columns: 1fr; }
+    .it { grid-template-columns: 48px minmax(0, 1fr); }
+    .it-r { grid-column: 2; text-align: left; }
+    .po-card { padding: 18px; }
+    .track li { font-size: 0; gap: 0; }
+    .track li.cur { font-size: 11.5px; gap: 6px; }
+}
+
+/* ----- Kartu ruang / gudang ----- */
+.rm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px; }
+
+.rm { display: flex; flex-direction: column; padding: 0; overflow: hidden; text-decoration: none; color: var(--text); transition: border-color 0.15s, transform 0.15s; }
+.rm:hover { border-color: var(--bright); transform: translateY(-2px); }
+
+.rm-art { position: relative; height: 170px; background: var(--alt); display: grid; place-items: center; overflow: hidden; }
+.rm-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.rm-art > svg { width: 44px; height: 44px; color: var(--muted); }
+.rm-art .badge { position: absolute; top: 14px; left: 14px; }
+.rm-body { display: flex; flex-direction: column; gap: 14px; padding: 20px 22px 22px; flex: 1; }
+.rm-body h3 { font-size: 21px; }
+.rm-where { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin-top: 4px; }
+.rm-where svg { width: 15px; height: 15px; flex: none; }
+.rm-cap { display: grid; gap: 6px; }
+.rm-cap .top { display: flex; justify-content: space-between; font-size: 13.5px; }
+.rm-cap .top span { color: var(--muted); }
+.rm-foot { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--line); display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.rm-price small { display: block; font-size: 12.5px; color: var(--muted); }
+.rm-price b { font-family: var(--display); font-size: 22px; line-height: 1.2; }
+.rm-price span { font-size: 13px; color: var(--muted); }
+
+.rm-tags { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.rm-tags li { font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--alt); }
+
+.pg-toolbar { display: flex; gap: 12px; flex-wrap: wrap; }
+.pg-search { position: relative; flex: 1 1 280px; }
+.pg-search svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--muted); width: 18px; height: 18px; }
+.pg-search input { width: 100%; height: 48px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); padding: 0 18px 0 46px; font-size: 15px; }
+.pg-search input:focus { outline: none; border-color: var(--teal); }
+.pg-select { height: 48px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); padding: 0 18px; font-weight: 600; font-size: 15px; }
+
+.pg-photo { position: relative; aspect-ratio: 16 / 9; background: var(--alt); border-radius: var(--r); overflow: hidden; display: grid; place-items: center; }
+.pg-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pg-photo > svg { width: 48px; height: 48px; color: var(--muted); }

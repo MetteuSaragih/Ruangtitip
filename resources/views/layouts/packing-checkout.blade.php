@@ -1,16 +1,11 @@
 {{--
-    Layout untuk langkah-langkah checkout Toko Packing & Toko Preloved.
-    Disamakan dengan pola flat Ruang Titip - tanpa kartu pembungkus, tombol
-    "Kembali" dikelola masing-masing halaman (di bawah, sejajar tombol lanjut).
-
-    View anak mengisi:
-      @section('title')            judul tab (opsional)
-      @section('checkout-content') isi langkah
+    Layout langkah-langkah checkout Toko Packing.
+    View anak mengisi @section('checkout-content'); judul tab lewat @section('title').
 --}}
-@extends('layouts.dashboard')
+@extends('layouts.rt')
 
 @section('content')
-<div class="max-w-xl mx-auto pt-6 pb-8">
+<div class="wrap" style="max-width:640px">
     @yield('checkout-content')
 </div>
 @endsection

@@ -1,0 +1,553 @@
+/* ==========================================================================
+   Komponen bersama (halaman baru memakai awalan rt-, view lama dipetakan
+   ulang di legacy.css supaya tampilannya ikut tema baru).
+   ========================================================================== */
+
+/* ----- Tombol ----- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 46px;
+    padding: 0 20px;
+    border-radius: 999px;
+    border: 1.5px solid transparent;
+    font-weight: 700;
+    font-size: 14.5px;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s, opacity 0.15s;
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn .ic,
+.btn svg {
+    width: 18px;
+    height: 18px;
+    flex: none;
+}
+
+.btn-sun,
+.btn-primary {
+    background: var(--sun);
+    color: var(--deep);
+}
+
+.btn-sun:hover,
+.btn-primary:hover {
+    background: var(--sun-600);
+    color: var(--deep);
+}
+
+.btn-ink {
+    background: var(--text);
+    color: var(--bg);
+}
+
+.btn-ink:hover {
+    background: #fff;
+    color: var(--bg);
+}
+
+.btn-ghost,
+.btn-outline {
+    background: var(--surface);
+    border-color: var(--line);
+    color: var(--text);
+}
+
+.btn-ghost:hover,
+.btn-outline:hover {
+    border-color: var(--text);
+    color: var(--text);
+}
+
+.btn-line {
+    border-color: rgba(255, 255, 255, 0.45);
+    color: #fff;
+}
+
+.btn-line:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-danger {
+    background: var(--err);
+    color: var(--deep);
+}
+
+.btn-link {
+    background: none;
+    border: 0;
+    color: var(--link);
+    padding: 0 6px;
+    min-height: 36px;
+}
+
+.btn.sm {
+    min-height: 38px;
+    padding: 0 14px;
+    font-size: 13.5px;
+}
+
+.btn.wide {
+    width: 100%;
+}
+
+.btn:disabled,
+.btn[aria-disabled='true'] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ----- Kartu ----- */
+.rt-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: 24px;
+    min-width: 0;
+}
+
+.rt-card-h {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.rt-card-h h2,
+.rt-card-h h3 {
+    font-size: 19px;
+}
+
+.more-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--link);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.more-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* ----- Badge ----- */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 99px;
+    padding: 5px 11px;
+    font-size: 12.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.badge i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.b-ok { background: var(--ok-bg); color: var(--ok-ink); }
+.b-warn { background: var(--warn-bg); color: var(--warn-ink); }
+.b-err { background: var(--err-bg); color: var(--err-ink); }
+.b-info { background: var(--info-bg); color: var(--info-ink); }
+.b-mute { background: var(--alt); color: var(--muted); }
+
+/* ----- Alert ----- */
+.alert {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    border-radius: 16px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.alert > .ic,
+.alert > svg {
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    flex: none;
+}
+
+.alert > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.alert b {
+    display: block;
+    font-size: 14.5px;
+}
+
+.alert p {
+    margin-top: 2px;
+}
+
+.alert .acts {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.a-ok { background: var(--ok-bg); color: var(--ok-ink); box-shadow: inset 3px 0 0 #86d9a0; }
+.a-warn { background: var(--warn-bg); color: var(--warn-ink); box-shadow: inset 3px 0 0 var(--sun); }
+.a-err { background: var(--err-bg); color: var(--err-ink); box-shadow: inset 3px 0 0 var(--err); }
+.a-info { background: var(--info-bg); color: var(--info-ink); box-shadow: inset 3px 0 0 var(--bright); }
+.a-mute { background: var(--alt); color: var(--muted); }
+
+/* ----- Form ----- */
+.rt-field {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.rt-field > label,
+.rt-lab {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.rt-input {
+    height: 46px;
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 0 12px;
+    font-size: 14.5px;
+}
+
+textarea.rt-input {
+    height: auto;
+    min-height: 90px;
+    padding: 10px 12px;
+    resize: vertical;
+}
+
+.rt-input:focus {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 28%, transparent);
+}
+
+.rt-input[aria-invalid='true'] {
+    border-color: var(--err);
+}
+
+.rt-msg {
+    font-size: 12.5px;
+    color: var(--err-ink);
+    font-weight: 600;
+}
+
+.rt-help {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+input[type='radio'],
+input[type='checkbox'] {
+    accent-color: var(--sun);
+}
+
+/* ----- Chip dan tab ----- */
+.chip {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 99px;
+    padding: 6px 14px;
+    font-size: 13.5px;
+    font-weight: 700;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.chip[aria-pressed='true'],
+.chip[aria-selected='true'] {
+    background: var(--sun);
+    border-color: var(--sun);
+    color: var(--deep);
+}
+
+.chip .c {
+    min-width: 20px;
+    height: 20px;
+    border-radius: 99px;
+    background: var(--alt);
+    color: var(--text);
+    font-size: 11.5px;
+    display: grid;
+    place-items: center;
+    padding: 0 5px;
+}
+
+.rt-tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+/* ----- Tabel dan baris ----- */
+.rt-rows {
+    display: grid;
+}
+
+.rt-rows > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+    border-top: 1px dashed var(--line);
+    font-size: 14px;
+}
+
+.rt-rows > div:first-child {
+    border-top: 0;
+}
+
+.rt-rows > div > span {
+    color: var(--muted);
+    max-width: 50%;
+}
+
+.rt-rows b {
+    text-align: right;
+}
+
+.rt-rows small {
+    display: block;
+    font-size: 12.5px;
+    color: var(--muted);
+    font-weight: 500;
+}
+
+.rt-rows .tot {
+    border-top: 1px solid var(--line);
+}
+
+.rt-rows .tot b {
+    font-family: var(--display);
+    font-size: 20px;
+}
+
+.rt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.rt-table th {
+    text-align: left;
+    font-size: 12.5px;
+    color: var(--muted);
+    padding: 8px 8px 8px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.rt-table td {
+    padding: 10px 8px 10px 0;
+    border-bottom: 1px dashed var(--line);
+    vertical-align: top;
+}
+
+.rt-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.rt-table small {
+    display: block;
+    font-size: 12.5px;
+    color: var(--muted);
+}
+
+/* ----- Tracker status ----- */
+.track {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(var(--n, 4), 1fr);
+    gap: 4px;
+}
+
+.track li {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.3;
+}
+
+.track li::before {
+    content: '';
+    position: absolute;
+    top: 13px;
+    left: -50%;
+    right: 50%;
+    height: 3px;
+    background: var(--line);
+}
+
+.track li:first-child::before {
+    display: none;
+}
+
+.track .d {
+    position: relative;
+    z-index: 1;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--line);
+    display: grid;
+    place-items: center;
+}
+
+.track .d svg {
+    width: 14px;
+    height: 14px;
+}
+
+.track li.done,
+.track li.cur {
+    color: var(--text);
+}
+
+.track li.done .d {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #fff;
+}
+
+.track li.done::before,
+.track li.cur::before {
+    background: var(--teal);
+}
+
+.track li.cur .d {
+    background: var(--sun);
+    border-color: var(--sun);
+}
+
+/* ----- Keadaan kosong ----- */
+.rt-state {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+    gap: 12px;
+    padding: 32px 20px;
+}
+
+.rt-state h3 {
+    font-size: 22px;
+}
+
+.rt-state > p {
+    color: var(--muted);
+    max-width: 54ch;
+}
+
+.rt-state .acts {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 6px;
+}
+
+/* ----- Toast ----- */
+.rt-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    z-index: 150;
+    max-width: min(480px, calc(100vw - 32px));
+    background: var(--tip-bg);
+    color: var(--tip-ink);
+    border-radius: 14px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translate(-50%, 16px);
+    transition: 0.2s;
+    pointer-events: none;
+}
+
+.rt-toast.show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* ----- Avatar ----- */
+.av {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 15px;
+    flex: none;
+    background: var(--sun);
+    color: var(--deep);
+    overflow: hidden;
+}
+
+.av img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ----- Animasi umum ----- */
+@keyframes rt-rot { to { transform: rotate(360deg); } }
+@keyframes rt-sk { to { background-position: -200% 0; } }
+
+.spin {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 3px solid color-mix(in srgb, currentColor 25%, transparent);
+    border-top-color: currentColor;
+    animation: rt-rot 0.8s linear infinite;
+    flex: none;
+}
+
+.sk {
+    border-radius: 16px;
+    background: linear-gradient(90deg, var(--alt) 25%, var(--surface) 50%, var(--alt) 75%);
+    background-size: 200% 100%;
+    animation: rt-sk 1.2s infinite;
+}

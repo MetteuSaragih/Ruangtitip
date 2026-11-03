@@ -2,48 +2,42 @@
 
 @section('title', 'Verifikasi OTP')
 @section('bubble-title', 'Hampir selesai!')
-@section('bubble-text', 'Cek email kamu buat kode OTP-nya.')
 
 @section('content')
-<a href="{{ route('login') }}" class="back-inline">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
-    Kembali
-</a>
-
-<h1>Masukkan Kode OTP</h1>
-<p class="sub" style="margin-bottom:4px">Kode verifikasi dikirim ke</p>
-<p class="sub" style="margin:0 0 28px;color:var(--tape-dark);font-weight:700">{{ $email }}</p>
+<div class="head">
+    <svg aria-hidden="true"><use href="#st-envelope"/></svg>
+    <h1>Masukkan kode</h1>
+</div>
+<p class="sub">Kode 6 digit sudah kami kirim ke <strong>{{ $email }}</strong>. Berlaku 10 menit.</p>
 
 @if (session('status'))
-    <div class="alert alert-success">{{ session('status') }}</div>
+    <div class="alert a-ok auth-alert" role="status"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><div>{{ session('status') }}</div></div>
 @endif
 @if ($errors->any())
-    <div class="alert alert-error">{{ $errors->first() }}</div>
+    <div class="alert a-err auth-alert" role="alert"><svg class="ic" aria-hidden="true"><use href="#i-warn"/></svg><div>{{ $errors->first() }}</div></div>
 @endif
 
 <form method="POST" action="{{ route('otp.verify') }}" id="otpForm">
     @csrf
     <input type="hidden" name="code" id="codeField">
 
-    <div class="otp-boxes" id="otpBoxes">
+    <div class="otp-label"><span id="otpLbl">Kode verifikasi</span><small>Bisa langsung paste</small></div>
+    <div class="otp-boxes" id="otpBoxes" role="group" aria-labelledby="otpLbl">
         @for ($i = 0; $i < 6; $i++)
-            <input type="text" inputmode="numeric" maxlength="1" data-index="{{ $i }}" class="otp-box">
+            <input type="text" inputmode="numeric" maxlength="1" data-index="{{ $i }}" class="otp-box" aria-label="Digit {{ $i + 1 }}" @if ($i === 0) autocomplete="one-time-code" @endif>
+            @if ($i === 2)<span class="dash" aria-hidden="true"></span>@endif
         @endfor
     </div>
+    <p class="otp-hint">Belum masuk? Cek folder Spam atau Promosi.</p>
 
-    <p class="otp-hint">Kode berlaku selama <strong>10 menit</strong></p>
-
-    <button type="submit" class="btn btn-primary" style="margin-bottom:20px">
-        Verifikasi &amp; Masuk
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    </button>
+    <button type="submit" class="btn btn-sun btn-block btn-submit">Verifikasi dan masuk</button>
 </form>
 
 <div class="resend">
+    <a class="back" href="{{ route('login') }}" style="padding:0">Ganti email</a>
     <form method="POST" action="{{ route('otp.resend') }}" id="resendForm">
         @csrf
         <button type="submit" id="resendBtn" disabled class="resend-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
             <span id="resendLabel">Kirim ulang dalam <span id="countdown">60</span>s</span>
         </button>
     </form>
@@ -54,6 +48,7 @@
 (function () {
     var boxes = Array.from(document.querySelectorAll('.otp-box'));
     var codeField = document.getElementById('codeField');
+    var form = document.getElementById('otpForm');
 
     function syncCode() {
         codeField.value = boxes.map(function (b) { return b.value; }).join('');
@@ -79,8 +74,11 @@
             syncCode();
             e.preventDefault();
         });
+        box.addEventListener('focus', function () { box.select(); });
     });
     if (boxes[0]) boxes[0].focus();
+
+    form.addEventListener('submit', syncCode);
 
     var secs = 60;
     var btn = document.getElementById('resendBtn');

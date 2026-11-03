@@ -1,0 +1,289 @@
+/* ==========================================================================
+   Halaman masuk dan verifikasi OTP. Dipakai oleh layouts/auth.blade.php
+   ========================================================================== */
+@import './rt/tokens.css';
+@import './rt/components.css';
+@import './rt/scene.css';
+
+body.au {
+    --field: var(--surface);
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    min-height: 100vh;
+}
+
+/* ----- Panel kiri ----- */
+.side {
+    position: relative;
+    background: var(--teal);
+    color: #fff;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 32px clamp(28px, 4vw, 56px) 0;
+    isolation: isolate;
+}
+
+.side::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(55% 45% at 88% 10%, rgba(45, 212, 191, 0.28), transparent 70%),
+        radial-gradient(45% 40% at 0% 55%, rgba(255, 201, 60, 0.1), transparent 70%);
+}
+
+.logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 23px;
+    letter-spacing: -0.04em;
+    color: inherit;
+    align-self: flex-start;
+}
+
+.logo svg { width: 36px; height: 36px; }
+.logo em { font-style: normal; color: var(--sun); }
+
+.side-copy { margin: auto 0; padding: 28px 0; max-width: 480px; position: relative; z-index: 2; }
+
+.kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    padding: 5px 14px 5px 5px;
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.kicker b { background: var(--sun); color: var(--deep); border-radius: 999px; padding: 2px 10px; font-size: 12.5px; }
+
+.side h1 {
+    font-weight: 700;
+    font-size: clamp(34px, 3.3vw, 50px);
+    text-wrap: balance;
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    font-stretch: 86%;
+    margin: 20px 0 0;
+}
+
+.side h1 span { color: var(--sun); display: block; }
+.side .lede { margin-top: 16px; max-width: 40ch; font-size: 16.5px; color: rgba(255, 255, 255, 0.84); }
+
+.perks { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 12px; }
+.perks li { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 600; color: rgba(255, 255, 255, 0.92); }
+.perks li > span { width: 28px; height: 28px; flex: none; border-radius: 50%; background: var(--sun); color: var(--deep); display: grid; place-items: center; }
+.perks svg { width: 15px; height: 15px; }
+
+.side .scene {
+    flex: none;
+    margin: 0 calc(-1 * clamp(28px, 4vw, 56px));
+    height: clamp(220px, 32vh, 300px);
+}
+
+/* ----- Panel kanan ----- */
+.main {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100vh;
+    padding: 28px clamp(24px, 5vw, 72px) 24px;
+    overflow-y: auto;
+}
+
+.top { display: flex; align-items: center; min-height: 44px; }
+
+.back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14.5px;
+    color: var(--muted);
+    padding: 10px 4px;
+}
+
+.back:hover { color: var(--text); }
+.back svg { width: 18px; height: 18px; }
+
+.stage { display: flex; align-items: center; justify-content: center; padding: 24px 0; }
+.card {
+    width: 100%;
+    max-width: 400px;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+}
+
+.head { display: flex; align-items: center; gap: 12px; }
+.head svg { width: 44px; height: 44px; flex: none; }
+
+.card h1,
+.card h2 {
+    font-weight: 700;
+    font-size: clamp(26px, 2.2vw, 30px);
+    line-height: 1.15;
+    letter-spacing: -0.028em;
+    margin: 0;
+}
+
+.sub { color: var(--muted); margin: 10px 0 0; font-size: 15px; line-height: 1.55; }
+.sub strong { color: var(--sun); }
+
+/* ----- Tombol ----- */
+.btn-block {
+    display: flex;
+    width: 100%;
+    min-height: 52px;
+    border-radius: 14px;
+    font-size: 15.5px;
+}
+
+.btn-google { margin-top: 26px; background: var(--surface); border-color: var(--line); color: var(--text); }
+.btn-google:hover { background: var(--alt); border-color: var(--muted); color: var(--text); }
+.btn-submit { margin-top: 16px; }
+
+.or { display: flex; align-items: center; gap: 14px; margin: 22px 0; color: var(--muted); font-size: 13.5px; }
+.or::before,
+.or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+/* ----- Form ----- */
+.field { display: block; }
+.field label { display: block; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+
+.input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--field);
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 0 14px;
+    min-height: 52px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input:focus-within {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--teal) 24%, transparent);
+}
+
+.input svg { width: 22px; height: 22px; flex: none; }
+
+.input input {
+    flex: 1;
+    border: 0;
+    background: none;
+    outline: none;
+    font-size: 16px;
+    min-width: 0;
+    height: 50px;
+}
+
+.input input::placeholder { color: #6e918c; }
+.field.bad .input { border-color: var(--err); }
+.error { display: none; margin: 8px 0 0; font-size: 13.5px; color: var(--err-ink); font-weight: 600; }
+.error.show { display: block; }
+
+.legal { font-size: 12.5px; color: var(--muted); margin: 16px 0 0; line-height: 1.55; }
+.legal a { font-weight: 600; }
+
+.auth-alert { margin-top: 18px; }
+
+/* ----- OTP ----- */
+.otp-label { display: flex; justify-content: space-between; align-items: baseline; font-weight: 700; font-size: 14px; margin: 22px 0 10px; }
+.otp-label small { font-weight: 600; font-size: 12.5px; color: var(--muted); }
+.otp-boxes { display: flex; align-items: center; gap: 8px; }
+.otp-boxes .dash { width: 12px; height: 3px; border-radius: 2px; background: var(--line); flex: none; }
+
+.otp-box {
+    flex: 1;
+    width: 0;
+    min-width: 0;
+    height: 58px;
+    padding: 0;
+    border: 1.5px solid var(--line);
+    background: var(--field);
+    border-radius: 14px;
+    text-align: center;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 24px;
+    outline: none;
+    caret-color: var(--teal);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.otp-box:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--teal) 24%, transparent);
+}
+
+.otp-box.otp-filled { border-color: var(--text); }
+.otp-hint { margin: 12px 0 0; font-size: 13.5px; color: var(--muted); }
+.otp-hint strong { color: var(--text); }
+
+.resend { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+
+.resend-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 0;
+    padding: 8px 0;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+.resend-btn:disabled { opacity: 0.5; text-decoration: none; cursor: default; }
+
+/* ----- Footer ----- */
+.foot { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 4px; }
+.foot a { font-weight: 700; color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+
+@media (max-height: 760px) and (min-width: 901px) {
+    .perks { display: none; }
+    .side h1 { font-size: clamp(30px, 3vw, 42px); }
+    .side .scene { height: 200px; }
+}
+
+@media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+    .side { padding: 16px 20px 0; }
+    .side-copy { margin: 14px 0 0; padding: 0; }
+    .kicker,
+    .perks,
+    .side .lede { display: none; }
+    .side h1 { margin-top: 0; font-size: 26px; }
+    .side .scene { height: 150px; margin: 8px -20px 0; }
+    .main { min-height: 0; padding: 16px 20px 24px; }
+    .card { max-width: none; }
+    .stage { padding: 8px 0 24px; align-items: flex-start; }
+    .foot { flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+}
+
+@media (max-width: 380px) {
+    .otp-boxes { gap: 5px; }
+    .otp-box { height: 52px; font-size: 21px; }
+    .otp-boxes .dash { width: 8px; }
+}

@@ -9,7 +9,7 @@
 @endphp
 
 @section('content')
-<main class="wrap" style="max-width:520px;margin:0 auto;padding-top:56px;padding-bottom:64px;display:flex;flex-direction:column;align-items:center;text-align:center">
+<div class="wrap" style="max-width:520px;margin:0 auto;padding-top:56px;padding-bottom:64px;display:flex;flex-direction:column;align-items:center;text-align:center">
   @if ($isPaid)
     <div style="width:80px;height:80px;border-radius:50%;display:grid;place-items:center;margin-bottom:24px;background:var(--depot-light);border:2px solid var(--depot)">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--depot)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -69,5 +69,5 @@
   </div>
 
   <a href="{{ $isPaid ? route('preloved.index') : route('preloved.cart.index') }}" class="btn btn-primary" style="width:100%;margin-top:20px">{{ $isPaid ? 'Belanja Lagi' : 'Kembali ke Keranjang' }}</a>
-</main>
+</div>
 @endsection

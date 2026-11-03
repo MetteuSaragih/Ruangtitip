@@ -1,0 +1,151 @@
+/* ==========================================================================
+   RuangTitip design system: token, reset, dan tipografi dasar.
+   Satu tema (teal gelap) dipakai di landing, login, dan seluruh area pengguna.
+   ========================================================================== */
+:root {
+    color-scheme: dark;
+
+    /* Warna merek */
+    --teal: #0f766e;
+    --teal-700: #0b5d57;
+    --bright: #2dd4bf;
+    --mist: #d7f2ee;
+    --sun: #ffc93c;
+    --sun-600: #f2b705;
+    --deep: #0c2b2a;          /* teks di atas warna sun, latar sidebar */
+
+    /* Permukaan dan teks */
+    --bg: #0a2423;
+    --surface: #11332f;
+    --alt: #163c38;
+    --text: #e6f5f3;
+    --muted: #a5c6c2;
+    --line: #24504b;
+    --link: #2dd4bf;
+
+    /* Status */
+    --ok-bg: #173f2a;
+    --ok-ink: #86d9a0;
+    --warn-bg: #1e3b37;
+    --warn-ink: #ffd86b;
+    --err: #f08a80;
+    --err-bg: #3a2629;
+    --err-ink: #f6aca5;
+    --info-bg: #143e3a;
+    --info-ink: #8ce6d8;
+
+    /* Tooltip */
+    --tip-bg: #e6f5f3;
+    --tip-ink: #0c2b2a;
+
+    /* Tipografi */
+    --display: 'Bricolage Grotesque', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    --r: 24px;
+    --side-w: 268px;
+
+    /* ----- Alias untuk view lama (palet cokelat) ----- */
+    --ink: var(--text);
+    --cream: var(--bg);
+    --paper: var(--surface);
+    --sand: var(--alt);
+    --tape: var(--sun);
+    --tape-dark: #ffd86b;
+    --tape-light: var(--sun);
+    --tape-soft: var(--warn-bg);
+    --depot: var(--bright);
+    --depot-light: var(--ok-bg);
+    --danger: var(--err);
+    --danger-light: var(--err-bg);
+    --line-strong: var(--line);
+    --font-display: var(--display);
+    --font-body: var(--body);
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    background: var(--bg);
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 15.5px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+}
+
+img,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+a {
+    color: var(--link);
+}
+
+p {
+    margin: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    font-family: var(--display);
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+    color: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+:focus-visible {
+    outline: 3px solid var(--sun);
+    outline-offset: 2px;
+    border-radius: 10px;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+.sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}

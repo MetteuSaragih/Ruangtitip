@@ -1,0 +1,7 @@
+/* Entry point design system RuangTitip (shell pengguna + halaman yang sudah ada). */
+@import './rt/tokens.css';
+@import './rt/components.css';
+@import './rt/shell.css';
+@import './rt/legacy.css';
+@import './rt/beranda.css';
+@import './rt/pages.css';

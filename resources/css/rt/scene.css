@@ -1,0 +1,34 @@
+/* Animasi Ruru naik motor (hero landing, panel login, footer). */
+@keyframes sc-pan { to { transform: translateX(-720px); } }
+@keyframes sc-lane { to { transform: translateX(-80px); } }
+@keyframes sc-bump { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(0, -2.5px); } }
+@keyframes sc-spin { to { transform: rotate(360deg); } }
+@keyframes sc-puff { 0% { opacity: 0.7; transform: translate(0, 0) scale(0.6); } 100% { opacity: 0; transform: translate(-60px, -14px) scale(1.6); } }
+@keyframes sc-speed { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 230; } }
+@keyframes sc-flap { to { transform: skewY(8deg) scaleX(1.08); } }
+@keyframes sc-pop { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: none; } }
+
+.scene {
+    position: relative;
+}
+
+.scene svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.scene .far { animation: sc-pan 60s linear infinite; }
+.scene .mid { animation: sc-pan 22s linear infinite; }
+.scene .lane { animation: sc-lane 0.45s linear infinite; }
+.scene .bike { animation: sc-bump 0.5s ease-in-out infinite; }
+.scene .wheel { animation: sc-spin 0.45s linear infinite; transform-box: fill-box; transform-origin: center; }
+.scene .puff { animation: sc-puff 1.2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+.scene .puff.p2 { animation-delay: 0.4s; }
+.scene .puff.p3 { animation-delay: 0.8s; }
+.scene .speed { animation: sc-speed 0.6s linear infinite; stroke-dasharray: 30 200; }
+.scene .speed.s2 { animation-delay: 0.2s; }
+.scene .speed.s3 { animation-delay: 0.4s; }
+.scene .scarf { animation: sc-flap 0.3s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: right center; }
+.scene .say { animation: sc-pop 0.5s 1s cubic-bezier(0.3, 1.6, 0.5, 1) both; transform-box: fill-box; transform-origin: left bottom; }

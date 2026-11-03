@@ -1,66 +1,73 @@
-@extends('layouts.packing-checkout')
+@extends('layouts.rt')
 
 @section('title', 'Opsi Pengiriman')
 
-@php
-    if (! function_exists('rupiah')) {
-        function rupiah($n) { return 'Rp ' . number_format($n, 0, ',', '.'); }
-    }
-@endphp
+@section('content')
+<div class="wrap">
+    <a class="back-link" href="{{ route('packing.index') }}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        Lanjut belanja
+    </a>
 
-@section('checkout-content')
-<x-checkout-progress :labels="['Opsi Logistik', 'Alamat', 'Kurir', 'Pembayaran']" :step="1" />
-<h1 class="text-lg font-extrabold text-white font-display mb-0.5">Opsi Pengiriman Toko</h1>
-<p class="text-xs mb-6" style="color:rgba(255,255,255,0.4);">Pilih cara kamu menerima pesanan</p>
+    <div class="layout">
+        <div>
+            <x-checkout-progress :labels="['Opsi logistik', 'Alamat', 'Kurir', 'Pembayaran']" :step="1" />
 
-<form method="POST" action="{{ route('packing.logistics.choose') }}" id="logisticForm">
-    @csrf
-    <input type="hidden" name="logistic" id="logisticInput" value="">
+            <div class="step-head">
+                <h1>Pesananmu mau diambil atau dikirim?</h1>
+                <p>Kalau kosmu dekat gudang, ambil sendiri lebih hemat.</p>
+            </div>
 
-    <div class="space-y-3 mb-6">
-        @php
-            $opts = [
-                ['id' => 'pickup',   'icon' => '🏪', 'label' => 'Jemput Sendiri ke Toko', 'desc' => 'Ambil pesananmu langsung di gudang RUTIP. Tidak ada biaya tambahan.', 'note' => '→ Langsung ke Pembayaran', 'color' => '#34d399', 'badge' => 'Rp0'],
-                ['id' => 'biteship', 'icon' => '🛵', 'label' => 'Pengiriman Biteship',    'desc' => 'Dikirim ke alamatmu oleh kurir instan.', 'note' => '→ Input Alamat → Pilih Kurir → Pembayaran', 'color' => '#7c3aed', 'badge' => 'Instan'],
-            ];
-        @endphp
-        @foreach ($opts as $o)
-            <button type="button" data-id="{{ $o['id'] }}" data-color="{{ $o['color'] }}" onclick="pickLogistic('{{ $o['id'] }}','{{ $o['color'] }}')"
-                    class="opt w-full flex items-start gap-4 p-4 rounded-2xl text-left transition-all hover:scale-[1.01]"
-                    style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.09);">
-                <span class="text-3xl shrink-0 mt-0.5">{{ $o['icon'] }}</span>
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 mb-0.5 flex-wrap">
-                        <span class="text-sm font-bold text-white">{{ $o['label'] }}</span>
-                        @if ($o['badge'])<span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style="background:{{ $o['color'] }}20;color:{{ $o['color'] }};">{{ $o['badge'] }}</span>@endif
-                    </div>
-                    <p class="text-xs leading-relaxed mb-1" style="color:rgba(255,255,255,0.5);">{{ $o['desc'] }}</p>
-                    <p class="text-[10px] font-medium" style="color:rgba(255,255,255,0.3);">{{ $o['note'] }}</p>
+            @if ($errors->any())
+                <p class="err">{{ $errors->first() }}</p>
+            @endif
+
+            <form method="POST" action="{{ route('packing.logistics.choose') }}" id="logisticForm">
+                @csrf
+                <input type="hidden" name="logistic" id="logisticInput" value="">
+
+                @php
+                    $opts = [
+                        ['id' => 'pickup', 'icon' => '🏪', 'bg' => 'bg-depot', 'label' => 'Jemput sendiri ke gudang', 'badge' => 'Gratis', 'pill' => 'pill-green', 'desc' => 'Ambil pesananmu langsung di gudang RuangTitip. Tidak ada biaya tambahan.', 'note' => 'Langsung ke pembayaran'],
+                        ['id' => 'biteship', 'icon' => '🛵', 'bg' => 'bg-tape', 'label' => 'Dikirim ke alamatmu', 'badge' => '', 'pill' => '', 'desc' => 'Diantar kurir dari gudang ke alamatmu.', 'note' => 'Isi alamat, pilih kurir, lalu bayar'],
+                    ];
+                @endphp
+                <fieldset class="choices" style="border:0;padding:0;margin-top:0">
+                    <legend class="sr">Cara menerima pesanan</legend>
+                    @foreach ($opts as $o)
+                        <button type="button" class="choice opt" data-id="{{ $o['id'] }}" onclick="pickLogistic('{{ $o['id'] }}')">
+                            <span class="ic {{ $o['bg'] }}" aria-hidden="true">{{ $o['icon'] }}</span>
+                            <span class="t">
+                                <strong>{{ $o['label'] }}</strong>
+                                @if ($o['badge'])<span class="pill {{ $o['pill'] }}">{{ $o['badge'] }}</span>@endif
+                                <p class="desc">{{ $o['desc'] }}</p>
+                                <p class="meta">{{ $o['note'] }}</p>
+                            </span>
+                            <span class="radio" aria-hidden="true"></span>
+                        </button>
+                    @endforeach
+                </fieldset>
+
+                <div class="actions">
+                    <a href="{{ route('packing.index') }}" class="btn btn-outline">Kembali</a>
+                    <button type="submit" id="nextBtn" disabled class="btn btn-primary">Lanjutkan
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                    </button>
                 </div>
-                <div class="radio w-5 h-5 rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center" style="border-color:rgba(255,255,255,0.2);"></div>
-            </button>
-        @endforeach
-    </div>
+            </form>
+        </div>
 
-    <div class="flex gap-3">
-        <a href="{{ route('packing.index') }}" class="flex items-center justify-center gap-1.5 py-3.5 px-4 rounded-xl font-semibold text-sm hover:bg-white/5 shrink-0" style="border:1.5px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.65);"><x-lucide-chevron-left class="w-4 h-4" /> Kembali</a>
-        <button type="submit" id="nextBtn" disabled class="flex-1 py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-40" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">Lanjutkan <x-lucide-arrow-right class="w-4 h-4" /></button>
+        @include('packing._summary', ['items' => $items])
     </div>
-</form>
+</div>
+@endsection
 
+@push('scripts')
 <script>
-    function pickLogistic(id, color) {
+    function pickLogistic(id) {
         document.getElementById('logisticInput').value = id;
         document.getElementById('nextBtn').disabled = false;
-        document.querySelectorAll('.opt').forEach(b => {
-            const on = b.dataset.id === id; const c = b.dataset.color;
-            b.style.background = on ? c + '12' : 'rgba(255,255,255,0.04)';
-            b.style.borderColor = on ? c : 'rgba(255,255,255,0.09)';
-            const radio = b.querySelector('.radio');
-            radio.style.background = on ? c : 'transparent';
-            radio.style.borderColor = on ? c : 'rgba(255,255,255,0.2)';
-            radio.innerHTML = on ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '';
-        });
+        document.querySelectorAll('.opt').forEach(function (b) { b.classList.toggle('on', b.dataset.id === id); });
     }
 </script>
-@endsection
+@endpush
