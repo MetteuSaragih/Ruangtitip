@@ -50,7 +50,7 @@
                 <b>Bayar tagihan pertama {{ rp($order->total) }}</b>
                 <p>Kalau lewat batas bayar, pesanan batal dan kapasitas dilepas.</p>
                 @if ($order->tripay_checkout_url)
-                    <div class="acts"><a class="btn btn-sun sm" href="{{ $order->tripay_checkout_url }}">Bayar sekarang</a></div>
+                    <div class="acts"><a class="btn btn-primary sm" href="{{ $order->tripay_checkout_url }}">Bayar sekarang</a></div>
                 @endif
             </div>
         </div>
@@ -75,7 +75,7 @@
                 <b>{{ $left === 0 ? 'Masa titip berakhir hari ini' : 'Masa titip berakhir ' . $left . ' hari lagi' }}</b>
                 <p>Periode sampai {{ $order->date_end->translatedFormat('l, j F Y') }}. Perpanjang atau ajukan pengambilan.</p>
                 <div class="acts">
-                    <a class="btn btn-sun sm" href="{{ $waText('Halo RuangTitip, saya mau tambah periode titip untuk pesanan') }}" target="_blank" rel="noopener">Tambah periode</a>
+                    <a class="btn btn-primary sm" href="{{ $waText('Halo RuangTitip, saya mau tambah periode titip untuk pesanan') }}" target="_blank" rel="noopener">Tambah periode</a>
                     <a class="btn btn-ghost sm" href="{{ $waText('Halo RuangTitip, saya mau kirim barang dari pesanan') }}" target="_blank" rel="noopener">Kirim barang</a>
                     <a class="btn btn-ghost sm" href="{{ $waText('Halo RuangTitip, saya mau ambil barang di gudang untuk pesanan') }}" target="_blank" rel="noopener">Ambil di gudang</a>
                 </div>

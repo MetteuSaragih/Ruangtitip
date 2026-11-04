@@ -1,48 +1,78 @@
 /* ==========================================================================
    RuangTitip design system: token, reset, dan tipografi dasar.
-   Satu tema (teal gelap) dipakai di landing, login, dan seluruh area pengguna.
+   Satu tema terang ("Teal Cerah") untuk seluruh area pengguna.
+   Semua warna didefinisikan di sini; jangan menulis hex langsung di komponen.
    ========================================================================== */
 :root {
-    color-scheme: dark;
+    color-scheme: light;
 
-    /* Warna merek */
-    --teal: #0f766e;
-    --teal-700: #0b5d57;
-    --bright: #2dd4bf;
-    --mist: #d7f2ee;
-    --sun: #ffc93c;
-    --sun-600: #f2b705;
-    --deep: #0c2b2a;          /* teks di atas warna sun, latar sidebar */
+    /* ----- Palet merek ----- */
+    --color-primary: #0f766e;           /* Deep Teal: hero, tombol utama, menu aktif, link */
+    --color-primary-hover: #0c5f58;
+    --color-accent: #ffc93c;            /* Sunshine: CTA utama (maks. 1 per layar), badge promo */
+    --color-accent-hover: #f5bc1f;
+    --color-aqua: #d7f2ee;              /* Aqua Mist: menu aktif, kotak ikon, kartu sorotan */
+    --color-bright: #2dd4bf;            /* Bright Teal: hanya latar besar konten medsos, tidak dipakai di dashboard */
+    --color-bg: #f3faf9;                /* Off White: latar halaman */
+    --color-ink: #0c2b2a;               /* Ink: teks utama */
+    --color-surface: #ffffff;           /* kartu, sidebar */
 
-    /* Permukaan dan teks */
-    --bg: #0a2423;
-    --surface: #11332f;
-    --alt: #163c38;
-    --text: #e6f5f3;
-    --muted: #a5c6c2;
-    --line: #24504b;
-    --link: #2dd4bf;
+    /* ----- Netral dan garis ----- */
+    --color-text-secondary: #4e6664;
+    --color-text-tertiary: #5c7472;
+    --color-text-nav: #2e4644;
+    --color-border: #ddeae7;
+    --color-divider: #eaf2f0;
+    --color-border-aqua: #b5e1da;
+    --color-on-primary-muted: #d7f2ee;
+    --color-timeline-dot: #bfd9d5;
 
-    /* Status */
-    --ok-bg: #173f2a;
-    --ok-ink: #86d9a0;
-    --warn-bg: #1e3b37;
-    --warn-ink: #ffd86b;
-    --err: #f08a80;
-    --err-bg: #3a2629;
-    --err-ink: #f6aca5;
-    --info-bg: #143e3a;
-    --info-ink: #8ce6d8;
+    /* ----- Status (sukses sengaja hijau agar tidak tertukar dengan teal) ----- */
+    --color-success-bg: #e3f1e6;
+    --color-success-text: #1f6b37;
+    --color-pending-bg: #fff4d6;
+    --color-pending-text: #7a5600;
+    --color-danger-bg: #fbe4e2;
+    --color-danger-text: #a12c22;
+    --color-danger-hover: #8a231b;
+
+    /* ----- Nama yang dipakai CSS yang sudah ada ----- */
+    --teal: var(--color-primary);
+    --teal-700: var(--color-primary-hover);
+    --mist: var(--color-aqua);
+    --sun: var(--color-accent);
+    --sun-600: var(--color-accent-hover);
+    --deep: var(--color-ink);
+
+    --bg: var(--color-bg);
+    --surface: var(--color-surface);
+    --alt: var(--color-bg);
+    --text: var(--color-ink);
+    --muted: var(--color-text-secondary);
+    --line: var(--color-border);
+    --link: var(--color-primary);
+
+    --ok-bg: var(--color-success-bg);
+    --ok-ink: var(--color-success-text);
+    --warn-bg: var(--color-pending-bg);
+    --warn-ink: var(--color-pending-text);
+    --sun-bg: var(--color-pending-bg);
+    --sun-ink: var(--color-pending-text);
+    --err: var(--color-danger-text);
+    --err-bg: var(--color-danger-bg);
+    --err-ink: var(--color-danger-text);
+    --info-bg: var(--color-aqua);
+    --info-ink: var(--color-primary);
 
     /* Tooltip */
-    --tip-bg: #e6f5f3;
-    --tip-ink: #0c2b2a;
+    --tip-bg: var(--color-ink);
+    --tip-ink: #ffffff;
 
     /* Tipografi */
-    --display: 'Bricolage Grotesque', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --display: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
     --body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-    --r: 24px;
+    --r: 16px;
     --side-w: 268px;
 
     /* ----- Alias untuk view lama (palet cokelat) ----- */
@@ -51,10 +81,10 @@
     --paper: var(--surface);
     --sand: var(--alt);
     --tape: var(--sun);
-    --tape-dark: #ffd86b;
+    --tape-dark: var(--color-primary);
     --tape-light: var(--sun);
     --tape-soft: var(--warn-bg);
-    --depot: var(--bright);
+    --depot: var(--color-primary);
     --depot-light: var(--ok-bg);
     --danger: var(--err);
     --danger-light: var(--err-bg);
@@ -122,7 +152,7 @@ button {
 }
 
 :focus-visible {
-    outline: 3px solid var(--sun);
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
     border-radius: 10px;
 }

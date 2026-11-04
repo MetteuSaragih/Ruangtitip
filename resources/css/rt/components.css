@@ -9,9 +9,9 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-height: 46px;
+    min-height: 44px;
     padding: 0 20px;
-    border-radius: 999px;
+    border-radius: 10px;
     border: 1.5px solid transparent;
     font-weight: 700;
     font-size: 14.5px;
@@ -32,53 +32,83 @@
     flex: none;
 }
 
-.btn-sun,
-.btn-primary {
-    background: var(--sun);
-    color: var(--deep);
+/* CTA utama: kuning, maksimal satu per layar */
+.btn-sun {
+    background: var(--color-accent);
+    color: var(--color-ink);
 }
 
-.btn-sun:hover,
-.btn-primary:hover {
-    background: var(--sun-600);
-    color: var(--deep);
+.btn-sun:hover {
+    background: var(--color-accent-hover);
+    color: var(--color-ink);
 }
 
+/* Primer: aksi utama di dalam kartu */
+.btn-primary,
 .btn-ink {
-    background: var(--text);
-    color: var(--bg);
+    background: var(--color-primary);
+    color: #fff;
 }
 
+.btn-primary:hover,
 .btn-ink:hover {
-    background: #fff;
-    color: var(--bg);
+    background: var(--color-primary-hover);
+    color: #fff;
 }
 
+/* Sekunder netral */
 .btn-ghost,
 .btn-outline {
-    background: var(--surface);
-    border-color: var(--line);
-    color: var(--text);
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    color: var(--color-ink);
 }
 
 .btn-ghost:hover,
 .btn-outline:hover {
-    border-color: var(--text);
-    color: var(--text);
+    background: var(--color-bg);
+    color: var(--color-ink);
 }
 
+/* Outline brand */
+.btn-brand {
+    background: transparent;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.btn-brand:hover {
+    background: var(--color-bg);
+}
+
+/* Tautan putih di atas latar Deep Teal (hero) */
 .btn-line {
-    border-color: rgba(255, 255, 255, 0.45);
+    background: none;
+    border-color: transparent;
     color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 0 8px;
 }
 
 .btn-line:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: none;
+    text-decoration-thickness: 2px;
 }
 
 .btn-danger {
-    background: var(--err);
-    color: var(--deep);
+    background: var(--color-danger-text);
+    color: #fff;
+}
+
+.btn-danger:hover {
+    background: var(--color-danger-hover);
+}
+
+.btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 10px;
 }
 
 .btn-link {
@@ -90,7 +120,7 @@
 }
 
 .btn.sm {
-    min-height: 38px;
+    min-height: 40px;
     padding: 0 14px;
     font-size: 13.5px;
 }
@@ -150,10 +180,10 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    border-radius: 99px;
-    padding: 5px 11px;
-    font-size: 12.5px;
-    font-weight: 700;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
     white-space: nowrap;
 }
 
@@ -209,11 +239,11 @@
     margin-top: 12px;
 }
 
-.a-ok { background: var(--ok-bg); color: var(--ok-ink); box-shadow: inset 3px 0 0 #86d9a0; }
-.a-warn { background: var(--warn-bg); color: var(--warn-ink); box-shadow: inset 3px 0 0 var(--sun); }
-.a-err { background: var(--err-bg); color: var(--err-ink); box-shadow: inset 3px 0 0 var(--err); }
-.a-info { background: var(--info-bg); color: var(--info-ink); box-shadow: inset 3px 0 0 var(--bright); }
-.a-mute { background: var(--alt); color: var(--muted); }
+.a-ok { background: var(--ok-bg); color: var(--ok-ink); }
+.a-warn { background: var(--warn-bg); color: var(--warn-ink); }
+.a-err { background: var(--err-bg); color: var(--err-ink); }
+.a-info { background: var(--info-bg); color: var(--info-ink); }
+.a-mute { background: var(--color-bg); color: var(--color-text-secondary); }
 
 /* ----- Form ----- */
 .rt-field {
@@ -268,7 +298,7 @@ textarea.rt-input {
 
 input[type='radio'],
 input[type='checkbox'] {
-    accent-color: var(--sun);
+    accent-color: var(--color-primary);
 }
 
 /* ----- Chip dan tab ----- */
@@ -288,9 +318,9 @@ input[type='checkbox'] {
 
 .chip[aria-pressed='true'],
 .chip[aria-selected='true'] {
-    background: var(--sun);
-    border-color: var(--sun);
-    color: var(--deep);
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
 }
 
 .chip .c {
@@ -455,8 +485,9 @@ input[type='checkbox'] {
 }
 
 .track li.cur .d {
-    background: var(--sun);
-    border-color: var(--sun);
+    background: var(--color-aqua);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
 }
 
 /* ----- Keadaan kosong ----- */
@@ -520,8 +551,8 @@ input[type='checkbox'] {
     font-weight: 800;
     font-size: 15px;
     flex: none;
-    background: var(--sun);
-    color: var(--deep);
+    background: var(--color-ink);
+    color: #fff;
     overflow: hidden;
 }
 
@@ -547,7 +578,7 @@ input[type='checkbox'] {
 
 .sk {
     border-radius: 16px;
-    background: linear-gradient(90deg, var(--alt) 25%, var(--surface) 50%, var(--alt) 75%);
-    background-size: 200% 100%;
+    background: var(--color-divider);
     animation: rt-sk 1.2s infinite;
+    opacity: 0.8;
 }

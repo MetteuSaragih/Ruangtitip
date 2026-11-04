@@ -75,14 +75,14 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 46px;
+  min-height: 44px;
   padding: 0 20px;
-  border-radius: 999px;
+  border-radius: 10px;
   font-weight: 700;
   font-size: 14.5px;
   border: 1.5px solid transparent;
   white-space: nowrap;}
-.mp .btn.sm {min-height: 38px;
+.mp .btn.sm {min-height: 40px;
   padding: 0 14px;
   font-size: 13.5px;}
 .mp .btn.wide {width: 100%;}
@@ -93,10 +93,10 @@
 .mp .badge {display: inline-flex;
   align-items: center;
   gap: 6px;
-  border-radius: 99px;
-  padding: 5px 11px;
-  font-size: 12.5px;
-  font-weight: 700;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
   white-space: nowrap;}
 .mp .b-ok,
 .mp .a-ok,
@@ -203,7 +203,7 @@
 .mp .slot input:disabled + label {opacity: 0.5;
   cursor: not-allowed;}
 .mp .slot input:focus-visible + label,
-.mp .pm input:focus-visible + label {outline: 3px solid var(--sun);}
+.mp .pm input:focus-visible + label {outline: 3px solid var(--color-primary);}
 .mp .pm {display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 8px;}
@@ -304,9 +304,9 @@
   background: var(--surface);}
 .mp .wiz .t {white-space: nowrap;}
 .mp .wiz li[aria-current] {color: var(--text);}
-.mp .wiz li[aria-current] .n {background: var(--sun);
-  border-color: var(--sun);
-  color: var(--ink);}
+.mp .wiz li[aria-current] .n {background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;}
 .mp .wiz li.done .n {background: var(--teal);
   border-color: var(--teal);
   color: #fff;}
@@ -394,8 +394,8 @@
   color: #fff;}
 .mp .track li.done::before,
 .mp .track li.cur::before {background: var(--teal);}
-.mp .track li.cur .d {background: var(--sun);
-  border-color: var(--sun);}
+.mp .track li.cur .d {background: var(--color-primary);
+  border-color: var(--color-primary);}
 .mp .act {list-style: none;
   margin: 0;
   padding: 0;}
@@ -418,7 +418,7 @@
   margin-top: 4px;
   background: var(--teal);}
 .mp .act .dt.Petugas,
-.mp .act .dt.Admin {background: var(--sun-600);}
+.mp .act .dt.Admin {background: var(--warn-ink);}
 .mp .act b {display: block;
   font-size: 14px;
   font-weight: 600;}
@@ -511,15 +511,15 @@
 .mp .tag {display: inline-block;
   font-size: 11.5px;
   font-weight: 800;
-  background: var(--sun);
-  color: var(--ink);
+  background: var(--color-primary);
+  color: #fff;
   border-radius: 99px;
   padding: 2px 8px;
   margin-left: 6px;
   vertical-align: middle;}
 .mp .tbl td:last-child {text-align: right;
   padding-right: 0;}
-.mp .act .dt.Kamu {background: var(--bright);}
+.mp .act .dt.Kamu {background: var(--color-primary);}
 .mp .grid {display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 16px;}
@@ -603,7 +603,7 @@
   opacity: 0;
   width: 1px;
   height: 1px;}
-.mp .drop:focus-within {outline: 3px solid var(--sun);}
+.mp .drop:focus-within {outline: 3px solid var(--color-primary);}
 .mp .oc .pic {width: 64px;
   height: 64px;
   aspect-ratio: auto;

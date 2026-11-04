@@ -1,7 +1,5 @@
 @extends('layouts.rt')
 
-@section('title', 'Beranda')
-
 @php
     if (! function_exists('rupiah')) {
         function rupiah($n) { return 'Rp' . number_format($n, 0, ',', '.'); }
@@ -22,12 +20,14 @@
     }
 
     $quick = [
-        [route('ruang-titip.index'), 'st-cal', 'Titip barang', 'Pilih ruang, periode, dan barang'],
-        [route('pesanan.index'), 'st-phone', 'Pesanan saya', 'Bayar, perpanjang, kirim, ambil'],
-        [route('preloved.index'), 'st-hand', 'Beli preloved', $prelovedCount . ' barang siap dibeli'],
-        [route('preloved.cara-jual'), 'st-coin', 'Jual barang', 'Kami beli, dibayar penuh'],
+        [route('ruang-titip.index'), 'n-ware', 'Titip barang', 'Pilih ruang, periode, dan barang'],
+        [route('pesanan.index'), 'n-receipt', 'Pesanan saya', 'Bayar, perpanjang, kirim, ambil'],
+        [route('preloved.index'), 'n-tag', 'Beli preloved', $prelovedCount . ' barang siap dibeli'],
+        [route('preloved.cara-jual'), 'n-coin', 'Jual barang', 'Kami beli, dibayar penuh'],
     ];
 @endphp
+
+@section('title', $greeting)
 
 @section('content')
 <div class="bd">
@@ -35,28 +35,25 @@
     {{-- ===== Lengkapi profil ===== --}}
     @if ($profileNext)
         <section class="bd-profile c12" aria-label="Lengkapi profil">
-            <div class="bd-ring">
-                <svg viewBox="0 0 52 52" aria-hidden="true">
-                    <circle class="t" cx="26" cy="26" r="21"/>
-                    <circle class="p" cx="26" cy="26" r="21" stroke-dasharray="131.9" stroke-dashoffset="{{ round(131.9 * (1 - $profileDone / count($profileSteps)), 1) }}"/>
-                </svg>
-                <span>{{ $profileDone }}/{{ count($profileSteps) }}</span>
+            <div class="bd-profile-main">
+                <div class="bd-segs" role="img" aria-label="Profil {{ $profileDone }} dari {{ count($profileSteps) }}">
+                    @foreach ($profileSteps as $i => $step)<i class="{{ $i < $profileDone ? 'on' : '' }}"></i>@endforeach
+                </div>
+                <span class="bd-segs-l">Profil {{ $profileDone }} dari {{ count($profileSteps) }}</span>
             </div>
-            <div>
+            <div class="bd-profile-t">
                 <b>Lengkapi profilmu dulu, yuk</b>
                 <p>Berikutnya: {{ $profileNext[0] }}. Tim Ruru menghubungimu lewat WhatsApp soal pesanan.</p>
             </div>
             <div class="acts">
-                <a class="btn btn-ink" href="{{ $profileNext[2] }}">Lengkapi sekarang</a>
+                <a class="btn btn-brand" href="{{ $profileNext[2] }}">Lengkapi sekarang</a>
             </div>
         </section>
     @endif
 
-    {{-- ===== Sapaan ===== --}}
+    {{-- ===== Hero: satu-satunya CTA kuning di halaman ===== --}}
     <section class="rt-card bd-hero c8" aria-label="Sapaan">
-        <div class="disc" aria-hidden="true"></div>
         <div class="bd-hero-copy">
-            <span class="hi">{{ $greeting }}</span>
             @if ($activeOrder)
                 <h2>Barangmu aman di <span>{{ $activeOrder->storage?->name ?? 'gudang kami' }}.</span></h2>
                 <p>Masa titip {{ $activeOrder->code() }} berakhir {{ $activeOrder->date_end->locale('id')->translatedFormat('j F Y') }}. Mau tambah periode, minta dikirim, atau ambil sendiri? Semua bisa dari sini.</p>
@@ -96,14 +93,15 @@
                 <li><span>Periode</span><b>{{ $activeOrder->date_start->locale('id')->translatedFormat('j M') }} sampai {{ $activeOrder->date_end->locale('id')->translatedFormat('j M Y') }}</b></li>
                 <li><span>Sisa tagihan</span><b>{{ rupiah(0) }}</b></li>
             </ul>
-            <a class="btn btn-ink" href="{{ route('pesanan.detail', $activeOrder) }}">Lihat detail pesanan</a>
+            <a class="btn btn-primary" href="{{ route('pesanan.detail', $activeOrder) }}">Lihat detail pesanan</a>
         @else
             <div class="rt-card-h"><div><h2>Ringkasan titipan</h2><p class="sub">Belum ada barang di gudang</p></div></div>
-            <div class="bd-empty-mini">
-                <svg viewBox="0 0 44 40" aria-hidden="true"><use href="#box"/></svg>
-                <b>Rak masih kosong</b>
-                <p>Sisa hari titip dan tagihanmu akan muncul di sini.</p>
-            </div>
+            <ul class="bd-kv">
+                <li><span>Barang disimpan</span><b class="nil">—</b></li>
+                <li><span>Periode</span><b class="nil">—</b></li>
+                <li><span>Sisa tagihan</span><b class="nil">—</b></li>
+            </ul>
+            <p class="bd-note">Sisa hari titip dan tagihanmu akan muncul di sini setelah barangmu masuk gudang.</p>
         @endif
     </section>
 
@@ -120,7 +118,7 @@
                     <li class="t-{{ $n['tone'] }}">
                         <div class="bd-t-main"><span class="bd-t-st">{{ $n['label'] }}</span><b>{{ $n['code'] }}</b></div>
                         <span class="bd-t-what">{{ $n['what'] }}</span>
-                        <a class="btn {{ $n['pay'] ? 'btn-sun' : 'btn-ghost' }} sm" href="{{ $n['href'] }}">{{ $n['cta'] }}</a>
+                        <a class="btn {{ $n['pay'] ? 'btn-primary' : 'btn-ghost' }} sm" href="{{ $n['href'] }}">{{ $n['cta'] }}</a>
                     </li>
                 @endforeach
             </ol>
@@ -131,11 +129,12 @@
     @endif
 
     {{-- ===== Aksi cepat ===== --}}
-    <nav class="rt-card bd-actions c12" aria-label="Aksi cepat">
-        @foreach ($quick as [$href, $sticker, $title, $desc])
+    <nav class="bd-actions c12" aria-label="Aksi cepat">
+        @foreach ($quick as [$href, $icon, $title, $desc])
             <a class="bd-act" href="{{ $href }}">
-                <svg class="stk" aria-hidden="true"><use href="#{{ $sticker }}"/></svg>
-                <span><b>{{ $title }}</b><small>{{ $desc }}</small></span>
+                <span class="ico" aria-hidden="true"><svg><use href="#{{ $icon }}"/></svg></span>
+                <span class="tx"><b>{{ $title }}</b><small>{{ $desc }}</small></span>
+                <svg class="chev" aria-hidden="true"><use href="#i-chev"/></svg>
             </a>
         @endforeach
     </nav>
@@ -148,31 +147,29 @@
                 <p class="sub">{{ $warehouseOrders->isNotEmpty() ? $warehouseOrders->sum(fn ($o) => $o->totalItems()) . ' barang tersimpan, status dan lokasinya.' : 'Status, lokasi, dan kondisi tiap barang.' }}</p>
             </div>
         </div>
+        <div class="bd-inv" role="table" aria-label="Barang di gudang">
+            <div class="bd-inv-h" role="row"><span role="columnheader">Kode</span><span role="columnheader">Lokasi</span><span role="columnheader">Sampai</span><span role="columnheader">Status</span><span></span></div>
+            @forelse ($warehouseOrders as $wo)
+                <a class="bd-inv-r" role="row" href="{{ route('pesanan.detail', $wo) }}">
+                    <span role="cell" class="bd-inv-code"><svg viewBox="0 0 44 40" aria-hidden="true"><use href="#box"/></svg><span><b>{{ $wo->code() }}</b><small>{{ $wo->totalItems() }} barang</small></span></span>
+                    <span role="cell"><b>{{ $wo->storage?->name }}</b><small>{{ $wo->storage?->address }}</small></span>
+                    <span role="cell">{{ $wo->date_end->locale('id')->translatedFormat('j M Y') }}</span>
+                    <span role="cell" class="bd-inv-st">Disimpan</span>
+                    <span class="bd-inv-go" aria-hidden="true"><svg class="ic"><use href="#i-arrow"/></svg></span>
+                </a>
+            @empty
+                <div class="bd-inv-empty">
+                    <span class="ico" aria-hidden="true"><svg><use href="#n-ware"/></svg></span>
+                    <h3>Belum ada barang di gudang</h3>
+                    <p>Setelah barangmu diterima petugas, setiap barang muncul di sini lengkap dengan kode, lokasi, dan status penyimpanannya.</p>
+                    <a class="btn btn-primary" href="{{ route('ruang-titip.index') }}">Buat pesanan</a>
+                </div>
+            @endforelse
+        </div>
         @if ($warehouseOrders->isNotEmpty())
-            <div class="bd-inv" role="table" aria-label="Barang di gudang">
-                <div class="bd-inv-h" role="row"><span role="columnheader">Kode pesanan</span><span role="columnheader">Lokasi</span><span role="columnheader">Sampai</span><span role="columnheader">Status</span><span></span></div>
-                @foreach ($warehouseOrders as $wo)
-                    <a class="bd-inv-r" role="row" href="{{ route('pesanan.detail', $wo) }}">
-                        <span role="cell" class="bd-inv-code"><svg viewBox="0 0 44 40" aria-hidden="true"><use href="#box"/></svg><span><b>{{ $wo->code() }}</b><small>{{ $wo->totalItems() }} barang</small></span></span>
-                        <span role="cell"><b>{{ $wo->storage?->name }}</b><small>{{ $wo->storage?->address }}</small></span>
-                        <span role="cell">{{ $wo->date_end->locale('id')->translatedFormat('j M Y') }}</span>
-                        <span role="cell" class="bd-inv-st">Disimpan</span>
-                        <span class="bd-inv-go" aria-hidden="true"><svg class="ic"><use href="#i-arrow"/></svg></span>
-                    </a>
-                @endforeach
-            </div>
             <div class="bd-list-foot">
                 <span>Isi kemasan tidak dibuka. Yang tercatat hanya kondisi luar.</span>
                 <a class="more-link" href="{{ route('pesanan.index') }}">Semua pesanan <svg class="ic" width="16" height="16" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-            </div>
-        @else
-            <div class="bd-empty">
-                <div class="stack" aria-hidden="true"><svg viewBox="0 0 44 40"><use href="#box"/></svg><svg viewBox="0 0 44 40"><use href="#box"/></svg></div>
-                <div>
-                    <h3>Belum ada barang di gudang</h3>
-                    <p>Setelah barangmu diterima petugas, setiap barang muncul di sini lengkap dengan kode, lokasi, dan status penyimpanannya.</p>
-                    <a class="btn btn-ink" href="{{ route('ruang-titip.index') }}">Buat pesanan</a>
-                </div>
             </div>
         @endif
     </section>
@@ -193,19 +190,18 @@
                 @endforeach
             </ul>
         @else
-            <p class="bd-note">Belum ada aktivitas. Kabar soal pembayaran, pemeriksaan barang, dan jadwal akan muncul di sini.</p>
+            <div class="bd-tl-empty"><i aria-hidden="true"></i><p>Belum ada aktivitas. Kabar soal pembayaran, pemeriksaan barang, dan jadwal akan muncul di sini.</p></div>
         @endif
     </section>
 
     {{-- ===== Toko Preloved ===== --}}
     <section class="rt-card bd-pre c8" aria-labelledby="pTitle">
-        <svg class="stk" aria-hidden="true"><use href="#st-coin"/></svg>
         <span class="tag">Toko Preloved</span>
         <h3 id="pTitle">Barang nganggur? Ubah jadi uang.</h3>
         <p>Ajukan barangmu, cek kondisinya bareng petugas, dan terima pembayaran penuh saat serah terima.</p>
         <div class="acts">
-            <a class="btn btn-sun" href="{{ route('preloved.cara-jual') }}">Ajukan barang</a>
-            <a class="btn btn-line" href="{{ route('preloved.index') }}">Lihat katalog</a>
+            <a class="btn btn-primary" href="{{ route('preloved.cara-jual') }}">Ajukan barang</a>
+            <a class="btn btn-plain" href="{{ route('preloved.index') }}">Lihat katalog</a>
         </div>
         @if ($preloved->isNotEmpty())
             <ul class="bd-mini-shop">
@@ -229,17 +225,14 @@
         @endif
     </section>
 
-    {{-- ===== Toko Packing ===== --}}
+    {{-- ===== Toko Packing (ditunda) ===== --}}
     <section class="rt-card bd-pack c4" aria-labelledby="kTitle">
-        <div class="row">
-            <svg class="stk" aria-hidden="true"><use href="#st-tape"/></svg>
-            <div>
-                <span class="soon">Segera hadir</span>
-                <h3 id="kTitle">Toko Packing</h3>
-                <p>Kardus, lakban, dan bubble wrap untuk titipanmu, dipesan sekalian dengan titipan.</p>
-            </div>
+        <div>
+            <span class="soon">Segera hadir</span>
+            <h3 id="kTitle">Toko Packing</h3>
+            <p>Kardus, lakban, dan bubble wrap untuk titipanmu, dipesan sekalian dengan titipan.</p>
         </div>
-        <div class="goods" aria-label="Produk yang akan tersedia"><span>Kardus S, M, L</span><span>Lakban</span><span>Bubble wrap</span><span>Plastik wrap</span></div>
+        <ul class="bd-goods" aria-label="Produk yang akan tersedia"><li>Kardus S, M, L</li><li>Lakban</li><li>Bubble wrap</li><li>Plastik wrap</li></ul>
         <button class="btn btn-ghost" type="button" id="notifyPack" aria-pressed="false">Kabari saya saat buka</button>
     </section>
 </div>

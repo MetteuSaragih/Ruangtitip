@@ -15,7 +15,7 @@
         'crumbs' => [['Pembelian Saya', null]],
         'title' => 'Pembelian Saya',
         'sub' => 'Pantau pembayaran, penyerahan, pengiriman, dan masa komplain.',
-        'acts' => '<a class="btn btn-sun" href="' . e(route('preloved.index')) . '">Belanja lagi</a>',
+        'acts' => '<a class="btn btn-ghost" href="' . e(route('preloved.index')) . '">Belanja lagi</a>',
     ])
 
     @if ($orders->isEmpty())
@@ -37,7 +37,7 @@
                         <p class="meta">{{ $o['method'] }}, total {{ rp($o['total']) }}</p>
                     </div>
                     <div class="oc-acts">
-                        @if ($o['key'] === 'bayar' && $o['pay_url'])<a class="btn btn-sun sm" href="{{ $o['pay_url'] }}">Bayar</a>@endif
+                        @if ($o['key'] === 'bayar' && $o['pay_url'])<a class="btn btn-primary sm" href="{{ $o['pay_url'] }}">Bayar</a>@endif
                         <a class="btn btn-ghost sm" href="{{ route('purchases.show', $o['id']) }}">Lihat detail</a>
                     </div>
                 </article>
