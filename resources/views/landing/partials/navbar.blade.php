@@ -1,6 +1,6 @@
 <header class="nav" id="nav">
     <div class="wrap nav-in">
-        <a class="logo" href="#top" aria-label="RuangTitip, ke atas"><svg aria-hidden="true"><use href="#logo"/></svg><span>ruang<em>titip</em></span></a>
+        <a class="logo" href="#top" aria-label="RuangTitip, ke atas"><img class="logo-img" src="{{ asset('assets/logo/logo-horizontal-light.png') }}" alt="RuTip" width="104" height="42"></a>
         <nav aria-label="Utama">
             <ul class="nav-links">
                 <li><a href="#keunggulan">Keunggulan</a></li>

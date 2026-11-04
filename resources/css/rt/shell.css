@@ -637,3 +637,12 @@ html.side-collapsed .rt-me {
         display: block;
     }
 }
+
+/* ----- Logo gambar (RuTip) ----- */
+.rt-logo { padding: 0 4px; }
+.rt-logo-full { height: 46px; width: auto; display: block; }
+.rt-logo-mini { display: none; height: 38px; width: auto; }
+
+html.side-collapsed .rt-logo-full { display: none; }
+html.side-collapsed .rt-logo-mini { display: block; }
+.rt-top-in .rt-logo-full { height: 40px; }

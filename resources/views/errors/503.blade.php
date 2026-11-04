@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Sedang perbaikan &middot; RuangTitip</title>
-<link rel="icon" type="image/svg+xml" href="{{ asset('assets/favicon.svg') }}">
+<link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/logo/favicon-32.png') }}">
+<link rel="icon" type="image/png" sizes="48x48" href="{{ asset('assets/logo/favicon-48.png') }}">
+<link rel="apple-touch-icon" href="{{ asset('assets/logo/apple-touch-icon.png') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
@@ -164,7 +166,7 @@ h1 em{font-style:normal;color:var(--tape)}
 
 <div class="page">
   <header class="top">
-    <img src="{{ asset('assets/logo-ruangtitip-putih.svg') }}" alt="RuangTitip" width="200" height="50">
+    <img src="{{ asset('assets/logo/logo-horizontal-light.png') }}" alt="RuTip" width="129" height="52" style="height:52px;width:auto">
     <a class="btn btn-outline" href="https://instagram.com/ruangtitip" target="_blank" rel="noopener">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor"/></svg>
       <span>Update di Instagram</span>

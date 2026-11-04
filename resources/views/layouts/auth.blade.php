@@ -6,7 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="color-scheme" content="dark">
     <title>@yield('title', 'Masuk') &middot; RuangTitip</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/favicon.svg') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/logo/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('assets/logo/favicon-48.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('assets/logo/apple-touch-icon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
@@ -19,7 +21,7 @@
 <div class="shell">
     {{-- ===== Panel kiri ===== --}}
     <aside class="side">
-        <a class="logo" href="{{ route('home') }}" aria-label="RuangTitip, ke beranda"><svg aria-hidden="true"><use href="#logo"/></svg><span>ruang<em>titip</em></span></a>
+        <a class="logo" href="{{ route('home') }}" aria-label="RuangTitip, ke beranda"><img class="logo-img" src="{{ asset('assets/logo/logo-horizontal-light.png') }}" alt="RuTip" width="104" height="42"></a>
 
         <div class="side-copy">
             <span class="kicker"><b>Malang</b>Penitipan barang khusus mahasiswa</span>

@@ -37,7 +37,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="color-scheme" content="light">
     <title>@yield('title', 'RuangTitip') &middot; RuangTitip</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/favicon.svg') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/logo/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('assets/logo/favicon-48.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('assets/logo/apple-touch-icon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
@@ -54,7 +56,8 @@
     <aside class="rt-side" id="rtSide" aria-label="Navigasi utama">
         <div class="rt-side-head">
             <a class="rt-logo" href="{{ route('dashboard') }}" data-tip="Beranda">
-                <span class="rt-logo-mark" aria-hidden="true"><svg><use href="#n-home"/></svg></span><span class="lbl">ruang<em>titip</em></span>
+                <img class="rt-logo-full" src="{{ asset('assets/logo/logo-horizontal.png') }}" alt="RuTip" width="119" height="46">
+                <img class="rt-logo-mini" src="{{ asset('assets/logo/logo-mark.png') }}" alt="RuTip" width="40" height="37">
             </a>
             <button class="rt-side-toggle" id="rtSideToggle" type="button" aria-expanded="true" aria-label="Ciutkan menu" data-tip="Ciutkan menu" data-kbd="[" data-tip-always>
                 <svg class="ic i-close" width="20" height="20" aria-hidden="true"><use href="#n-side-close"/></svg>
@@ -127,7 +130,7 @@
     <div class="rt-main">
         <header class="rt-top">
             <div class="rt-top-in">
-                <a class="rt-logo" href="{{ route('dashboard') }}"><span class="rt-logo-mark" aria-hidden="true"><svg><use href="#n-home"/></svg></span><span>ruang<em>titip</em></span></a>
+                <a class="rt-logo" href="{{ route('dashboard') }}" aria-label="RuTip, ke beranda"><img class="rt-logo-full" src="{{ asset('assets/logo/logo-horizontal.png') }}" alt="RuTip" width="104" height="40"></a>
                 <div class="rt-crumb">
                     <small>{{ now()->locale('id')->translatedFormat('l, j F Y') }}</small>
                     <h1>@yield('title', 'RuangTitip')</h1>

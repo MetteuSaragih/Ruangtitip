@@ -285,3 +285,7 @@ body.p-landing .f-bottom a:hover{color:#fff}
 @media (max-width:640px){body.p-landing .f-cta-act .btn{width:100%}}
 @media (prefers-reduced-motion:reduce){body.p-landing *, body.p-landing *::before, body.p-landing *::after{animation:none!important;transition:none!important}}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* logo-img */
+body.p-landing .logo-img{height:42px;width:auto;display:block}
+body.p-landing .f-top .logo-img,body.p-landing footer .logo-img{height:46px}

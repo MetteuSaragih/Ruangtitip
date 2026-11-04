@@ -65,7 +65,9 @@
     <meta name="color-scheme" content="light">
     <meta name="robots" content="noindex">
     <title>@yield('title', 'Ringkasan') &middot; Admin RuangTitip</title>
-    <link rel="icon" href="{{ asset('assets/favicon.svg') }}" type="image/svg+xml">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/logo/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('assets/logo/favicon-48.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('assets/logo/apple-touch-icon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
@@ -78,8 +80,8 @@
 <div class="app">
     <aside class="side" id="adminSide" aria-label="Navigasi admin">
         <a class="brand" href="{{ route('admin.dashboard') }}" aria-label="RuangTitip Admin, ke ringkasan">
-            <span class="brand-mark" aria-hidden="true"><svg><use href="#n-home"/></svg></span>
-            <b>ruang<em>titip</em></b><span class="role">ADMIN</span>
+            <img class="brand-img" src="{{ asset('assets/logo/logo-horizontal.png') }}" alt="RuTip" width="112" height="44">
+            <span class="role">ADMIN</span>
         </a>
 
         @foreach ($adminNav as $group => $items)

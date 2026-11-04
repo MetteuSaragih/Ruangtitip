@@ -93,11 +93,14 @@ h1 em{font-style:normal;color:var(--tape)}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/logo/favicon-32.png') }}">
+  <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('assets/logo/favicon-48.png') }}">
+  <link rel="apple-touch-icon" href="{{ asset('assets/logo/apple-touch-icon.png') }}">
 </head>
 <body>
 <div class="page">
   <header class="top">
-    <a class="logo" href="{{ url('/') }}" aria-label="RuangTitip, ke beranda"><img src="{{ asset('assets/logo-ruangtitip-putih.svg') }}" alt="RuangTitip" width="160" height="40" style="height:40px;width:auto"></a>
+    <a class="logo" href="{{ url('/') }}" aria-label="RuangTitip, ke beranda"><img src="{{ asset('assets/logo/logo-horizontal-light.png') }}" alt="RuTip" width="109" height="44" style="height:44px;width:auto"></a>
   </header>
 
   <main>

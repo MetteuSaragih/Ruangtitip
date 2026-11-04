@@ -6,7 +6,9 @@
     <meta name="color-scheme" content="dark">
     <title>Kebijakan Privasi | RuangTitip</title>
     <meta name="description" content="Data apa yang kami kumpulkan, untuk apa, dan apa hakmu.">
-    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/favicon.svg') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/logo/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('assets/logo/favicon-48.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('assets/logo/apple-touch-icon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
@@ -15,7 +17,7 @@
 <body class="p-legal">
 @include('landing.partials.symbols')
 <div id="pgLegal">
-      <header class="lg-top"><div class="lg-in"><a class="lg-logo" href="{{ route('home') }}"><svg aria-hidden="true"><use href="#logo"/></svg><span>ruang<em>titip</em></span></a><button type="button" class="lg-back" id="lgBack"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5M11 5.5 4.5 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Kembali</button></div></header>
+      <header class="lg-top"><div class="lg-in"><a class="lg-logo" href="{{ route('home') }}"><img class="logo-img" src="{{ asset('assets/logo/logo-horizontal-light.png') }}" alt="RuTip" width="104" height="42"></a><button type="button" class="lg-back" id="lgBack"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5M11 5.5 4.5 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Kembali</button></div></header>
       <div class="lg-in lg-body">
         <aside class="lg-side"><nav class="lg-tabs" aria-label="Dokumen"><a href="{{ route('legal.terms') }}" >Syarat &amp; Ketentuan</a><a href="{{ route('legal.privacy') }}" aria-current="page">Kebijakan Privasi</a></nav>
           <p class="lg-toc-t">Isi</p><ol class="lg-toc"><li><button type="button" data-lg="siapa"><span>1</span>Siapa kami</button></li><li><button type="button" data-lg="data"><span>2</span>Data yang kami kumpulkan</button></li><li><button type="button" data-lg="tujuan"><span>3</span>Untuk apa data dipakai</button></li><li><button type="button" data-lg="dasar"><span>4</span>Dasar pemrosesan</button></li><li><button type="button" data-lg="bagi"><span>5</span>Dengan siapa data dibagikan</button></li><li><button type="button" data-lg="simpan"><span>6</span>Berapa lama data disimpan</button></li><li><button type="button" data-lg="aman"><span>7</span>Keamanan data</button></li><li><button type="button" data-lg="hak"><span>8</span>Hak kamu</button></li><li><button type="button" data-lg="anak"><span>9</span>Pengguna di bawah umur</button></li><li><button type="button" data-lg="lokal"><span>10</span>Penyimpanan di browser</button></li><li><button type="button" data-lg="ubah"><span>11</span>Perubahan kebijakan</button></li><li><button type="button" data-lg="kontak"><span>12</span>Hubungi kami</button></li></ol></aside>
