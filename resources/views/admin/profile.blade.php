@@ -4,7 +4,7 @@
 
 @push('styles')
 <style>
-    .pf-av { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; background: var(--color-primary); color: #fff; font-family: var(--display); font-weight: 800; font-size: 26px; }
+    .pf-av { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; background: var(--color-primary); color: var(--color-surface); font-family: var(--display); font-weight: 800; font-size: 26px; }
 </style>
 @endpush
 

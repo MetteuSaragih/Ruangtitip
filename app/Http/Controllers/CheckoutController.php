@@ -18,14 +18,17 @@ class CheckoutController extends Controller
 
     public function shipping()
     {
+        $gone = $this->pruneUnavailable();
         $cart = $this->checkoutCart();
         if (empty($cart)) {
-            return redirect()->route('preloved.cart.index');
+            return redirect()->route('preloved.cart.index')->withErrors(['selected' => $gone ?: 'Pilih produk dulu sebelum checkout.']);
         }
         $cartCount = count($cart);
         $shipping = session('checkout_shipping', []);
 
-        return view('checkout.shipping', compact('cart', 'cartCount', 'shipping'));
+        $view = view('checkout.shipping', compact('cart', 'cartCount', 'shipping'));
+
+        return $gone ? $view->withErrors(['selected' => $gone]) : $view;
     }
 
     public function chooseShipping(Request $request)
@@ -199,8 +202,13 @@ class CheckoutController extends Controller
 
     public function payment()
     {
+        $gone = $this->pruneUnavailable();
         $cart = $this->checkoutCart();
         $shipping = session('checkout_shipping', []);
+
+        if ($gone) {
+            return redirect()->route('preloved.cart.index')->withErrors(['selected' => $gone]);
+        }
 
         if (empty($cart) || empty($shipping)) {
             return redirect()->route('checkout.shipping');
@@ -223,6 +231,10 @@ class CheckoutController extends Controller
             'pickup_date' => 'nullable|date|after_or_equal:today',
             'pickup_time' => 'nullable|string',
         ]);
+
+        if ($gone = $this->pruneUnavailable()) {
+            return response()->json(['success' => false, 'message' => $gone], 409);
+        }
 
         $cart = $this->checkoutCart();
         $shipping = session('checkout_shipping', []);
@@ -324,6 +336,44 @@ class CheckoutController extends Controller
     private function checkoutCart(): array
     {
         return session('checkout_cart', []);
+    }
+
+    /**
+     * Buang barang preloved yang sudah terjual, di-Draft, dihapus, atau dicadangkan
+     * pesanan belum dibayar milik pembeli lain, dari keranjang checkout dan keranjang.
+     * Mengembalikan pesan untuk pengguna, atau null bila semua barang masih tersedia.
+     */
+    private function pruneUnavailable(): ?string
+    {
+        $checkout = $this->checkoutCart();
+        $ids = collect($checkout)
+            ->filter(fn ($i) => ($i['type'] ?? 'preloved') === 'preloved')
+            ->pluck('id')->map(fn ($id) => (int) $id)->all();
+        if (empty($ids)) {
+            return null;
+        }
+
+        $available = PrelovedItem::whereIn('id', $ids)->where('status', 'Tersedia')->pluck('id')->all();
+        $available = array_diff($available, Order::reservedPrelovedIds(Auth::id()));
+
+        $removed = [];
+        foreach ($checkout as $key => $item) {
+            if (($item['type'] ?? 'preloved') === 'preloved' && ! in_array((int) $item['id'], $available, true)) {
+                $removed[] = $item['name'];
+                unset($checkout[$key]);
+                $cart = session('cart', []);
+                unset($cart[$key]);
+                session(['cart' => $cart]);
+            }
+        }
+
+        if (empty($removed)) {
+            return null;
+        }
+
+        session(['checkout_cart' => $checkout]);
+
+        return implode(', ', $removed) . ' sudah tidak tersedia dan dikeluarkan dari pesananmu.';
     }
 
     /** Biaya layanan platform: Rp 2.000 jika pengiriman pakai Biteship, Rp 1.000 jika tidak. */

@@ -144,6 +144,12 @@ class RuangTitipController extends Controller
     /* ═══ SCREEN 2 — Detail gudang ═══ */
     public function show(Request $r, StorageRoom $storage)
     {
+        abort_unless($storage->active, 404);
+
+        // Ganti gudang berarti harga dan kapasitas berbeda: mulai pesanan dari awal.
+        if (($this->state($r)['storage_id'] ?? null) !== $storage->id) {
+            $r->session()->forget('titip');
+        }
         $this->setState($r, ['storage_id' => $storage->id]);
         return view('dashboard.ruang-titip.detail', compact('storage'));
     }
@@ -151,10 +157,10 @@ class RuangTitipController extends Controller
     /* ═══ SCREEN 3 — GABUNGAN: item + rentang tanggal (GET) ═══ */
     public function detailForm(Request $r)
     {
-        if (empty($this->state($r)['storage_id'])) {
-            return redirect()->route('ruang-titip.index');
+        $storage = $this->bookableStorage($this->state($r));
+        if (! $storage) {
+            return redirect()->route('ruang-titip.index')->with('error', 'Pilih ruang titip yang tersedia dulu.');
         }
-        $storage = StorageRoom::find($this->state($r)['storage_id']);
         $sizes = $this->itemSizesFromStorage($storage);
         $kardus = $sizes->where('type', 'kardus')->values();
         $koper = $sizes->where('type', 'koper')->values();
@@ -174,9 +180,10 @@ class RuangTitipController extends Controller
             'items'      => 'required|array',
             'items.*'    => 'nullable|integer|min:0',
             'items_weight.dimensi_lain' => 'nullable|integer|min:' . ($weightLimits['weight_min'] / 1000) . '|max:' . ($weightLimits['weight_max'] / 1000),
-            'date_start' => 'required|date',
+            'date_start' => 'required|date|after_or_equal:today',
             'date_end'   => 'required|date|after:date_start',
         ], [
+            'date_start.after_or_equal' => 'Tanggal mulai tidak boleh sebelum hari ini.',
             'date_end.after' => 'Tanggal selesai harus setelah tanggal mulai.',
             'items_weight.dimensi_lain.max' => 'Berat barang dimensi lain maksimal ' . ($weightLimits['weight_max'] / 1000) . ' kg per item.',
         ]);
@@ -187,7 +194,10 @@ class RuangTitipController extends Controller
             return back()->withErrors(['items' => 'Pilih minimal satu barang.'])->withInput();
         }
 
-        $storage = StorageRoom::find($this->state($r)['storage_id'] ?? null);
+        $storage = $this->bookableStorage($this->state($r));
+        if (! $storage) {
+            return redirect()->route('ruang-titip.index')->with('error', 'Ruang titip ini tidak tersedia. Pilih ruang lain.');
+        }
         $sizes = $this->itemSizesFromStorage($storage)->keyBy('code');
         $items = array_filter(
             $items,
@@ -198,8 +208,20 @@ class RuangTitipController extends Controller
             return back()->withErrors(['items' => 'Pilihan barang tidak valid.'])->withInput();
         }
 
+        $remaining = max(0, (int) $storage->capacity_total - (int) $storage->capacity_used);
+        if (array_sum($items) > $remaining) {
+            return back()->withErrors(['items' => $remaining > 0
+                ? "Kapasitas ruang ini tinggal {$remaining} unit. Kurangi jumlah barang atau pilih ruang lain."
+                : 'Ruang ini sudah penuh. Pilih ruang lain.'])->withInput();
+        }
+
         $types = $sizes->only(array_keys($items))->pluck('type')->unique()->values();
         $itemType = $types->count() === 1 ? $types->first() : 'campuran';
+
+        // Isi barang berubah, jadi tarif kurir instan yang lama tidak berlaku lagi.
+        if (($this->state($r)['logistic'] ?? null) === 'instant') {
+            $this->setState($r, ['courier_code' => null, 'courier_service_code' => null, 'courier_name' => null, 'courier_cost' => 0]);
+        }
 
         $this->setState($r, [
             'item_type'  => $itemType,
@@ -229,7 +251,13 @@ class RuangTitipController extends Controller
         $logistic = $data['logistic'];
 
         // Reset pilihan kurir lama
-        $this->setState($r, ['logistic' => $logistic, 'courier_code' => null]);
+        $this->setState($r, [
+            'logistic' => $logistic,
+            'courier_code' => null,
+            'courier_service_code' => null,
+            'courier_name' => null,
+            'courier_cost' => 0,
+        ]);
 
         if ($logistic === 'self') {
             return redirect()->route('ruang-titip.checkout');
@@ -455,7 +483,9 @@ class RuangTitipController extends Controller
     public function checkout(Request $r)
     {
         $s = $this->state($r);
-        if (empty($s['logistic'])) return redirect()->route('ruang-titip.logistik');
+        if ($redirect = $this->resumeStep($s)) {
+            return $redirect;
+        }
 
         $calc    = $this->calc($s);
         $storage = StorageRoom::find($s['storage_id'] ?? null);
@@ -470,6 +500,28 @@ class RuangTitipController extends Controller
     public function place(Request $r, TripayService $tripay)
     {
         $s = $this->state($r);
+        if ($redirect = $this->resumeStep($s)) {
+            return $redirect;
+        }
+
+        $storage = $this->bookableStorage($s);
+        if (! $storage) {
+            return redirect()->route('ruang-titip.index')->with('error', 'Ruang titip ini tidak tersedia. Pilih ruang lain.');
+        }
+
+        // Buang barang yang tidak ada lagi di daftar harga ruang (harga bisa diubah admin).
+        $validSizes = $this->itemSizesFromStorage($storage)->keyBy('code');
+        $s['items'] = array_filter($s['items'], fn ($qty, $code) => isset($validSizes[$code]) && (int) $qty > 0, ARRAY_FILTER_USE_BOTH);
+        if (empty($s['items'])) {
+            return redirect()->route('ruang-titip.detail-item')->with('error', 'Pilihan barang sudah tidak tersedia. Pilih ulang barangmu.');
+        }
+        $remaining = max(0, (int) $storage->capacity_total - (int) $storage->capacity_used);
+        if (array_sum(array_map('intval', $s['items'])) > $remaining) {
+            return redirect()->route('ruang-titip.detail-item')->with('error', 'Kapasitas ruang ini tidak cukup lagi. Kurangi jumlah barang atau pilih ruang lain.');
+        }
+        $itemTypes = $validSizes->only(array_keys($s['items']))->pluck('type')->unique()->values();
+        $s['item_type'] = $itemTypes->count() === 1 ? $itemTypes->first() : 'campuran';
+
         $requiresSchedule = ($s['logistic'] ?? null) !== 'self';
         $minHours = (float) config('pickup_slots.min_hours_ahead');
         $maxDays = (int) config('pickup_slots.max_days_ahead');
@@ -516,7 +568,7 @@ class RuangTitipController extends Controller
 
         $order = TitipanOrder::create([
             'user_id'        => Auth::id(),
-            'storage_id'     => $s['storage_id'],
+            'storage_id'     => $storage->id,
             'item_type'      => $s['item_type'],
             'items'          => $s['items'],
             'date_start'     => $s['date_start'] ?? null,
@@ -525,13 +577,13 @@ class RuangTitipController extends Controller
             'pickup_time'    => $r->input('pickup_time'),
             'pickup_time_end' => $pickupTimeEnd,
             'logistic'       => $s['logistic'],
-            'address'        => $s['address'] ?? null,
-            'note'           => $s['note'] ?? null,
+            'address'        => $s['logistic'] === 'self' ? null : ($s['address'] ?? null),
+            'note'           => $s['logistic'] === 'self' ? null : ($s['note'] ?? null),
             'courier_code'   => $s['courier_code'] ?? null,
             'courier_service_code' => $s['courier_service_code'] ?? null,
             'courier_company' => $s['courier_code'] ?? null,
-            'address_area_id' => $s['address_area_id'] ?? null,
-            'address_postal_code' => $s['address_postal_code'] ?? null,
+            'address_area_id' => $s['logistic'] === 'self' ? null : ($s['address_area_id'] ?? null),
+            'address_postal_code' => $s['logistic'] === 'self' ? null : ($s['address_postal_code'] ?? null),
             'packing'        => $s['logistic'] === 'rutip' ? 'buy' : null,
             'payment_method' => $r->payment_method,
             'item_subtotal'  => $calc['itemSubtotal'],
@@ -583,38 +635,59 @@ class RuangTitipController extends Controller
         return view('dashboard.ruang-titip.success', compact('order'));
     }
 
+    /** Ruang yang dipilih di sesi, hanya bila masih aktif dan masih punya sisa kapasitas. */
+    private function bookableStorage(array $s): ?StorageRoom
+    {
+        $storage = StorageRoom::find($s['storage_id'] ?? null);
+        if (! $storage || ! $storage->active) {
+            return null;
+        }
+
+        return max(0, (int) $storage->capacity_total - (int) $storage->capacity_used) > 0 ? $storage : null;
+    }
+
+    /** Kirim pengguna kembali ke langkah yang belum lengkap sebelum checkout. */
+    private function resumeStep(array $s): ?\Illuminate\Http\RedirectResponse
+    {
+        if (empty($s['storage_id'])) {
+            return redirect()->route('ruang-titip.index');
+        }
+        if (empty($s['items']) || empty($s['date_start']) || empty($s['date_end'])) {
+            return redirect()->route('ruang-titip.detail-item');
+        }
+        if (empty($s['logistic'])) {
+            return redirect()->route('ruang-titip.logistik');
+        }
+        if ($s['logistic'] !== 'self' && empty($s['address'])) {
+            return redirect()->route('ruang-titip.alamat');
+        }
+        if ($s['logistic'] === 'instant' && empty($s['courier_service_code'])) {
+            return redirect()->route('ruang-titip.kurir');
+        }
+
+        return null;
+    }
+
+    /** Harga per ukuran dari tarif ruang (kode: ks, km, kl, kxl, kpc, kpm, kpl, kpxl, dimensi_lain). */
     private function itemSizesFromStorage(?StorageRoom $storage)
     {
         if (! $storage) {
             return collect();
         }
 
-        $pricing = $storage->pricing ?? [];
         $rows = [];
-
-        foreach (['kardus', 'koper'] as $type) {
-            foreach (($pricing[$type] ?? []) as $id => $row) {
-                $code = is_array($row) ? ($row['id'] ?? $id) : $id;
+        foreach ($storage->pricing_rows as $type => $list) {
+            foreach ($list as $row) {
                 $rows[] = (object) [
                     'type' => $type,
-                    'code' => $code,
-                    'label' => is_array($row) ? ($row['label'] ?? strtoupper((string) $code)) : strtoupper((string) $code),
-                    'dims' => is_array($row) ? ($row['dims'] ?? '-') : '-',
-                    'price' => is_array($row) ? (int) ($row['price'] ?? 0) : (int) $row,
+                    'code' => $row['id'],
+                    'label' => $row['label'],
+                    'dims' => $row['dims'] ?: '-',
+                    'price' => (int) $row['price'],
                 ];
             }
         }
 
-        if (isset($pricing['dimensiLain'])) {
-            $rows[] = (object) [
-                'type' => 'dimensi',
-                'code' => 'dimensi_lain',
-                'label' => 'Dimensi Lain',
-                'dims' => '30x30x30 - 100x100x100 cm',
-                'price' => (int) $pricing['dimensiLain'],
-            ];
-        }
-
-        return collect($rows)->filter(fn ($row) => $row->price > 0)->values();
+        return collect($rows)->values();
     }
 }

@@ -321,3 +321,10 @@
 .ttp .stepper output{min-width:28px;text-align:center;font-weight:800}
 .ttp .rm{width:42px;height:46px;border:0;background:none;border-radius:12px;color:var(--muted);display:grid;place-items:center}
 .ttp .rm:disabled{opacity:0.35}
+
+/* Dialog permintaan atas titipan (tambah periode, kirim, ambil) */
+.ttp .req-dlg{text-align:left;width:min(480px, calc(100vw - 32px))}
+.ttp .req-dlg .rt-dlg-acts{justify-content:flex-end;margin-top:4px}
+.ttp .req-dlg .rt-dlg-acts .btn{flex:0 1 auto}
+.ttp .req-dlg label{font-size:13px;font-weight:600}
+.ttp .btn[disabled]{opacity:.5;cursor:not-allowed}

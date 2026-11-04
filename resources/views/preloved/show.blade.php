@@ -24,7 +24,7 @@
         <div class="stack">
             <div class="gal">
                 @forelse ($images as $k => $img)
-                    <div class="pic" style="--tone:var(--alt)"><img src="{{ \Illuminate\Support\Facades\Storage::url($img) }}" alt="{{ $product['name'] }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"><small>Foto {{ $k + 1 }}</small></div>
+                    <div class="pic" style="--tone:var(--alt)"><img src="{{ asset('storage/'.$img) }}" alt="{{ $product['name'] }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"><small>Foto {{ $k + 1 }}</small></div>
                 @empty
                     <div class="pic" style="--tone:var(--alt)"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#n-tag"/></svg><small>Foto 1</small></div>
                 @endforelse
@@ -78,7 +78,7 @@
         btn.disabled = true;
         fetch(cartUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
             body: JSON.stringify({ type: 'preloved', product_id: productId, qty: 1, buy_now: true })
         }).then(function (r) { return r.json(); }).then(function (data) {
             if (data.redirect) { window.location.href = data.redirect; return; }

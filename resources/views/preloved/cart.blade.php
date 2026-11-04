@@ -43,7 +43,7 @@
                                             @if ($type === 'packing')
                                                 <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ $item['name'] }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px">
                                             @else
-                                                <img src="{{ \Illuminate\Support\Facades\Storage::url($item['image']) }}" alt="{{ $item['name'] }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px">
+                                                <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ $item['name'] }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px">
                                             @endif
                                         @else
                                             <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#n-tag"/></svg>
@@ -56,11 +56,15 @@
                                             @if ($type === 'packing')Satuan: {{ $item['unit'] ?? 'pcs' }}. @elseif (! empty($item['condition_label'])){{ $item['condition_label'] }}. @endif
                                             <span data-price="{{ $item['price'] }}">{{ rp($item['price']) }}</span>
                                         </p>
+                                        @if ($type === 'preloved')
+                                            <output class="qty-num" hidden>1</output>
+                                        @else
                                         <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
                                             <button type="button" class="btn btn-ghost sm" aria-label="Kurangi {{ $item['name'] }}" onclick="cartChangeQty('{{ $key }}', -1)">&minus;</button>
                                             <output class="qty-num" style="min-width:24px;text-align:center;font-weight:800">{{ $item['qty'] }}</output>
                                             <button type="button" class="btn btn-ghost sm" aria-label="Tambah {{ $item['name'] }}" onclick="cartChangeQty('{{ $key }}', 1)">+</button>
                                         </div>
+                                        @endif
                                     </div>
                                     <div class="oc-acts"><button type="button" class="btn btn-ghost sm" aria-label="Hapus {{ $item['name'] }}" onclick="cartRemove('{{ $key }}')">Hapus</button></div>
                                 </article>

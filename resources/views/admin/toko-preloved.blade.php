@@ -15,6 +15,12 @@ $formAction = $editId ? route('admin.preloved.update', $editId) : route('admin.p
   .pl-photos { display: grid; gap: 6px; }
   .pl-photos input[type=file] { font-size: 13px; }
   .pl-sub { font-size: 12.5px; color: var(--color-text-secondary); }
+  .photo-edit { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; margin-bottom: 8px; }
+  .photo-tile { position: relative; display: grid; gap: 4px; font-size: 12px; color: var(--color-text-secondary); cursor: pointer; }
+  .photo-tile img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; border: 1px solid var(--color-border); }
+  .photo-tile input { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; }
+  .photo-tile input:checked ~ span { color: var(--color-danger-text); font-weight: 700; }
+  .photo-tile:has(input:checked) img { opacity: 0.4; }
 </style>
 @endpush
 
@@ -66,7 +72,7 @@ $formAction = $editId ? route('admin.preloved.update', $editId) : route('admin.p
         </thead>
         <tbody>
           @foreach ($items as $item)
-            @php $cl = $conditionLabels[$item->condition]['label'] ?? ($item->condition . '%'); @endphp
+            @php $cl = \App\Models\PrelovedItem::conditionText((int) $item->condition); @endphp
             <tr>
               <td>
                 <div class="row-flex">
@@ -86,7 +92,7 @@ $formAction = $editId ? route('admin.preloved.update', $editId) : route('admin.p
               <td><span class="st {{ $statusTone[$item->status] ?? 'mute' }}">{{ $item->status }}</span></td>
               <td class="acts">
                 @if ($item->status !== 'Terjual')
-                  <button class="btn btn-ghost sm" type="button" data-edit-item="{{ e($item->toJson()) }}">Ubah</button>
+                  <button class="btn btn-ghost sm" type="button" data-edit-item="{{ $item->toJson() }}">Ubah</button>
                   <form method="POST" action="{{ route('admin.preloved.toggle-draft', $item) }}" style="display:inline">
                     @csrf
                     <button class="btn btn-ghost sm" type="submit">{{ $item->status === 'Draft' ? 'Publikasikan' : 'Jadikan draft' }}</button>
@@ -119,9 +125,10 @@ $formAction = $editId ? route('admin.preloved.update', $editId) : route('admin.p
     </div>
     <div class="db">
       <div class="field pl-photos">
-        <label for="plImages">Foto <span class="muted">(wajib minimal 1, maksimal 10, JPG/PNG, 5 MB per foto)</span></label>
-        <input type="file" id="plImages" name="images[]" accept="image/png,image/jpeg" multiple>
-        <span class="help" id="plPhotoHelp">Foto baru ditambahkan ke foto yang sudah ada.</span>
+        <label for="plImages">Foto <span class="muted">(wajib minimal 1, maksimal 10, JPG/PNG/WEBP, 5 MB per foto)</span></label>
+        <div class="photo-edit" id="plPhotoList" hidden></div>
+        <input type="file" id="plImages" name="images[]" accept="image/png,image/jpeg,image/webp" multiple>
+        <span class="help" id="plPhotoHelp">Foto pertama jadi foto utama di katalog pelanggan.</span>
         @error('images')<span class="err-t">{{ $message }}</span>@enderror
         @error('images.*')<span class="err-t">{{ $message }}</span>@enderror
       </div>
@@ -133,7 +140,7 @@ $formAction = $editId ? route('admin.preloved.update', $editId) : route('admin.p
         </div>
         <div class="field">
           <label for="plCategory">Kategori</label>
-          <select class="input" id="plCategory" name="category">
+          <select class="input" id="plCategory" name="category" required>
             @foreach ($categories as $cat)
               <option value="{{ $cat }}" @selected(old('category') === $cat)>{{ $cat }}</option>
             @endforeach
@@ -142,9 +149,9 @@ $formAction = $editId ? route('admin.preloved.update', $editId) : route('admin.p
         </div>
         <div class="field">
           <label for="plCondition">Kondisi</label>
-          <select class="input" id="plCondition" name="condition">
-            @foreach ($conditions as $c)
-              <option value="{{ $c }}" @selected((int) old('condition', 90) === $c)>{{ $conditionLabels[$c]['label'] }}</option>
+          <select class="input" id="plCondition" name="condition" required>
+            @foreach ($conditions as $pct => $label)
+              <option value="{{ $pct }}" @selected((int) old('condition', 85) === $pct)>{{ $label }} ({{ $pct }}%)</option>
             @endforeach
           </select>
           @error('condition')<span class="err-t">{{ $message }}</span>@enderror
@@ -155,9 +162,30 @@ $formAction = $editId ? route('admin.preloved.update', $editId) : route('admin.p
           @error('price')<span class="err-t">{{ $message }}</span>@enderror
         </div>
         <div class="field">
-          <label for="plSeller">Pemilik titipan</label>
-          <input class="input" id="plSeller" name="seller" value="{{ old('seller') }}" placeholder="Nama mahasiswa">
+          <label for="plSeller">Pemilik barang (catatan internal)</label>
+          <input class="input" id="plSeller" name="seller" value="{{ old('seller') }}" placeholder="Nama pemilik awal, tidak tampil ke pembeli">
           @error('seller')<span class="err-t">{{ $message }}</span>@enderror
+        </div>
+        <div class="field full"><span class="pl-sub">Isian di bawah ini tampil di halaman produk pelanggan, persis seperti yang kamu tulis.</span></div>
+        <div class="field full">
+          <label for="plDesc">Deskripsi</label>
+          <textarea class="input" id="plDesc" name="description" rows="3" required placeholder="Lama pemakaian, ukuran, dan hal lain yang perlu pembeli tahu">{{ old('description') }}</textarea>
+          @error('description')<span class="err-t">{{ $message }}</span>@enderror
+        </div>
+        <div class="field full">
+          <label for="plFunc">Fungsi <span class="muted">(opsional)</span></label>
+          <input class="input" id="plFunc" name="function_note" value="{{ old('function_note') }}" maxlength="255" placeholder="Contoh: Semua fungsi normal, sudah dites petugas">
+          @error('function_note')<span class="err-t">{{ $message }}</span>@enderror
+        </div>
+        <div class="field">
+          <label for="plKel">Kelengkapan</label>
+          <input class="input" id="plKel" name="completeness" value="{{ old('completeness') }}" maxlength="255" required placeholder="Contoh: Unit, kabel, dus">
+          @error('completeness')<span class="err-t">{{ $message }}</span>@enderror
+        </div>
+        <div class="field">
+          <label for="plFlaws">Kekurangan</label>
+          <input class="input" id="plFlaws" name="flaws" value="{{ old('flaws') }}" maxlength="255" required placeholder="Tulis &quot;Tidak ada&quot; kalau memang tidak ada">
+          @error('flaws')<span class="err-t">{{ $message }}</span>@enderror
         </div>
         <div class="field full"><span class="pl-sub">Berat dan dimensi dipakai untuk menghitung ongkir Biteship.</span></div>
         <div class="field">
@@ -207,6 +235,31 @@ $formAction = $editId ? route('admin.preloved.update', $editId) : route('admin.p
 
   function setVal(name, val) { if (form.elements[name]) form.elements[name].value = val; }
 
+  // Foto yang sudah ada: bisa dicentang untuk dihapus (tetap harus tersisa minimal satu).
+  var photoBase = @json(asset('storage') . '/');
+  function renderPhotos(item) {
+    var box = document.getElementById('plPhotoList');
+    box.innerHTML = '';
+    var list = [];
+    if (item) {
+      list = (item.photos || []).slice();
+      if (item.photo && list.indexOf(item.photo) === -1) list.unshift(item.photo);
+    }
+    box.hidden = list.length === 0;
+    list.forEach(function (path, i) {
+      var label = document.createElement('label');
+      label.className = 'photo-tile';
+      var img = document.createElement('img');
+      img.src = photoBase + path; img.alt = 'Foto ' + (i + 1);
+      var cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.name = 'remove_photos[]'; cb.value = path;
+      var span = document.createElement('span');
+      span.textContent = i === 0 ? 'Utama, hapus' : 'Hapus';
+      label.appendChild(img); label.appendChild(cb); label.appendChild(span);
+      box.appendChild(label);
+    });
+  }
+
   document.getElementById('plAdd').addEventListener('click', function () {
     form.reset();
     form.action = storeUrl;
@@ -215,8 +268,9 @@ $formAction = $editId ? route('admin.preloved.update', $editId) : route('admin.p
     title.textContent = 'Tambah barang preloved';
     submit.textContent = 'Tambah ke katalog';
     images.required = true;
-    setVal('condition', '90');
+    setVal('condition', '85');
     setVal('weight', '1000'); setVal('length', '30'); setVal('width', '20'); setVal('height', '15');
+    renderPhotos(null);
   });
 
   document.querySelectorAll('[data-edit-item]').forEach(function (btn) {
@@ -231,10 +285,23 @@ $formAction = $editId ? route('admin.preloved.update', $editId) : route('admin.p
       submit.textContent = 'Simpan perubahan';
       images.required = false;
       setVal('name', item.name || '');
+      // Kategori lama yang tidak ada di daftar resmi tetap bisa dipilih agar tidak berubah diam-diam.
+      var cat = form.elements['category'];
+      if (item.category && ![].some.call(cat.options, function (o) { return o.value === item.category; })) {
+        var extra = document.createElement('option');
+        extra.value = item.category; extra.textContent = item.category + ' (kategori lama)';
+        cat.appendChild(extra);
+      }
       setVal('category', item.category || '');
-      setVal('condition', String(item.condition || 90));
+      var c = parseInt(item.condition, 10) || 85;
+      setVal('condition', String(c >= 90 ? 95 : (c >= 80 ? 85 : 75)));
       setVal('price', item.price || '');
       setVal('seller', item.seller || '');
+      setVal('description', item.description || '');
+      setVal('function_note', item.function_note || '');
+      setVal('completeness', item.completeness || '');
+      setVal('flaws', item.flaws || '');
+      renderPhotos(item);
       setVal('weight', item.weight || 1000);
       setVal('length', item.length || 30);
       setVal('width', item.width || 20);

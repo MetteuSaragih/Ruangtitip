@@ -54,7 +54,7 @@
 
     $adminUser = auth()->user();
     $adminInitials = \Illuminate\Support\Str::of($adminUser->name ?? 'Admin')->trim()->explode(' ')->map(fn ($w) => mb_substr($w, 0, 1))->take(2)->implode('');
-    $reqType = request()->query('type');
+    $reqType = request()->query('type', 'ambil');
 @endphp
 <!doctype html>
 <html lang="id">

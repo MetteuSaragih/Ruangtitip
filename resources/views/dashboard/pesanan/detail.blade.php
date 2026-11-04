@@ -17,7 +17,19 @@
     $storageName = $order->storage->name ?? 'Penitipan Barang';
     $days = $order->date_start && $order->date_end ? $order->date_start->diffInDays($order->date_end) + 1 : null;
     $payMethod = $order->tripay_payment_method ?: $order->payment_method;
-    $itemLabel = fn ($k) => ucfirst(str_replace('_', ' ', $k));
+    $itemLabel = function ($k) {
+        foreach (\App\Models\StorageRoom::SIZE_META as $type => $sizes) {
+            if (isset($sizes[$k])) {
+                return ucfirst($type) . ' ' . $sizes[$k][0];
+            }
+        }
+
+        return $k === 'dimensi_lain' ? 'Dimensi lain' : ucfirst(str_replace('_', ' ', $k));
+    };
+    $requests = $requests ?? collect();
+    $addresses = $addresses ?? collect();
+    $hasOpen = fn ($t) => $requests->contains(fn ($r) => $r->type === $t && $r->isOpen());
+    $reqTone = ['menunggu' => 'warn', 'diproses' => 'info', 'selesai' => 'ok', 'ditolak' => 'err'];
 @endphp
 
 @section('content')
@@ -34,14 +46,21 @@
         <div class="ph-acts">
             <span class="badge b-{{ $tone }}"><i></i>{{ $statusLabel }}</span>
             @if ($inStorage)
-                <a class="btn btn-sun" href="{{ $waText('Halo RuangTitip, saya mau tambah periode titip untuk pesanan') }}" target="_blank" rel="noopener">Tambah periode</a>
-                <a class="btn btn-ink" href="{{ $waText('Halo RuangTitip, saya mau kirim barang dari pesanan') }}" target="_blank" rel="noopener">Kirim barang</a>
-                <a class="btn btn-ghost" href="{{ $waText('Halo RuangTitip, saya mau ambil barang di gudang untuk pesanan') }}" target="_blank" rel="noopener">Ambil di gudang</a>
+                <button type="button" class="btn btn-sun" data-open="dlgPerpanjang" @disabled($hasOpen('perpanjang'))>Tambah periode</button>
+                <button type="button" class="btn btn-ink" data-open="dlgKirim" @disabled($hasOpen('kirim'))>Kirim barang</button>
+                <button type="button" class="btn btn-ghost" data-open="dlgAmbil" @disabled($hasOpen('ambil'))>Ambil di gudang</button>
             @elseif ($awaitingPay && $order->tripay_checkout_url)
                 <a class="btn btn-sun" href="{{ $order->tripay_checkout_url }}">Bayar {{ rp($order->total) }}</a>
             @endif
         </div>
     </div>
+
+    @if (session('error') || $errors->any())
+        <div class="alert a-err"><svg class="ic" aria-hidden="true"><use href="#i-warn"/></svg><div><b>{{ session('error') ?? $errors->first() }}</b></div></div>
+    @endif
+    @if (session('success'))
+        <div class="alert a-ok"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><div><b>{{ session('success') }}</b></div></div>
+    @endif
 
     @if ($awaitingPay)
         <div class="alert a-warn">
@@ -75,9 +94,9 @@
                 <b>{{ $left === 0 ? 'Masa titip berakhir hari ini' : 'Masa titip berakhir ' . $left . ' hari lagi' }}</b>
                 <p>Periode sampai {{ $order->date_end->translatedFormat('l, j F Y') }}. Perpanjang atau ajukan pengambilan.</p>
                 <div class="acts">
-                    <a class="btn btn-primary sm" href="{{ $waText('Halo RuangTitip, saya mau tambah periode titip untuk pesanan') }}" target="_blank" rel="noopener">Tambah periode</a>
-                    <a class="btn btn-ghost sm" href="{{ $waText('Halo RuangTitip, saya mau kirim barang dari pesanan') }}" target="_blank" rel="noopener">Kirim barang</a>
-                    <a class="btn btn-ghost sm" href="{{ $waText('Halo RuangTitip, saya mau ambil barang di gudang untuk pesanan') }}" target="_blank" rel="noopener">Ambil di gudang</a>
+                    <button type="button" class="btn btn-primary sm" data-open="dlgPerpanjang" @disabled($hasOpen('perpanjang'))>Tambah periode</button>
+                    <button type="button" class="btn btn-ghost sm" data-open="dlgKirim" @disabled($hasOpen('kirim'))>Kirim barang</button>
+                    <button type="button" class="btn btn-ghost sm" data-open="dlgAmbil" @disabled($hasOpen('ambil'))>Ambil di gudang</button>
                 </div>
             </div>
         </div>
@@ -108,7 +127,7 @@
                         <tbody>
                             @forelse (($order->items ?? []) as $name => $qty)
                                 @if ((int) $qty > 0)
-                                    <tr><td><b>{{ $itemLabel($name) }}</b></td><td>{{ ucfirst($order->item_type ?? '-') }}</td><td>{{ (int) $qty }}</td></tr>
+                                    <tr><td><b>{{ $itemLabel($name) }}</b></td><td>{{ \Illuminate\Support\Str::before($itemLabel($name), ' ') }}</td><td>{{ (int) $qty }}</td></tr>
                                 @endif
                             @empty
                                 <tr><td colspan="3">Belum ada data barang.</td></tr>
@@ -154,6 +173,20 @@
                 </div>
             </section>
 
+            @if ($requests->isNotEmpty())
+                <section class="card">
+                    <h3>Permintaanmu</h3>
+                    <div class="rows">
+                        @foreach ($requests as $rq)
+                            <div>
+                                <span>{{ $rq->typeLabel() }}<small>{{ $rq->created_at->translatedFormat('j M Y') }}</small></span>
+                                <b><span class="badge b-{{ $reqTone[$rq->status] ?? 'info' }}"><i></i>{{ $rq->statusLabel() }}</span></b>
+                            </div>
+                        @endforeach
+                    </div>
+                </section>
+            @endif
+
             <section class="card">
                 <h3>Biaya</h3>
                 <div class="rows">
@@ -183,6 +216,110 @@
 
         </aside>
     </div>
+
+    @if ($inStorage)
+        <dialog class="rt-dlg req-dlg" id="dlgPerpanjang" aria-labelledby="dlgPerpanjangT">
+            <form method="POST" action="{{ route('pesanan.request.perpanjang', $order) }}" class="stack" style="gap:14px">
+                @csrf
+                <h3 id="dlgPerpanjangT">Tambah periode titip</h3>
+                <p>Periode sekarang berakhir {{ $order->date_end?->translatedFormat('j F Y') ?? '-' }}. Admin akan mengonfirmasi dan menerbitkan tagihan.</p>
+                <div class="field">
+                    <label for="rqMonths">Tambah berapa bulan</label>
+                    <select class="input" id="rqMonths" name="months" required>
+                        @for ($m = 1; $m <= 12; $m++)<option value="{{ $m }}">{{ $m }} bulan</option>@endfor
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="rqNote1">Catatan (opsional)</label>
+                    <textarea class="input" id="rqNote1" name="catatan" rows="2" maxlength="500" style="height:auto;padding:12px"></textarea>
+                </div>
+                <div class="rt-dlg-acts">
+                    <button class="btn btn-ghost" type="button" data-close>Batal</button>
+                    <button class="btn btn-primary" type="submit">Kirim permintaan</button>
+                </div>
+            </form>
+        </dialog>
+
+        <dialog class="rt-dlg req-dlg" id="dlgKirim" aria-labelledby="dlgKirimT">
+            <form method="POST" action="{{ route('pesanan.request.kirim', $order) }}" class="stack" style="gap:14px">
+                @csrf
+                <h3 id="dlgKirimT">Kirim barang ke alamatku</h3>
+                <p>Admin akan menghitung ongkir dan menerbitkan tagihan sebelum barang dikirim.</p>
+                @if ($addresses->isNotEmpty())
+                    <div class="field">
+                        <label for="rqAddr">Alamat tujuan</label>
+                        <select class="input" id="rqAddr" name="address_id" required>
+                            @foreach ($addresses as $ad)
+                                <option value="{{ $ad->id }}" @selected($ad->is_primary)>{{ ($ad->label ?: 'Alamat') . ': ' . IlluminateSupportStr::limit($ad->address, 60) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @else
+                    <p class="help">Kamu belum punya alamat tersimpan. <a href="{{ route('akun.alamat', ['baru' => 1]) }}">Tambah alamat dulu</a>.</p>
+                @endif
+                <div class="field">
+                    <label for="rqNote2">Catatan (opsional)</label>
+                    <textarea class="input" id="rqNote2" name="catatan" rows="2" maxlength="500" style="height:auto;padding:12px"></textarea>
+                </div>
+                <div class="rt-dlg-acts">
+                    <button class="btn btn-ghost" type="button" data-close>Batal</button>
+                    <button class="btn btn-primary" type="submit" @disabled($addresses->isEmpty())>Kirim permintaan</button>
+                </div>
+            </form>
+        </dialog>
+
+        <dialog class="rt-dlg req-dlg" id="dlgAmbil" aria-labelledby="dlgAmbilT">
+            <form method="POST" action="{{ route('pesanan.request.ambil', $order) }}" class="stack" style="gap:14px">
+                @csrf
+                <h3 id="dlgAmbilT">Ambil di gudang</h3>
+                <p>Admin akan mengonfirmasi jadwal dan pelunasan sebelum barang dikeluarkan.</p>
+                <div class="field">
+                    <label for="rqDate">Tanggal ambil</label>
+                    <input class="input" type="date" id="rqDate" name="date" required min="{{ now()->toDateString() }}">
+                </div>
+                <div class="picks" role="radiogroup" aria-label="Cara pengambilan">
+                    <label class="pick"><input type="radio" name="method" value="sendiri" checked><span><b>Diambil sendiri</b></span></label>
+                    <label class="pick"><input type="radio" name="method" value="diwakilkan"><span><b>Diwakilkan orang lain</b></span></label>
+                </div>
+                <div class="field" id="rqRepBox" hidden>
+                    <label for="rqRep">Nama perwakilan</label>
+                    <input class="input" type="text" id="rqRep" name="rep_name" maxlength="100">
+                </div>
+                <div class="field">
+                    <label for="rqNote3">Catatan (opsional)</label>
+                    <textarea class="input" id="rqNote3" name="catatan" rows="2" maxlength="500" style="height:auto;padding:12px"></textarea>
+                </div>
+                <div class="rt-dlg-acts">
+                    <button class="btn btn-ghost" type="button" data-close>Batal</button>
+                    <button class="btn btn-primary" type="submit">Kirim permintaan</button>
+                </div>
+            </form>
+        </dialog>
+    @endif
 </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    document.querySelectorAll('[data-open]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            var d = document.getElementById(b.dataset.open);
+            if (d && typeof d.showModal === 'function') d.showModal();
+        });
+    });
+    document.querySelectorAll('dialog [data-close]').forEach(function (b) {
+        b.addEventListener('click', function () { b.closest('dialog').close(); });
+    });
+    var rep = document.getElementById('rqRepBox');
+    document.querySelectorAll('input[name="method"]').forEach(function (r) {
+        r.addEventListener('change', function () {
+            var on = document.querySelector('input[name="method"]:checked').value === 'diwakilkan';
+            rep.hidden = !on;
+            document.getElementById('rqRep').required = on;
+        });
+    });
+})();
+</script>
+@endpush

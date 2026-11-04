@@ -50,7 +50,6 @@
                     <img src="{{ asset('storage/' . $images[0]) }}" alt="Foto {{ $storage->name }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
                 @else
                     <svg viewBox="0 0 260 150" role="img" aria-label="Ilustrasi {{ $storage->name }}"><use href="#sc"/></svg>
-                    <figcaption>Ilustrasi, ganti dengan foto asli</figcaption>
                 @endif
             </figure>
 
@@ -71,12 +70,13 @@
                     <table class="tbl">
                         <thead><tr><th>Ukuran</th><th>Dimensi</th><th>Harga</th></tr></thead>
                         <tbody>
+                            @php $priceRows = $storage->pricing_rows; @endphp
                             @foreach ($groups as $key => $groupLabel)
-                                @foreach (($storage->pricing[$key] ?? []) as $row)
+                                @foreach ($priceRows[$key] ?? [] as $row)
                                     <tr>
-                                        <td><b>{{ $row['label'] ?? $groupLabel }}</b><small>{{ $groupLabel }}</small></td>
-                                        <td>{{ ! empty($row['dims']) && $row['dims'] !== '-' ? $row['dims'] : '—' }}</td>
-                                        <td><b>{{ rp($row['price'] ?? 0) }}</b><small>per barang per bulan</small></td>
+                                        <td><b>{{ $row['label'] }}</b><small>{{ $groupLabel }}</small></td>
+                                        <td>{{ ! empty($row['dims']) ? $row['dims'] : '—' }}</td>
+                                        <td><b>{{ rp($row['price']) }}</b><small>per barang per bulan</small></td>
                                     </tr>
                                 @endforeach
                             @endforeach
@@ -101,9 +101,9 @@
                 <h3>Lokasi dan jam operasional</h3>
                 <div class="rows">
                     <div><span>Alamat</span><b>{{ $storage->address }}</b></div>
-                    <div><span>Senin sampai Jumat</span><b>08.00–17.00</b></div>
-                    <div><span>Sabtu</span><b>08.00–12.00</b></div>
-                    <div><span>Minggu</span><b>Tutup</b></div>
+                    <div><span>Senin sampai Jumat</span><b>{{ $storage->hours['weekday'] }}</b></div>
+                    <div><span>Sabtu</span><b>{{ $storage->hours['saturday'] }}</b></div>
+                    <div><span>Minggu</span><b>{{ $storage->hours['sunday'] }}</b></div>
                 </div>
             </section>
         </div>

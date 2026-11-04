@@ -56,7 +56,7 @@
                     <div class="oc" style="grid-template-columns:64px 1fr;margin-bottom:12px">
                         <div class="pic" style="--tone:var(--alt)">
                             @if (! empty($item['image']))
-                                <img src="{{ \Illuminate\Support\Facades\Storage::url($item['image']) }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px">
+                                <img src="{{ asset('storage/'.$item['image']) }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px">
                             @else
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#n-tag"/></svg>
                             @endif

@@ -26,7 +26,7 @@ class PrelovedSellController extends Controller
 
     public static function categories(): array
     {
-        return ['Elektronik', 'Perabot', 'Peralatan dapur', 'Buku', 'Lainnya'];
+        return \App\Models\PrelovedItem::CATEGORIES;
     }
 
     public function create()

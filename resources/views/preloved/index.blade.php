@@ -6,6 +6,7 @@
     if (! function_exists('rp')) {
         function rp($n) { return 'Rp' . number_format($n, 0, ',', '.'); }
     }
+    $condChips = ['semua' => 'Semua kondisi', '95_mulus' => 'Seperti baru', '85_baik' => 'Baik', '75_pernah_pakai' => 'Cukup, ada bekas pakai'];
 @endphp
 
 @section('content')
@@ -22,7 +23,12 @@
         <div class="field"><label for="q">Cari barang</label><input class="input" id="q" type="search" value="" placeholder="Contoh: kipas, rak, rice cooker"></div>
         <div class="chips" role="group" aria-label="Kategori">
             @foreach ($categories as $cat)
-                <a class="chip" aria-pressed="{{ $cat === $category ? 'true' : 'false' }}" href="{{ route('preloved.index', array_filter(['kategori' => $cat === 'Semua' ? null : $cat])) }}">{{ $cat }}</a>
+                <a class="chip" aria-pressed="{{ $cat === $category ? 'true' : 'false' }}" href="{{ route('preloved.index', array_filter(['kategori' => $cat === 'Semua' ? null : $cat, 'kondisi' => $condition === 'semua' ? null : $condition])) }}">{{ $cat }}</a>
+            @endforeach
+        </div>
+        <div class="chips" role="group" aria-label="Kondisi">
+            @foreach ($condChips as $slug => $label)
+                <a class="chip" aria-pressed="{{ $slug === $condition ? 'true' : 'false' }}" href="{{ route('preloved.index', array_filter(['kategori' => $category === 'Semua' ? null : $category, 'kondisi' => $slug === 'semua' ? null : $slug])) }}">{{ $label }}</a>
             @endforeach
         </div>
     </section>
@@ -35,7 +41,7 @@
                 <a class="card prod" href="{{ route('preloved.show', $p['id']) }}" data-name="{{ strtolower($p['name']) }}">
                     <div class="pic" style="--tone:var(--alt)">
                         @if ($p['image'])
-                            <img src="{{ \Illuminate\Support\Facades\Storage::url($p['image']) }}" alt="{{ $p['name'] }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+                            <img src="{{ asset('storage/'.$p['image']) }}" alt="{{ $p['name'] }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
                         @else
                             <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#n-tag"/></svg>
                         @endif

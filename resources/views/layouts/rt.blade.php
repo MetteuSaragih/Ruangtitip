@@ -186,7 +186,7 @@
     </div>
 </dialog>
 
-<div class="rt-toast" id="rtToast" role="status" aria-live="polite" @if (session('success') || session('status')) data-msg="{{ session('success') ?? session('status') }}" @endif></div>
+<div class="rt-toast" id="rtToast" role="status" aria-live="polite" @if (session('success') || session('status') || session('error')) data-msg="{{ session('success') ?? session('status') ?? session('error') }}" @endif></div>
 
 @stack('scripts')
 </body>
