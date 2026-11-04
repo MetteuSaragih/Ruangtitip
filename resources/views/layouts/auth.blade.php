@@ -21,7 +21,7 @@
 <div class="shell">
     {{-- ===== Panel kiri ===== --}}
     <aside class="side">
-        <a class="logo" href="{{ route('home') }}" aria-label="RuangTitip, ke beranda"><img class="logo-img" src="{{ asset('assets/logo/logo-horizontal-light.png') }}" alt="RuTip" width="104" height="42"></a>
+        <a class="logo" href="{{ route('home') }}" aria-label="RuangTitip, ke beranda"><img class="logo-img" src="{{ asset('assets/logo/logo-horizontal-light.png') }}" alt="RuangTitip" width="104" height="42"></a>
 
         <div class="side-copy">
             <span class="kicker"><b>Malang</b>Penitipan barang khusus mahasiswa</span>

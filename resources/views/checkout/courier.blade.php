@@ -48,6 +48,9 @@
 </div>
 @endsection
 
+@php
+    $courierItems = array_map(fn ($i) => ['n' => $i['name'] . ' ×' . $i['qty'], 's' => (int) $i['subtotal']], array_values($cart));
+@endphp
 @push('scripts')
 <script>
 (function () {
@@ -56,7 +59,7 @@
     const nextBtn = document.getElementById('nextBtn');
     const courierList = document.getElementById('courierList');
     const sRows = document.getElementById('s-rows');
-    const items = @json(array_map(fn ($i) => ['n' => $i['name'] . ' ×' . $i['qty'], 's' => (int) $i['subtotal']], array_values($cart)));
+    const items = @json($courierItems);
     const baseSubtotal = {{ array_sum(array_column($cart, 'subtotal')) }};
     const serviceFee = 2000;
     const rpf = (n) => 'Rp' + Number(n).toLocaleString('id-ID');
@@ -79,12 +82,12 @@
                     '<div><span>Ongkir</span><b>' + rpf(c.price) + '</b></div>' +
                     '<div class="tot"><span>Total</span><b id="s-total">' + rpf(baseSubtotal + serviceFee + Number(c.price)) + '</b></div>';
             }
-        }, 'light');
+        });
     }
 
     fetch('{{ route("checkout.courier.rates") }}', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
     })
     .then(r => r.json())
     .then(data => renderCouriers(data.pricing || []))

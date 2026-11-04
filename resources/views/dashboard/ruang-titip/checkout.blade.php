@@ -42,7 +42,7 @@
                 <div class="card-h"><h3>Gudang, periode, dan pengiriman</h3><a class="more-link" href="{{ route('ruang-titip.detail-item') }}">Ubah</a></div>
                 <div class="rows">
                     <div><span>Gudang</span><b>{{ $storage->name ?? '-' }}<small>{{ $storage->location ?? '' }}</small></b></div>
-                    <div><span>Periode</span><b>{{ $dStart->translatedFormat('l, j F Y') }} sampai {{ $dEnd->translatedFormat('l, j F Y') }}<small>{{ $calc['months'] }} bulan</small></b></div>
+                    <div><span>Periode</span><b>{{ $dStart->translatedFormat('l, j F Y') }} sampai {{ $dEnd->translatedFormat('l, j F Y') }}<small>{{ $calc['days'] }} hari</small></b></div>
                     <div><span>Pengiriman</span><b>{{ $logLabel }}</b></div>
                 </div>
             </section>
@@ -53,7 +53,12 @@
                     <table class="tbl">
                         <thead><tr><th>Rincian</th><th>Subtotal</th></tr></thead>
                         <tbody>
-                            <tr><td><b>Biaya penitipan</b><small>{{ $calc['totalItems'] }} item, {{ $calc['months'] }} bulan</small></td><td><b>{{ rp($calc['itemSubtotal']) }}</b></td></tr>
+                            @foreach (($s['items'] ?? []) as $code => $qty)
+                                @if ((int) $qty > 0)
+                                    @php $unitPrice = \App\Support\StorageSizes::price((string) $code); @endphp
+                                    <tr><td><b>{{ (int) $qty }} &times; {{ \App\Support\StorageSizes::label((string) $code) }}</b><small>{{ (int) $qty }} &times; {{ rp($unitPrice) }} &times; {{ $calc['days'] }} hari</small></td><td><b>{{ rp((int) $qty * $unitPrice * $calc['days']) }}</b></td></tr>
+                                @endif
+                            @endforeach
                             @if ($s['logistic'] === 'rutip')
                                 <tr><td><b>Antar-jemput RuTip</b><small>{{ $calc['km'] }} km dari alamatmu ke gudang</small></td><td><b>{{ rp($calc['kmCost']) }}</b></td></tr>
                                 <tr><td><b>Jemput per barang</b><small>{{ $calc['totalItems'] }} &times; {{ rp($calc['totalItems'] > 0 ? $calc['pickupBoxCost'] / $calc['totalItems'] : 0) }}</small></td><td><b>{{ rp($calc['pickupBoxCost']) }}</b></td></tr>

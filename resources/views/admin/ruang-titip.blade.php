@@ -7,21 +7,23 @@
     .rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
     .room { display: flex; flex-direction: column; gap: 12px; }
     .room-top { display: flex; gap: 12px; align-items: flex-start; }
-    .room-top .thumb { width: 64px; height: 64px; border-radius: 10px; }
+    .room-top .thumb { width: 64px; height: 64px; border-radius: 10px; flex: none; }
     .room-top h3 { font-size: 16px; }
     .room-top p { font-size: 12.5px; color: var(--color-text-secondary); }
     .room-top .st { margin-left: auto; }
     .room-nums { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; }
     .room-nums small { display: block; color: var(--color-text-secondary); font-size: 12px; }
     .room-nums b { font-variant-numeric: tabular-nums; }
+    .room-tags { display: flex; gap: 6px; flex-wrap: wrap; }
     .room-foot { display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--color-divider); padding-top: 12px; }
     .room-foot form { margin: 0; }
-    .price-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-    .price-grid .field span { font-size: 12px; text-align: center; color: var(--color-text-secondary); }
-    .price-grid .field span b { display: block; color: var(--color-ink); }
-    .facs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .price-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .price-grid .field > span { font-size: 12px; color: var(--color-text-secondary); display: block; margin-top: 4px; }
+    .price-grid .field > label { font-weight: 700; }
     .grp { border: 1px solid var(--color-border); border-radius: 12px; padding: 12px; display: grid; gap: 10px; }
     .grp > .lab { margin: 0; }
+    .size-pick { display: grid; gap: 8px; }
+    .size-pick .check small { display: block; color: var(--color-text-secondary); font-size: 12px; }
     dialog.dlg.wide { width: min(680px, 94vw); }
     .photo-edit { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; margin-bottom: 8px; }
     .photo-tile { position: relative; display: grid; gap: 4px; font-size: 12px; color: var(--color-text-secondary); cursor: pointer; }
@@ -36,63 +38,71 @@
 @section('content')
 @php
     $rp = fn ($n) => 'Rp ' . number_format((int) $n, 0, ',', '.');
-
-    // Normalisasi harga tersimpan (bisa berupa baris [id,label,price] atau peta id => harga).
-    $normPrices = function ($pricing, string $type) {
-        $out = [];
-        foreach (($pricing[$type] ?? []) as $k => $row) {
-            if (is_array($row)) {
-                $out[$row['id'] ?? $k] = (int) ($row['price'] ?? 0);
-            } else {
-                $out[$k] = (int) $row;
-            }
-        }
-        return $out;
-    };
+    $codes = array_keys($sizes);
 
     $roomData = [];
     foreach ($rooms as $room) {
         $roomData[$room->id] = [
             'id' => $room->id,
             'name' => $room->name,
+            'title' => $room->title,
             'location' => $room->location,
             'address' => $room->address,
             'description' => $room->description,
+            'long_description' => $room->long_description,
+            'sizes' => $room->accepted_sizes,
+            'facilities' => array_values((array) ($room->facilities ?? [])),
+            'rules' => array_values((array) ($room->rules ?? [])),
             'capacity_total' => $room->capacity_total,
             'active' => (bool) $room->active,
-            'facilities' => $room->facilities ?? [],
-            'photos' => count($room->photos ?? []),
             'photoList' => array_values($room->photos ?? []),
             'photoBase' => asset('storage') . '/',
             'hours' => $room->hours,
-            'kardus' => $normPrices($room->pricing, 'kardus'),
-            'koper' => $normPrices($room->pricing, 'koper'),
-            'dimensiLain' => (int) ($room->pricing['dimensiLain'] ?? 0),
         ];
     }
     $editingId = old('_room');
+    $hasOld = old('name') !== null;
+    $pickedSizes = $hasOld ? (array) old('sizes', []) : $codes;
 @endphp
 
 <div class="ph">
     <div>
         <h1>Ruang &amp; kapasitas</h1>
-        <p>Kelola gudang yang tayang di aplikasi pelanggan: kapasitas, harga, dan fasilitas.</p>
+        <p>Kelola gudang yang tayang di aplikasi pelanggan: kapasitas, ukuran yang diterima, dan harga per ukuran.</p>
     </div>
     <div class="acts">
         <button type="button" class="btn btn-sun" id="roomAddBtn"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg> Tambah ruang</button>
     </div>
 </div>
 
+<section class="card" style="margin-bottom:16px">
+    <div class="card-h"><h3>Harga per ukuran</h3><small>per barang per hari, berlaku di semua ruang</small></div>
+    <form method="POST" action="{{ route('admin.ruang-titip.sizes') }}">
+        @csrf
+        <div class="price-grid">
+            @foreach ($sizes as $code => $spec)
+                <div class="field">
+                    <label for="price{{ $code }}">{{ $spec['label'] }} (Rp per hari)</label>
+                    <input class="input num" id="price{{ $code }}" name="prices[{{ $code }}]" type="number" min="1000" step="1" inputmode="numeric" required value="{{ old('prices.' . $code, $spec['price']) }}">
+                    <span>Kardus {{ $spec['box'] }}@if (! empty($spec['koper'])), koper {{ $spec['koper'] }}@endif, maks {{ $spec['kg'] }} kg</span>
+                    <span>Jatah ruang {{ $spec['unit'] }} setara ukuran S</span>
+                    @error('prices.' . $code)<span class="err-t">{{ $message }}</span>@enderror
+                </div>
+            @endforeach
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px">
+            <button type="submit" class="btn btn-primary">Simpan harga</button>
+            <span class="help">Perubahan harga hanya berlaku untuk pesanan baru. Pesanan yang sudah dibuat tetap memakai harga lamanya.</span>
+        </div>
+    </form>
+</section>
+
 @if ($rooms->isEmpty())
     <section class="card"><div class="empty"><b>Belum ada ruang</b>Klik &quot;Tambah ruang&quot; untuk mulai.</div></section>
 @else
     <div class="rooms">
         @foreach ($rooms as $room)
-            @php
-                $pct = $room->capacity_pct;
-                $minP = collect($roomData[$room->id]['kardus'])->filter(fn ($p) => $p > 0)->min() ?? 0;
-                $maxP = collect($roomData[$room->id]['koper'])->max() ?? 0;
-            @endphp
+            @php $pct = $room->capacity_pct; @endphp
             <article class="card room">
                 <div class="room-top">
                     <div class="thumb">
@@ -103,23 +113,31 @@
                         @endif
                     </div>
                     <div>
-                        <h3>{{ $room->name }}</h3>
-                        <p>{{ \Illuminate\Support\Str::limit($room->address, 60) }}{{ $room->location ? ', ' . $room->location : '' }}</p>
+                        <h3>{{ $room->name }}@if ($room->title) <span class="muted">&middot; {{ $room->title }}</span>@endif</h3>
+                        <p>{{ $room->location ?: 'Kode lokasi belum diisi' }}</p>
+                        <p>{{ \Illuminate\Support\Str::limit($room->address, 60) }}</p>
                     </div>
                     <span class="st {{ $room->active ? 'ok' : 'mute' }}">{{ $room->active ? 'Tayang' : 'Disembunyikan' }}</span>
                 </div>
 
                 <div>
                     <div class="room-nums" style="margin-bottom:6px">
-                        <span><small>Terpakai</small><b>{{ $room->capacity_used }} / {{ $room->capacity_total }} slot</b></span>
+                        <span><small>Terpakai</small><b>{{ $room->capacity_used }} / {{ $room->capacity_total }} setara ukuran S</b></span>
                         <span style="text-align:right"><small>Okupansi</small><b>{{ $pct }}%</b></span>
                     </div>
                     <div class="meter {{ $pct >= 90 ? 'full' : ($pct >= 70 ? 'hi' : '') }}"><i style="width: {{ min(100, $pct) }}%"></i></div>
                 </div>
 
                 <div class="room-nums">
-                    <span><small>Kardus mulai</small><b>{{ $rp($minP) }}</b></span>
-                    <span style="text-align:right"><small>Koper hingga</small><b>{{ $rp($maxP) }}</b></span>
+                    <span>
+                        <small>Ukuran diterima</small>
+                        <span class="room-tags">
+                            @foreach ($room->accepted_sizes as $code)
+                                <span class="tag info">{{ $code }}</span>
+                            @endforeach
+                        </span>
+                    </span>
+                    <span style="text-align:right"><small>Mulai dari</small><b>{{ $rp($room->min_price) }} / hari</b></span>
                 </div>
 
                 <div class="room-foot">
@@ -140,7 +158,7 @@
 @endif
 
 {{-- Dialog tambah / ubah ruang --}}
-<dialog class="dlg wide" id="roomDialog" aria-labelledby="roomDialogT" @if ($errors->any() && old('name') !== null) data-reopen @endif>
+<dialog class="dlg wide" id="roomDialog" aria-labelledby="roomDialogT" @if ($errors->any() && $hasOld) data-reopen @endif>
     <form id="roomForm" method="POST" action="{{ route('admin.ruang-titip.store') }}" enctype="multipart/form-data">
         @csrf
         <span id="roomMethod"></span>
@@ -152,34 +170,75 @@
         <div class="db">
             <div class="fgrid">
                 <div class="field">
-                    <label for="rName">Nama gudang</label>
-                    <input class="input" id="rName" name="name" required value="{{ old('name') }}" placeholder="Contoh: Gudang Sumbersari">
+                    <label for="rName">Nama ruang</label>
+                    <input class="input" id="rName" name="name" required maxlength="255" value="{{ old('name') }}" placeholder="Contoh: Ruang A">
                     @error('name')<span class="err-t">{{ $message }}</span>@enderror
                 </div>
                 <div class="field">
-                    <label for="rLocation">Lokasi atau kecamatan</label>
-                    <input class="input" id="rLocation" name="location" value="{{ old('location') }}" placeholder="Lowokwaru, Malang">
+                    <label for="rTitle">Jenis ruang</label>
+                    <input class="input" id="rTitle" name="title" maxlength="255" value="{{ old('title') }}" placeholder="Contoh: Rak Kardus">
+                    @error('title')<span class="err-t">{{ $message }}</span>@enderror
+                </div>
+                <div class="field">
+                    <label for="rLocation">Kode lokasi</label>
+                    <input class="input" id="rLocation" name="location" maxlength="255" value="{{ old('location') }}" placeholder="Contoh: Rak B">
                     @error('location')<span class="err-t">{{ $message }}</span>@enderror
                 </div>
+                <div class="field">
+                    <label for="rCap">Kapasitas total (setara ukuran S)</label>
+                    <input class="input num" id="rCap" name="capacity_total" type="number" min="1" required value="{{ old('capacity_total') }}" placeholder="500">
+                    <span class="help">Per barang: @foreach ($sizes as $code => $spec){{ $code }} = {{ $spec['unit'] }}@if (! $loop->last), @endif @endforeach.</span>
+                    @error('capacity_total')<span class="err-t">{{ $message }}</span>@enderror
+                </div>
                 <div class="field full">
-                    <label for="rAddress">Alamat lengkap</label>
-                    <input class="input" id="rAddress" name="address" required value="{{ old('address') }}" placeholder="Jl. Sumbersari No. 12, Lowokwaru, Malang">
+                    <label for="rAddress">Alamat lengkap gudang</label>
+                    <input class="input" id="rAddress" name="address" required maxlength="500" value="{{ old('address') }}" placeholder="Jl. Sumbersari No. 12, Lowokwaru, Malang">
                     @error('address')<span class="err-t">{{ $message }}</span>@enderror
                 </div>
                 <div class="field full">
-                    <label for="rDesc">Deskripsi</label>
-                    <textarea class="input" id="rDesc" name="description" placeholder="Contoh: ruangan tertutup, ada CCTV, cocok untuk koper dan kardus.">{{ old('description') }}</textarea>
+                    <label for="rDesc">Deskripsi singkat</label>
+                    <textarea class="input" id="rDesc" name="description" maxlength="500" placeholder="Satu atau dua kalimat yang tampil di daftar ruang.">{{ old('description') }}</textarea>
                     @error('description')<span class="err-t">{{ $message }}</span>@enderror
                 </div>
-                <div class="field">
-                    <label for="rCap">Kapasitas total (slot)</label>
-                    <input class="input num" id="rCap" name="capacity_total" type="number" min="1" required value="{{ old('capacity_total') }}" placeholder="500">
-                    @error('capacity_total')<span class="err-t">{{ $message }}</span>@enderror
+                <div class="field full">
+                    <label for="rLong">Deskripsi lengkap</label>
+                    <textarea class="input" id="rLong" name="long_description" maxlength="3000" rows="4" placeholder="Penjelasan lengkap yang tampil di halaman detail ruang.">{{ old('long_description') }}</textarea>
+                    @error('long_description')<span class="err-t">{{ $message }}</span>@enderror
+                </div>
+            </div>
+
+            <div class="grp">
+                <span class="lab">Ukuran yang diterima</span>
+                <div class="size-pick" id="sizePick">
+                    @foreach ($sizes as $code => $spec)
+                        <label class="check">
+                            <input type="checkbox" name="sizes[]" value="{{ $code }}" @checked(in_array($code, $pickedSizes, true))>
+                            <span><b>{{ $spec['label'] }}</b>
+                                <small>Kardus {{ $spec['box'] }}@if (! empty($spec['koper'])), koper {{ $spec['koper'] }}@endif, maks {{ $spec['kg'] }} kg, {{ $rp($spec['price']) }} per hari</small>
+                            </span>
+                        </label>
+                    @endforeach
+                </div>
+                <span class="help">Pilih minimal satu. Pelanggan hanya bisa menitipkan ukuran yang dicentang di ruang ini. Harga diatur di bagian &quot;Harga per ukuran&quot; di atas.</span>
+                @error('sizes')<span class="err-t">{{ $message }}</span>@enderror
+                @error('sizes.*')<span class="err-t">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="fgrid">
+                <div class="field full">
+                    <label for="rFac">Fitur ruang</label>
+                    <textarea class="input" id="rFac" name="facilities" rows="4" placeholder="Satu fitur per baris, contoh:&#10;CCTV 24 jam&#10;Bebas banjir">{{ old('facilities') }}</textarea>
+                    @error('facilities')<span class="err-t">{{ $message }}</span>@enderror
+                </div>
+                <div class="field full">
+                    <label for="rRules">Aturan khusus ruang <span class="muted">(opsional)</span></label>
+                    <textarea class="input" id="rRules" name="rules" rows="3" placeholder="Satu aturan per baris, contoh:&#10;Dilarang menitipkan barang cair">{{ old('rules') }}</textarea>
+                    @error('rules')<span class="err-t">{{ $message }}</span>@enderror
                 </div>
                 <div class="field full">
                     <label for="rImages">Foto ruangan</label>
                     <div class="photo-edit" id="rPhotos" hidden></div>
-                    <input class="input" id="rImages" name="images[]" type="file" accept="image/png,image/jpeg" multiple>
+                    <input class="input" id="rImages" name="images[]" type="file" accept="image/png,image/jpeg,image/webp" multiple>
                     <span class="help" id="rImagesHelp">Wajib minimal 1 foto, maksimal 10 foto, 5 MB per foto. Foto pertama jadi foto utama di aplikasi pelanggan.</span>
                     @error('images')<span class="err-t">{{ $message }}</span>@enderror
                     @error('images.*')<span class="err-t">{{ $message }}</span>@enderror
@@ -203,43 +262,6 @@
                     </div>
                 </div>
                 <span class="help">Kosongkan untuk memakai jam bawaan (Senin sampai Jumat 08.00–17.00, Sabtu 08.00–12.00, Minggu tutup).</span>
-            </div>
-
-            <div class="grp">
-                <span class="lab">Harga per barang per bulan, kardus</span>
-                <div class="price-grid">
-                    @foreach ($defaultPricing['kardus'] as $row)
-                        <div class="field">
-                            <span><b>{{ $row['label'] }}</b>{{ $row['dims'] }}</span>
-                            <input class="input num" type="number" min="0" name="pricing[kardus][{{ $row['id'] }}]" data-price="kardus.{{ $row['id'] }}" data-default="{{ $row['price'] }}" value="{{ old('pricing.kardus.' . $row['id'], $row['price']) }}" aria-label="Harga kardus {{ $row['label'] }}">
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-            <div class="grp">
-                <span class="lab">Harga per barang per bulan, koper</span>
-                <div class="price-grid">
-                    @foreach ($defaultPricing['koper'] as $row)
-                        <div class="field">
-                            <span><b>{{ $row['label'] }}</b>{{ $row['dims'] }}</span>
-                            <input class="input num" type="number" min="0" name="pricing[koper][{{ $row['id'] }}]" data-price="koper.{{ $row['id'] }}" data-default="{{ $row['price'] }}" value="{{ old('pricing.koper.' . $row['id'], $row['price']) }}" aria-label="Harga koper {{ $row['label'] }}">
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-            <div class="field">
-                <label for="rDim">Dimensi lain (30x30x30 sampai 100x100x100 cm), harga per barang per bulan</label>
-                <input class="input num" id="rDim" type="number" min="0" name="pricing[dimensiLain]" data-price="dimensiLain" data-default="{{ $defaultPricing['dimensiLain'] }}" value="{{ old('pricing.dimensiLain', $defaultPricing['dimensiLain']) }}">
-                @error('pricing')<span class="err-t">{{ $message }}</span>@enderror
-            </div>
-
-            <div>
-                <span class="lab">Fasilitas</span>
-                <div class="facs" id="facsList" style="margin-top:6px">
-                    @foreach ($allFacilities as $f)
-                        <label class="check"><input type="checkbox" name="facilities[]" value="{{ $f }}" @checked(in_array($f, (array) old('facilities', [])))> <span>{{ $f }}</span></label>
-                    @endforeach
-                </div>
             </div>
 
             <label class="sw">
@@ -272,6 +294,8 @@
     var title = document.getElementById('roomDialogT');
     var submit = document.getElementById('roomSubmit');
     var imgHelp = document.getElementById('rImagesHelp');
+    var TEXT_FIELDS = ['name', 'title', 'location', 'address', 'description', 'long_description', 'capacity_total', 'facilities', 'rules',
+        'opening_hours[weekday]', 'opening_hours[saturday]', 'opening_hours[sunday]'];
 
     function setMode(room) {
         if (room) {
@@ -287,26 +311,27 @@
             form.action = STORE_URL;
             methodBox.innerHTML = '';
             idField.value = '';
-            imgHelp.textContent = 'Wajib minimal 1 foto, maksimal 10 foto, 5 MB per foto.';
+            imgHelp.textContent = 'Wajib minimal 1 foto, maksimal 10 foto, 5 MB per foto. Foto pertama jadi foto utama di aplikasi pelanggan.';
         }
+    }
+
+    function setSizes(list) {
+        form.querySelectorAll('#sizePick input[type=checkbox]').forEach(function (cb) {
+            cb.checked = list.indexOf(cb.value) !== -1;
+        });
     }
 
     function fill(room) {
         form.elements['name'].value = room.name || '';
+        form.elements['title'].value = room.title || '';
         form.elements['location'].value = room.location || '';
         form.elements['address'].value = room.address || '';
         form.elements['description'].value = room.description || '';
+        form.elements['long_description'].value = room.long_description || '';
         form.elements['capacity_total'].value = room.capacity_total || '';
-        form.querySelectorAll('[data-price]').forEach(function (el) {
-            var p = el.dataset.price;
-            var v;
-            if (p === 'dimensiLain') { v = room.dimensiLain; }
-            else { var parts = p.split('.'); v = (room[parts[0]] || {})[parts[1]]; }
-            el.value = (v === undefined || v === null) ? el.dataset.default : v;
-        });
-        form.querySelectorAll('#facsList input[type=checkbox]').forEach(function (cb) {
-            cb.checked = (room.facilities || []).indexOf(cb.value) !== -1;
-        });
+        form.elements['facilities'].value = (room.facilities || []).join('\n');
+        form.elements['rules'].value = (room.rules || []).join('\n');
+        setSizes(room.sizes || []);
         document.getElementById('rActive').checked = !!room.active;
         form.elements['images[]'].value = '';
         form.elements['opening_hours[weekday]'].value = (room.hours && room.hours.weekday) || '';
@@ -340,9 +365,14 @@
         });
     }
 
+    // Form kosong: semua ukuran tercentang, tayang aktif.
     function reset() {
         form.reset();
-        form.querySelectorAll('[data-price]').forEach(function (el) { el.value = el.dataset.default; });
+        TEXT_FIELDS.forEach(function (n) { form.elements[n].value = ''; });
+        form.elements['images[]'].value = '';
+        setSizes(@json($codes));
+        document.getElementById('rActive').checked = true;
+        form.querySelectorAll('.err-t').forEach(function (el) { el.remove(); });
         renderPhotos(null);
     }
 
@@ -364,7 +394,10 @@
     });
 
     // Setelah validasi gagal: pulihkan mode ubah (isian lama sudah diisi server).
-    if (EDITING && ROOMS[EDITING]) { setMode(ROOMS[EDITING]); }
+    if (EDITING && ROOMS[EDITING]) {
+        setMode(ROOMS[EDITING]);
+        renderPhotos(ROOMS[EDITING]);
+    }
 })();
 </script>
 @endpush

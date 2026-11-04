@@ -100,7 +100,7 @@ h1 em{font-style:normal;color:var(--tape)}
 <body>
 <div class="page">
   <header class="top">
-    <a class="logo" href="{{ url('/') }}" aria-label="RuangTitip, ke beranda"><img src="{{ asset('assets/logo/logo-horizontal-light.png') }}" alt="RuTip" width="109" height="44" style="height:44px;width:auto"></a>
+    <a class="logo" href="{{ url('/') }}" aria-label="RuangTitip, ke beranda"><img src="{{ asset('assets/logo/logo-horizontal-light.png') }}" alt="RuangTitip" width="109" height="44" style="height:44px;width:auto"></a>
   </header>
 
   <main>

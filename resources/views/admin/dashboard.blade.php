@@ -42,7 +42,7 @@
         <div class="kpi">
             <small>Okupansi gudang</small>
             <b class="num">{{ $okupansi }}%</b>
-            <span>dari seluruh kapasitas ruang</span>
+            <span>dari seluruh kapasitas (setara ukuran S)</span>
         </div>
         <div class="kpi">
             <small>Pendapatan bulan ini</small>
@@ -109,7 +109,7 @@
                 @forelse ($rooms as $room)
                     @php $pct = $room->capacity_pct; @endphp
                     <div class="room-row" style="margin-bottom:14px">
-                        <div class="top-r"><b>{{ $room->name }}</b><span class="num muted">{{ $room->capacity_used }} / {{ $room->capacity_total }}</span></div>
+                        <div class="top-r"><b>{{ $room->name }}</b><span class="num muted">{{ $room->capacity_used }} / {{ $room->capacity_total }} setara S</span></div>
                         <div class="meter {{ $pct >= 90 ? 'full' : ($pct >= 70 ? 'hi' : '') }}"><i style="width: {{ min(100, $pct) }}%"></i></div>
                     </div>
                 @empty

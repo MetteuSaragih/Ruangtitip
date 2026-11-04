@@ -25,6 +25,8 @@ class BiteshipService
     {
         return Http::baseUrl($this->baseUrl)
             ->withHeaders(['Authorization' => $this->apiKey])
+            ->connectTimeout(5)
+            ->timeout(20)
             ->acceptJson();
     }
 
@@ -38,19 +40,30 @@ class BiteshipService
             return [];
         }
 
-        $response = $this->client()->get('/maps/areas', [
-            'countries' => 'ID',
-            'input' => $input,
-        ]);
+        if (! $this->isConfigured()) {
+            return [];
+        }
+
+        try {
+            $response = $this->client()->get('/maps/areas', [
+                'countries' => 'ID',
+                'input' => $input,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Biteship searchAreas error koneksi', ['error' => $e->getMessage()]);
+
+            return [];
+        }
 
         if (! $response->successful()) {
             Log::warning('Biteship searchAreas gagal', ['status' => $response->status(), 'body' => $response->body()]);
             return [];
         }
 
-        $areas = $response->json('areas', []);
+        $areas = $response->json('areas');
 
-        return collect($areas)
+        return collect(is_array($areas) ? $areas : [])
+            ->filter(fn ($area) => is_array($area))
             ->map(function (array $area) {
                 preg_match('/(\d{5})\s*$/', $area['name'] ?? '', $m);
 
@@ -89,19 +102,32 @@ class BiteshipService
             ]
         );
 
-        $response = $this->client()->post('/rates/couriers', $payload);
+        if (! $this->isConfigured()) {
+            return ['success' => false, 'pricing' => [], 'message' => 'Layanan kurir belum dikonfigurasi.'];
+        }
+
+        try {
+            $response = $this->client()->post('/rates/couriers', $payload);
+        } catch (\Throwable $e) {
+            Log::warning('Biteship getRates error koneksi', ['error' => $e->getMessage()]);
+
+            return ['success' => false, 'pricing' => [], 'message' => 'Layanan kurir tidak dapat dihubungi. Coba lagi sebentar.'];
+        }
 
         if (! $response->successful()) {
             Log::warning('Biteship getRates gagal', ['status' => $response->status(), 'body' => $response->body()]);
 
-            return ['success' => false, 'pricing' => [], 'message' => $response->json('error') ?? 'Gagal mengambil tarif kurir.'];
+            $error = $response->json('error');
+
+            return ['success' => false, 'pricing' => [], 'message' => is_string($error) && $error !== '' ? $error : 'Gagal mengambil tarif kurir.'];
         }
 
         $body = $response->json();
+        $body = is_array($body) ? $body : [];
 
         return [
             'success' => (bool) ($body['success'] ?? false),
-            'pricing' => $this->filterOversizedMotorCouriers($body['pricing'] ?? [], $items),
+            'pricing' => $this->filterOversizedMotorCouriers(is_array($body['pricing'] ?? null) ? $body['pricing'] : [], $items),
             'message' => $body['message'] ?? null,
         ];
     }
@@ -208,26 +234,45 @@ class BiteshipService
         $payload = array_merge($payload, $this->prefixed('destination', $destination));
         $payload = array_filter($payload, fn ($v) => $v !== null);
 
-        $response = $this->client()->post('/orders', $payload);
-
-        if (! $response->successful()) {
-            Log::error('Biteship createOrder gagal', ['status' => $response->status(), 'body' => $response->body(), 'payload' => $payload]);
-
-            throw new \RuntimeException('Gagal membuat pesanan Biteship: ' . $response->body());
+        if (! $this->isConfigured()) {
+            throw new \RuntimeException('Biteship belum dikonfigurasi (BITESHIP_API_KEY kosong).');
         }
 
-        return $response->json();
+        try {
+            $response = $this->client()->post('/orders', $payload);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('Biteship tidak dapat dihubungi: ' . $e->getMessage(), 0, $e);
+        }
+
+        $body = $response->json();
+
+        // Respons sukses tanpa "id" dianggap gagal supaya tidak tercatat sebagai terpesan.
+        if (! $response->successful() || ! is_array($body) || empty($body['id'])) {
+            Log::error('Biteship createOrder gagal', ['status' => $response->status(), 'body' => $response->body(), 'reference_id' => $referenceId]);
+
+            $reason = is_array($body) ? (string) ($body['error'] ?? $body['message'] ?? '') : '';
+
+            throw new \RuntimeException('Gagal membuat pesanan Biteship (HTTP ' . $response->status() . ')' . ($reason !== '' ? ': ' . $reason : '.'));
+        }
+
+        return $body;
     }
 
     public function getOrder(string $biteshipOrderId): array
     {
-        $response = $this->client()->get("/orders/{$biteshipOrderId}");
-
-        if (! $response->successful()) {
-            throw new \RuntimeException('Gagal mengambil data pesanan Biteship: ' . $response->body());
+        try {
+            $response = $this->client()->get('/orders/' . rawurlencode($biteshipOrderId));
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('Biteship tidak dapat dihubungi: ' . $e->getMessage(), 0, $e);
         }
 
-        return $response->json();
+        $body = $response->json();
+
+        if (! $response->successful() || ! is_array($body)) {
+            throw new \RuntimeException('Gagal mengambil data pesanan Biteship (HTTP ' . $response->status() . ').');
+        }
+
+        return $body;
     }
 
     /**

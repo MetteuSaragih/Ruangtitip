@@ -144,6 +144,9 @@ $formAction = $editId ? route('admin.preloved.update', $editId) : route('admin.p
             @foreach ($categories as $cat)
               <option value="{{ $cat }}" @selected(old('category') === $cat)>{{ $cat }}</option>
             @endforeach
+            @if (old('category') && ! in_array(old('category'), $categories, true))
+              <option value="{{ old('category') }}" selected>{{ old('category') }} (kategori lama)</option>
+            @endif
           </select>
           @error('category')<span class="err-t">{{ $message }}</span>@enderror
         </div>

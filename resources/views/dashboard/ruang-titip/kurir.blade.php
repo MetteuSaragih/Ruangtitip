@@ -83,12 +83,12 @@
                     '<div><span>Kurir/anjem</span><b>Rp' + Number(c.price).toLocaleString('id-ID') + '</b></div>';
             }
             if (sTotal) sTotal.textContent = 'Rp' + (baseTotal + Number(c.price)).toLocaleString('id-ID');
-        }, 'light');
+        });
     }
 
     fetch('{{ route("ruang-titip.kurir.rates") }}', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
     })
     .then(r => r.json())
     .then(data => renderCouriers(data.pricing || []))

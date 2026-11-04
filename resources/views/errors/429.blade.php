@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Terlalu Banyak Request - RUTIP</title>
+<title>Terlalu Banyak Request &middot; RuangTitip</title>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{min-height:100vh;background:#0A2423;color:#fff;font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;position:relative;}
@@ -43,7 +43,7 @@
 <div class="bg-orb-2"></div>
 <div class="card">
   <a href="/" style="display:inline-block;margin-bottom:32px;">
-    <img src="{{ asset('assets/logo/logo-horizontal-light.png') }}" alt="RuTip" width="129" height="52" style="height:52px;width:auto">
+    <img src="{{ asset('assets/logo/logo-horizontal-light.png') }}" alt="RuangTitip" width="129" height="52" style="height:52px;width:auto">
   </a>
   <div class="wave-illus">
     <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
@@ -62,7 +62,7 @@
     Kembali ke Beranda
   </a>
 </div>
-<footer>© {{ date('Y') }} RUTIP · Ruang Titip</footer>
+<footer>© {{ date('Y') }} RuangTitip</footer>
 <script>
 let t = 60;
 const el = document.getElementById('countdown');

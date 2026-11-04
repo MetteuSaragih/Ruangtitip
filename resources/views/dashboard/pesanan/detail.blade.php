@@ -17,15 +17,8 @@
     $storageName = $order->storage->name ?? 'Penitipan Barang';
     $days = $order->date_start && $order->date_end ? $order->date_start->diffInDays($order->date_end) + 1 : null;
     $payMethod = $order->tripay_payment_method ?: $order->payment_method;
-    $itemLabel = function ($k) {
-        foreach (\App\Models\StorageRoom::SIZE_META as $type => $sizes) {
-            if (isset($sizes[$k])) {
-                return ucfirst($type) . ' ' . $sizes[$k][0];
-            }
-        }
-
-        return $k === 'dimensi_lain' ? 'Dimensi lain' : ucfirst(str_replace('_', ' ', $k));
-    };
+    $itemLabel = fn ($k) => \App\Support\StorageSizes::label((string) $k);
+    $itemSpec = fn ($k) => \App\Support\StorageSizes::get((string) $k);
     $requests = $requests ?? collect();
     $addresses = $addresses ?? collect();
     $hasOpen = fn ($t) => $requests->contains(fn ($r) => $r->type === $t && $r->isOpen());
@@ -123,11 +116,11 @@
                 <h3>Barang</h3>
                 <div class="tbl-wrap">
                     <table class="tbl">
-                        <thead><tr><th>Ukuran</th><th>Kategori</th><th>Jumlah</th></tr></thead>
+                        <thead><tr><th>Ukuran</th><th>Maks. kardus</th><th>Jumlah</th></tr></thead>
                         <tbody>
                             @forelse (($order->items ?? []) as $name => $qty)
                                 @if ((int) $qty > 0)
-                                    <tr><td><b>{{ $itemLabel($name) }}</b></td><td>{{ \Illuminate\Support\Str::before($itemLabel($name), ' ') }}</td><td>{{ (int) $qty }}</td></tr>
+                                    <tr><td><b>{{ $itemLabel($name) }}</b></td><td>{{ $itemSpec($name)['box'] ?? '-' }}</td><td>{{ (int) $qty }}</td></tr>
                                 @endif
                             @empty
                                 <tr><td colspan="3">Belum ada data barang.</td></tr>
@@ -224,9 +217,9 @@
                 <h3 id="dlgPerpanjangT">Tambah periode titip</h3>
                 <p>Periode sekarang berakhir {{ $order->date_end?->translatedFormat('j F Y') ?? '-' }}. Admin akan mengonfirmasi dan menerbitkan tagihan.</p>
                 <div class="field">
-                    <label for="rqMonths">Tambah berapa bulan</label>
-                    <select class="input" id="rqMonths" name="months" required>
-                        @for ($m = 1; $m <= 12; $m++)<option value="{{ $m }}">{{ $m }} bulan</option>@endfor
+                    <label for="rqDays">Tambah berapa hari</label>
+                    <select class="input" id="rqDays" name="days" required>
+                        @foreach ([7, 14, 30, 60, 90] as $d)<option value="{{ $d }}" @selected($d === 30)>{{ $d }} hari</option>@endforeach
                     </select>
                 </div>
                 <div class="field">
@@ -250,7 +243,7 @@
                         <label for="rqAddr">Alamat tujuan</label>
                         <select class="input" id="rqAddr" name="address_id" required>
                             @foreach ($addresses as $ad)
-                                <option value="{{ $ad->id }}" @selected($ad->is_primary)>{{ ($ad->label ?: 'Alamat') . ': ' . IlluminateSupportStr::limit($ad->address, 60) }}</option>
+                                <option value="{{ $ad->id }}" @selected($ad->is_primary)>{{ ($ad->label ?: 'Alamat') . ': ' . \Illuminate\Support\Str::limit($ad->address, 60) }}</option>
                             @endforeach
                         </select>
                     </div>

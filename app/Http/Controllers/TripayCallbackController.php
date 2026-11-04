@@ -8,11 +8,15 @@ use App\Models\PackingOrder;
 use App\Models\PrelovedItem;
 use App\Models\TitipanOrder;
 use App\Services\TripayService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class TripayCallbackController extends Controller
 {
+    private const STATUSES = ['PAID', 'UNPAID', 'EXPIRED', 'FAILED', 'REFUND'];
+
     /**
      * Webhook server-to-server dari Tripay setiap status transaksi berubah.
      * Ini SUMBER KEBENARAN status pembayaran, bukan redirect return_url di browser.
@@ -23,91 +27,139 @@ class TripayCallbackController extends Controller
      * Route HARUS bebas dari middleware 'auth' dan dikecualikan dari CSRF.
      *
      * Begitu status jadi PAID, controller ini CUMA menandai pesanan lunas
-     * dan menembakkan event OrderPaid — tidak langsung memesan Biteship di
-     * sini. Pemesanan Biteship ada di App\Listeners\BookShipmentOnOrderPaid
-     * (kurir reguler) dan App\Console\Commands\BookPendingBiteshipShipments
-     * (kurir instan + percobaan ulang), lewat App\Services\BiteshipOrderBooker.
-     * Kalau nanti ditambah gateway lain (mis. Midtrans), webhook-nya cukup
-     * fire event OrderPaid yang sama tanpa menyentuh kode Biteship sama sekali.
+     * dan menembakkan event OrderPaid (sekali saja) — pemesanan Biteship ada di
+     * App\Listeners\BookShipmentOnOrderPaid dan App\Console\Commands\BookPendingBiteshipShipments.
      */
     public function handle(Request $request, TripayService $tripay)
     {
         $rawBody = $request->getContent();
         $signature = $request->header('X-Callback-Signature');
 
+        // Signature diperiksa PERTAMA, sebelum payload dibaca atau diproses.
         if (! $tripay->verifyCallbackSignature($rawBody, $signature)) {
-            Log::warning('Tripay callback signature tidak valid', ['body' => $rawBody]);
+            Log::warning('Tripay callback signature tidak valid', ['ip' => $request->ip()]);
 
             return response()->json(['success' => false, 'message' => 'Invalid signature'], 403);
         }
 
-        $payload = json_decode($rawBody, true) ?? [];
-        $merchantRef = $payload['merchant_ref'] ?? null;
-        $status = $payload['status'] ?? null; // PAID|UNPAID|EXPIRED|FAILED|REFUND
+        // Tripay juga mengirim event lain; hanya "payment_status" yang relevan.
+        $event = $request->header('X-Callback-Event');
+        if ($event !== null && $event !== 'payment_status') {
+            return response()->json(['success' => true]);
+        }
 
-        if (! $merchantRef || ! $status) {
+        $payload = json_decode($rawBody, true);
+        $payload = is_array($payload) ? $payload : [];
+        $merchantRef = isset($payload['merchant_ref']) ? (string) $payload['merchant_ref'] : '';
+        $status = isset($payload['status']) ? strtoupper((string) $payload['status']) : '';
+
+        if ($merchantRef === '' || $status === '') {
             return response()->json(['success' => false, 'message' => 'Payload tidak lengkap'], 422);
+        }
+
+        if (! in_array($status, self::STATUSES, true)) {
+            Log::warning("Tripay callback {$merchantRef}: status tidak dikenal {$status}");
+
+            return response()->json(['success' => true]);
         }
 
         Log::info("Tripay callback {$merchantRef}: {$status}");
 
-        if (str_starts_with($merchantRef, 'TP-')) {
-            $order = PackingOrder::where('order_code', $merchantRef)->first();
-            if ($order) {
-                $this->applyPackingStatus($order, $status);
-            }
-        } elseif (str_starts_with($merchantRef, 'RT-')) {
-            $order = Order::where('order_number', $merchantRef)->first();
-            if ($order) {
-                $this->applyOrderStatus($order, $status);
-            }
-        } elseif (str_starts_with($merchantRef, 'RTP-')) {
-            $id = (int) ltrim(substr($merchantRef, 4), '0');
-            $order = TitipanOrder::find($id);
-            if ($order) {
-                $this->applyTitipanStatus($order, $status);
+        try {
+            $paidOrder = $this->apply($merchantRef, $status);
+        } catch (\Throwable $e) {
+            report($e);
+
+            // 500 membuat Tripay mengirim ulang callback; aman karena pemrosesan idempoten.
+            return response()->json(['success' => false, 'message' => 'Server error'], 500);
+        }
+
+        if ($paidOrder) {
+            try {
+                event(new OrderPaid($paidOrder));
+            } catch (\Throwable $e) {
+                // Pemesanan kurir gagal tidak boleh membatalkan konfirmasi bayar;
+                // command biteship:book-pending akan mengulang.
+                report($e);
             }
         }
 
+        // Pesanan tidak ditemukan tetap dibalas sukses agar Tripay tidak mengulang tanpa henti.
         return response()->json(['success' => true]);
     }
 
-    private function applyPackingStatus(PackingOrder $order, string $status): void
+    /**
+     * Terapkan status di dalam transaksi dengan row lock supaya callback ganda/bersamaan
+     * tidak menggandakan efek. Mengembalikan pesanan bila baru saja berubah menjadi PAID.
+     */
+    private function apply(string $merchantRef, string $status): ?Model
     {
-        // Idempoten: kalau sudah PAID sebelumnya, jangan proses ulang efek
-        // sampingnya (event OrderPaid dkk) walau Tripay kirim callback dobel.
-        $alreadyPaid = $order->payment_status === 'PAID';
+        return DB::transaction(function () use ($merchantRef, $status) {
+            $order = null;
 
-        $order->payment_status = $status;
-        if ($status === 'PAID') {
-            $order->status = 'diproses';
-        }
-        $order->save();
+            if (str_starts_with($merchantRef, 'TP-')) {
+                $order = PackingOrder::where('order_code', $merchantRef)->lockForUpdate()->first();
+            } elseif (str_starts_with($merchantRef, 'RT-')) {
+                $order = Order::where('order_number', $merchantRef)->lockForUpdate()->first();
+            } elseif (preg_match('/^RTP-(\d+)$/', $merchantRef, $m)) {
+                $order = TitipanOrder::whereKey((int) $m[1])->lockForUpdate()->first();
+            }
 
-        if ($status === 'PAID' && ! $alreadyPaid) {
-            event(new OrderPaid($order));
-        }
+            if (! $order) {
+                Log::warning("Tripay callback {$merchantRef}: pesanan tidak ditemukan");
+
+                return null;
+            }
+
+            $current = strtoupper((string) $order->payment_status);
+
+            // Aturan transisi: PAID tidak pernah turun (kecuali REFUND); status akhir
+            // gagal/kedaluwarsa tidak kembali ke UNPAID; callback sama diabaikan.
+            if ($status === $current) {
+                return null;
+            }
+            if ($current === 'PAID' && $status !== 'REFUND') {
+                return null;
+            }
+            if ($status === 'REFUND' && $current !== 'PAID') {
+                return null;
+            }
+            if ($status === 'UNPAID' && $current !== '' && $current !== 'PENDING') {
+                return null;
+            }
+
+            $order->payment_status = $status;
+
+            if ($status === 'PAID') {
+                $this->markPaid($order);
+            }
+            $order->save();
+
+            return $status === 'PAID' ? $order : null;
+        });
     }
 
-    private function applyOrderStatus(Order $order, string $status): void
+    private function markPaid(Model $order): void
     {
-        $alreadyPaid = $order->payment_status === 'PAID';
-
-        $order->payment_status = $status;
-        if ($status === 'PAID') {
-            $order->status = Order::STATUS_PAID;
-        }
-        $order->save();
-
-        if ($status === 'PAID' && ! $alreadyPaid) {
+        if ($order instanceof PackingOrder) {
+            if (in_array($order->status, ['menunggu_pembayaran', null, ''], true)) {
+                $order->status = 'diproses';
+            }
+        } elseif ($order instanceof Order) {
+            if (in_array($order->status, [Order::STATUS_PENDING, null, ''], true)) {
+                $order->status = Order::STATUS_PAID;
+            }
             $this->markPrelovedItemsSold($order);
-            event(new OrderPaid($order));
+        } elseif ($order instanceof TitipanOrder) {
+            if (in_array($order->status, ['menunggu_pembayaran', null, ''], true)) {
+                $order->status = 'penjadwalan_penjemputan';
+            }
         }
     }
 
     private function markPrelovedItemsSold(Order $order): void
     {
-        $prelovedIds = collect($order->items)
+        $prelovedIds = collect($order->items ?? [])
             ->filter(fn ($i) => ($i['type'] ?? 'preloved') === 'preloved')
             ->pluck('id')
             ->filter()
@@ -119,27 +171,10 @@ class TripayCallbackController extends Controller
 
         // Barang yang sudah Terjual lewat pesanan lain: tandai supaya admin menindaklanjuti (refund/batalkan).
         if (PrelovedItem::whereIn('id', $prelovedIds)->where('status', 'Terjual')->exists()) {
-            $order->update([
-                'needs_admin_attention' => true,
-                'biteship_last_error' => 'Barang preloved di pesanan ini sudah terjual lewat pesanan lain.',
-            ]);
+            $order->needs_admin_attention = true;
+            $order->biteship_last_error = 'Barang preloved di pesanan ini sudah terjual lewat pesanan lain.';
         }
 
         PrelovedItem::whereIn('id', $prelovedIds)->update(['status' => 'Terjual']);
-    }
-
-    private function applyTitipanStatus(TitipanOrder $order, string $status): void
-    {
-        $alreadyPaid = $order->payment_status === 'PAID';
-
-        $order->payment_status = $status;
-        if ($status === 'PAID') {
-            $order->status = 'penjadwalan_penjemputan';
-        }
-        $order->save();
-
-        if ($status === 'PAID' && ! $alreadyPaid) {
-            event(new OrderPaid($order));
-        }
     }
 }

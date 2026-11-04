@@ -24,7 +24,7 @@
           </button>
         @endforeach
     </div>
-    <p class="pickup-hint" id="{{ $uid }}_feedback"></p>
+    <p class="pickup-hint" id="{{ $uid }}_feedback" role="status" aria-live="polite"></p>
 </div>
 
 <script>
@@ -35,11 +35,14 @@
     const dateHidden = document.getElementById('{{ $uid }}_date_hidden');
     const startHidden = document.getElementById('{{ $uid }}_start_hidden');
     const endHidden = document.getElementById('{{ $uid }}_end_hidden');
+    if (!dateInput || !dateHidden) { return; }
     const buttons = Array.from(document.getElementById('{{ $uid }}_buttons').querySelectorAll('.slot-btn'));
     const feedback = document.getElementById('{{ $uid }}_feedback');
 
-    const todayStr = new Date().toISOString().split('T')[0];
-    const maxDate = new Date(Date.now() + maxDays * 86400000).toISOString().split('T')[0];
+    const pad = function (n) { return String(n).padStart(2, '0'); };
+    const localDate = function (d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+    const todayStr = localDate(new Date());
+    const maxDate = localDate(new Date(Date.now() + maxDays * 86400000));
     dateInput.min = todayStr;
     dateInput.max = maxDate;
     if (!dateInput.value) dateInput.value = todayStr;

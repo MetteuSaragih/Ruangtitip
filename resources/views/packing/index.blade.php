@@ -148,7 +148,7 @@
             delete known[id];
             fetch(removeUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
                 body: JSON.stringify({ product_id: 'packing_' + id })
             });
             return;
@@ -156,8 +156,8 @@
         const isNew = !(id in known);
         known[id] = true;
         const req = isNew
-            ? fetch(addUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify({ type: 'packing', product_id: id, qty: qty }) })
-            : fetch(updateUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify({ product_id: 'packing_' + id, qty: qty }) });
+            ? fetch(addUrl, { method: 'POST', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify({ type: 'packing', product_id: id, qty: qty }) })
+            : fetch(updateUrl, { method: 'POST', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify({ product_id: 'packing_' + id, qty: qty }) });
         req.then(r => r.json()).catch(function () {});
     }
 

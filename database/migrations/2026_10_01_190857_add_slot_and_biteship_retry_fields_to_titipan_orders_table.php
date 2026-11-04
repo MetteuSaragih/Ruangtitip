@@ -10,11 +10,21 @@ return new class extends Migration
     {
         Schema::table('titipan_orders', function (Blueprint $table) {
             // pickup_time dipakai sebagai jam MULAI slot (HH:mm); ini jam SELESAI-nya.
-            $table->string('pickup_time_end')->nullable()->after('pickup_date');
-            $table->string('biteship_status')->nullable()->after('biteship_tracking_id');
-            $table->unsignedTinyInteger('biteship_attempts')->default(0)->after('biteship_status');
-            $table->text('biteship_last_error')->nullable()->after('biteship_attempts');
-            $table->boolean('needs_admin_attention')->default(false)->after('biteship_last_error');
+            if (! Schema::hasColumn('titipan_orders', 'pickup_time_end')) {
+                $table->string('pickup_time_end')->nullable()->after('pickup_date');
+            }
+            if (! Schema::hasColumn('titipan_orders', 'biteship_status')) {
+                $table->string('biteship_status')->nullable()->after('biteship_tracking_id');
+            }
+            if (! Schema::hasColumn('titipan_orders', 'biteship_attempts')) {
+                $table->unsignedTinyInteger('biteship_attempts')->default(0)->after('biteship_status');
+            }
+            if (! Schema::hasColumn('titipan_orders', 'biteship_last_error')) {
+                $table->text('biteship_last_error')->nullable()->after('biteship_attempts');
+            }
+            if (! Schema::hasColumn('titipan_orders', 'needs_admin_attention')) {
+                $table->boolean('needs_admin_attention')->default(false)->after('biteship_last_error');
+            }
         });
     }
 

@@ -73,7 +73,7 @@
                 </td>
                 <td>
                   @if ($req->type === 'perpanjang')
-                    <b>+{{ (int) ($p['months'] ?? 0) }} bulan</b>
+                    <b>+{{ ! empty($p['days']) ? (int) $p['days'] . ' hari' : (int) ($p['months'] ?? 0) . ' bulan' }}</b>
                     <small>sampai {{ $fmtDate($p['new_date_end'] ?? null) }}</small>
                   @elseif ($req->type === 'kirim')
                     <b>{{ $p['label'] ?? 'Alamat' }}</b>

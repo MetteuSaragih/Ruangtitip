@@ -7,7 +7,7 @@
     }
     $opts = [
         ['id' => 'self', 'label' => 'Antar sendiri', 'desc' => 'Kamu antar barang langsung ke Ruang Titip, tanpa biaya logistik.', 'note' => 'Langsung ke ringkasan dan pembayaran', 'badge' => 'Rp0', 'tone' => 'ok'],
-        ['id' => 'rutip', 'label' => 'Packing + Anjem RuTip', 'desc' => 'Tim kami jemput dan packing barangmu. Biaya = jarak (per km) + jasa packing per kardus.', 'note' => 'Isi alamat, lalu ringkasan dan pembayaran', 'badge' => 'Terpopuler', 'tone' => 'warn'],
+        ['id' => 'rutip', 'label' => 'Packing + Anjem RuTip', 'desc' => 'Tim kami jemput dan packing barangmu. Biaya = jarak (per km) + jasa packing per barang.', 'note' => 'Isi alamat, lalu ringkasan dan pembayaran', 'badge' => 'Terpopuler', 'tone' => 'warn'],
         ['id' => 'instant', 'label' => 'Kurir instan', 'desc' => 'Dijemput kurir instan (Gojek/Grab) dari alamatmu.', 'note' => 'Isi alamat, pilih kurir, lalu bayar', 'badge' => null, 'tone' => 'info'],
     ];
 @endphp

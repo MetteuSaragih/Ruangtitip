@@ -8,6 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Sudah berbentuk baru: jangan hapus data survei yang ada.
+        if (Schema::hasTable('landing_survey_responses') && Schema::hasColumn('landing_survey_responses', 'minat')) {
+            return;
+        }
+
         Schema::dropIfExists('landing_survey_responses');
 
         Schema::create('landing_survey_responses', function (Blueprint $table) {

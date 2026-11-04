@@ -19,7 +19,7 @@ class OtpMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Kode Login RUTIP: ' . $this->code,
+            subject: 'Kode Login RuangTitip: ' . $this->code,
         );
     }
 

@@ -55,6 +55,10 @@ class PackingController extends Controller
     {
         abort_unless($product->is_active, 404);
 
+        if ($product->stock < 1) {
+            return back()->with('error', 'Stok produk habis.');
+        }
+
         $qty = max(1, min((int) $request->input('qty', 1), $product->stock));
 
         session([
@@ -92,7 +96,10 @@ class PackingController extends Controller
             'logistic' => 'required|in:pickup,biteship',
         ]);
 
-        $checkout = session('packing.checkout', []);
+        $checkout = $this->guardCheckout();
+        if (! $checkout) {
+            return redirect()->route('packing.index');
+        }
         $checkout['logistic'] = $data['logistic'];
         session(['packing.checkout' => $checkout]);
 
@@ -133,13 +140,17 @@ class PackingController extends Controller
             'is_primary' => 'nullable|boolean',
         ]);
 
+        $checkout = $this->guardCheckout();
+        if (! $checkout) {
+            return redirect()->route('packing.index');
+        }
+
         $address = $this->resolveAddress($data);
         if (! $address->area_id) {
             return back()->withErrors(['address' => 'Pilih kecamatan/kota tujuan terlebih dahulu.'])->withInput();
         }
         $address = $this->distance->ensureAddressCoords($address);
 
-        $checkout = $this->guardCheckout();
         $checkout['address'] = $address->address;
         $checkout['address_id'] = $address->id;
         $checkout['address_area_id'] = $address->area_id;
@@ -189,6 +200,10 @@ class PackingController extends Controller
         ]);
 
         $checkout = $this->guardCheckout();
+        if (! $checkout || empty($checkout['address_area_id'])) {
+            return redirect()->route('packing.address');
+        }
+
         $rates = $biteship->getRates(
             $this->originWarehouse(),
             $this->destinationFromCheckout($checkout),
@@ -218,6 +233,9 @@ class PackingController extends Controller
         if (! $checkout || ! isset($checkout['logistic'])) {
             return redirect()->route('packing.logistics');
         }
+        if ($checkout['logistic'] === 'biteship' && empty($checkout['courier'])) {
+            return redirect()->route('packing.address');
+        }
 
         [$subtotal, $shipping, $platformFee, $total, $courier] = $this->calcTotals($checkout);
 
@@ -244,11 +262,17 @@ class PackingController extends Controller
         if (! $checkout) {
             return redirect()->route('packing.index');
         }
+        if (! isset($checkout['logistic'])) {
+            return redirect()->route('packing.logistics');
+        }
+        if ($checkout['logistic'] === 'biteship' && (empty($checkout['courier']) || empty($checkout['address_area_id']))) {
+            return redirect()->route('packing.address');
+        }
 
         [$subtotal, $shipping, $platformFee, $total] = $this->calcTotals($checkout);
 
         $order = PackingOrder::create([
-            'order_code' => 'TP-' . now()->year . '-' . random_int(10000, 99999),
+            'order_code' => $this->newOrderCode(),
             'user_id' => Auth::id(),
             'items' => $checkout['items'],
             'subtotal' => $subtotal,
@@ -305,7 +329,7 @@ class PackingController extends Controller
             $order->update(['payment_status' => 'FAILED']);
 
             return redirect()->route('packing.payment')
-                ->with('error', 'Gagal memulai pembayaran: ' . $e->getMessage());
+                ->with('error', 'Gagal memulai pembayaran. Coba lagi atau pilih metode lain.');
         }
 
         session()->forget('packing.checkout');
@@ -386,6 +410,20 @@ class PackingController extends Controller
             'latitude' => $checkout['address_lat'] ?? null,
             'longitude' => $checkout['address_lng'] ?? null,
         ]);
+    }
+
+    /** Kode unik: coba beberapa kali, lalu perpanjang agar tidak pernah bentrok. */
+    private function newOrderCode(): string
+    {
+        $prefix = 'TP-' . now()->year . '-';
+        for ($i = 0; $i < 8; $i++) {
+            $code = $prefix . random_int(10000, 99999);
+            if (! PackingOrder::where('order_code', $code)->exists()) {
+                return $code;
+            }
+        }
+
+        return $prefix . random_int(10000, 99999) . random_int(100, 999);
     }
 
     private function calcTotals(array $checkout): array

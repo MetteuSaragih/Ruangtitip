@@ -158,8 +158,9 @@ class ProfileController extends Controller
     public function setPrimaryAddress($id)
     {
         $user = Auth::user();
+        $addr = UserAddress::where('id', $id)->where('user_id', $user->id)->firstOrFail();
         UserAddress::where('user_id', $user->id)->update(['is_primary' => false]);
-        UserAddress::where('id', $id)->where('user_id', $user->id)->update(['is_primary' => true]);
+        $addr->update(['is_primary' => true]);
 
         return response()->json(['success' => true]);
     }

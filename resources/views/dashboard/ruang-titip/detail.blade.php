@@ -12,7 +12,9 @@
     $status = $full ? 'err' : ($pct >= 85 ? 'warn' : 'ok');
     $statusLabel = $full ? 'Penuh di periode ini' : ($pct >= 85 ? 'Hampir penuh' : 'Tersedia');
     $rem = max(0, (int) $storage->capacity_total - (int) $storage->capacity_used);
-    $groups = ['kardus' => 'Kardus', 'koper' => 'Koper', 'dimensi' => 'Dimensi Lain'];
+    $sizeRows = $storage->size_rows;
+    $rules = array_values(array_filter((array) ($storage->rules ?? []), fn ($x) => is_string($x) && trim($x) !== ''));
+    $aboutText = trim((string) $storage->long_description) !== '' ? $storage->long_description : $storage->description;
     $aturan = [
         'Barang diantar sudah dikemas (kardus, koper, atau plastik wrap).',
         'Isi kemasan tidak dibuka (blind box). Petugas hanya memeriksa jumlah, kategori, ukuran, kemasan, dan kondisi luar.',
@@ -38,7 +40,7 @@
     <div class="ph">
         <div>
             <h2 class="pt" tabindex="-1">{{ $storage->name }}</h2>
-            <p class="ps">{{ $storage->location ?: $storage->address }}</p>
+            <p class="ps">@if ($storage->title){{ $storage->title }} &middot; @endif{{ $storage->location ?: $storage->address }}</p>
         </div>
         <div class="ph-acts"><span class="badge b-{{ $status }}"><i></i>{{ $statusLabel }}</span></div>
     </div>
@@ -55,7 +57,8 @@
 
             <section class="card">
                 <h3>Tentang ruang ini</h3>
-                <p class="desc">{{ $storage->description ?: 'Gudang penitipan barang dengan pengawasan petugas dan pencatatan kondisi di setiap barang.' }}</p>
+                @if ($storage->title)<h4 class="sub">{{ $storage->title }}</h4>@endif
+                <p class="desc">{{ $aboutText ?: 'Gudang penitipan barang dengan pengawasan petugas dan pencatatan kondisi di setiap barang.' }}</p>
                 @if (count($storage->facilities ?? []))
                     <h4 class="sub">Fasilitas</h4>
                     <ul class="bul">
@@ -68,23 +71,30 @@
                 <h3>Ukuran dan harga</h3>
                 <div class="tbl-wrap">
                     <table class="tbl">
-                        <thead><tr><th>Ukuran</th><th>Dimensi</th><th>Harga</th></tr></thead>
+                        <thead><tr><th>Ukuran</th><th>Kardus maks.</th><th>Koper</th><th>Harga</th></tr></thead>
                         <tbody>
-                            @php $priceRows = $storage->pricing_rows; @endphp
-                            @foreach ($groups as $key => $groupLabel)
-                                @foreach ($priceRows[$key] ?? [] as $row)
-                                    <tr>
-                                        <td><b>{{ $row['label'] }}</b><small>{{ $groupLabel }}</small></td>
-                                        <td>{{ ! empty($row['dims']) ? $row['dims'] : '—' }}</td>
-                                        <td><b>{{ rp($row['price']) }}</b><small>per barang per bulan</small></td>
-                                    </tr>
-                                @endforeach
+                            @foreach ($sizeRows as $row)
+                                <tr>
+                                    <td><b>{{ $row['code'] }}</b><small>{{ $row['unit'] }} setara ukuran S</small></td>
+                                    <td>{{ $row['box'] }}<small>{{ $row['vol'] }}</small></td>
+                                    <td>{{ $row['koper'] ?: 'Belum muat' }}</td>
+                                    <td><b>{{ rp($row['price']) }}</b><small>per barang per hari</small></td>
+                                </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
-                <p class="help mt">Harga dihitung per bulan. Kurang dari 30 hari tetap dihitung 1 bulan.</p>
+                <p class="help mt">Harga dihitung per barang per hari, dari tanggal mulai sampai tanggal selesai. Harga sama di semua ruang.</p>
             </section>
+
+            @if (count($rules))
+                <section class="card">
+                    <h3>Aturan khusus ruang ini</h3>
+                    <ul class="bul">
+                        @foreach ($rules as $x)<li>{{ $x }}</li>@endforeach
+                    </ul>
+                </section>
+            @endif
 
             <section class="card">
                 <h3>Aturan penitipan</h3>
@@ -110,9 +120,9 @@
 
         <aside class="aside">
             <section class="card stack" style="gap:14px">
-                <p class="price"><small>Mulai</small><b>{{ rp($storage->min_price) }}</b><small>per barang per bulan</small></p>
+                <p class="price"><small>Mulai</small><b>{{ rp($storage->min_price) }}</b><small>per barang per hari</small></p>
                 <div class="cap">
-                    <div class="cap-top"><span>Sisa kapasitas</span><b>{{ $rem > 0 ? '±' . $rem . ' unit' : 'Habis' }}</b></div>
+                    <div class="cap-top"><span>Sisa kapasitas</span><b>{{ $rem > 0 ? '±' . $rem . ' setara ukuran S' : 'Habis' }}</b></div>
                     <div class="bar is-{{ $status }}" aria-hidden="true"><i style="width:{{ min(100, $pct) }}%"></i></div>
                     <small>Terisi {{ $pct }}%</small>
                 </div>

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 
 class OtpController extends Controller
 {
@@ -35,10 +36,19 @@ class OtpController extends Controller
 
         $email = strtolower(trim($request->email));
 
+        // Batasi permintaan kode per email (anti spam/bom email).
+        $key = 'otp-send:' . $email;
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            return back()->withInput()->withErrors([
+                'email' => 'Terlalu banyak permintaan kode. Coba lagi dalam ' . RateLimiter::availableIn($key) . ' detik.',
+            ]);
+        }
+        RateLimiter::hit($key, 600);
+
         $otp = EmailOtp::generateFor($email);
 
         // Kirim email (driver "log" akan menulis ke storage/logs/laravel.log)
-        Mail::to($email)->send(new OtpMail($otp->code));
+        Mail::to($email)->send(new OtpMail($otp->plain_code));
 
         // Simpan email & waktu kirim ke session untuk step berikutnya
         $request->session()->put('otp_email', $email);
@@ -90,7 +100,7 @@ class OtpController extends Controller
             return back()->withErrors(['code' => 'Kode sudah kedaluwarsa. Minta kode baru.']);
         }
 
-        if ($otp->code !== $request->code) {
+        if (! $otp->matches((string) $request->code)) {
             $otp->increment('attempts');
             return back()->withErrors(['code' => 'Kode OTP salah. Coba lagi.']);
         }
@@ -98,13 +108,24 @@ class OtpController extends Controller
         // Kode benar → tandai terpakai
         $otp->update(['used_at' => now()]);
 
+        // Akun nonaktif tidak boleh masuk.
+        $existing = User::where('email', $email)->first();
+        if ($existing && $existing->is_active === false) {
+            $request->session()->forget(['otp_email', 'otp_last_sent']);
+
+            return redirect()->route('login')->withErrors([
+                'email' => 'Akun kamu sedang dinonaktifkan. Hubungi tim RuangTitip lewat WhatsApp.',
+            ]);
+        }
+
         // AUTO-REGISTER: cari user, buat jika belum ada
         $user = User::firstOrCreate(
             ['email' => $email],
             [
                 'name'              => null,            // diisi nanti di halaman profil
                 'email_verified_at' => now(),
-                'role'              => 'penitip',       // <-- SUDAH DIUBAH MENJADI 'penitip'
+                'role'              => 'penitip',
+                'is_active'         => true,
             ]
         );
 
@@ -126,7 +147,8 @@ class OtpController extends Controller
         }
 
         // Tampilkan layar "Berhasil masuk" dulu, lalu lanjut ke tujuan semula.
-        $request->session()->put('login_done_to', $request->session()->pull('url.intended', route('dashboard')));
+        $intended = (string) $request->session()->pull('url.intended', '');
+        $request->session()->put('login_done_to', $this->safeInternalUrl($intended) ?? route('dashboard'));
 
         return redirect()->route('login.done');
     }
@@ -136,9 +158,36 @@ class OtpController extends Controller
      */
     public function done(Request $request)
     {
-        $to = $request->session()->get('login_done_to', route('dashboard'));
+        $to = $this->safeInternalUrl((string) $request->session()->get('login_done_to', '')) ?? route('dashboard');
 
         return view('auth.done', ['to' => $to]);
+    }
+
+    /**
+     * Hanya terima URL internal (host sama) agar tidak jadi open redirect.
+     */
+    private function safeInternalUrl(string $url): ?string
+    {
+        if ($url === '') {
+            return null;
+        }
+
+        if (str_starts_with($url, '/') && ! str_starts_with($url, '//') && ! str_contains($url, '\\')) {
+            return url($url);
+        }
+
+        $host = parse_url($url, PHP_URL_HOST);
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+        if ($host && in_array($scheme, ['http', 'https'], true) && strcasecmp($host, $this->currentHost()) === 0) {
+            return $url;
+        }
+
+        return null;
+    }
+
+    private function currentHost(): string
+    {
+        return (string) parse_url(url('/'), PHP_URL_HOST);
     }
 
     /**
@@ -161,8 +210,16 @@ class OtpController extends Controller
             ]);
         }
 
+        $key = 'otp-send:' . $email;
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            return back()->withErrors([
+                'code' => 'Terlalu banyak permintaan kode. Coba lagi dalam ' . RateLimiter::availableIn($key) . ' detik.',
+            ]);
+        }
+        RateLimiter::hit($key, 600);
+
         $otp = EmailOtp::generateFor($email);
-        Mail::to($email)->send(new OtpMail($otp->code));
+        Mail::to($email)->send(new OtpMail($otp->plain_code));
         $request->session()->put('otp_last_sent', now()->timestamp);
 
         return back()->with('status', 'Kode baru sudah dikirim ke email kamu.');

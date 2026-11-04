@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\PackingOrder;
 use App\Models\TitipanOrder;
+use App\Support\StorageSizes;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -156,24 +157,22 @@ class BiteshipOrderBooker
 
     private function bookTitipan(TitipanOrder $order, bool $forceNow): array
     {
-        $fallback = config('item_sizes.fallback');
+        // Kode ukuran S/M/L/XL; pesanan lama berkode lama (ks, kpc, dimensi_lain, ...) dipetakan oleh StorageSizes.
+        $items = collect($order->items ?? [])
+            ->filter(fn ($qty) => (int) $qty > 0)
+            ->map(function ($qty, $code) {
+                $size = StorageSizes::shipping((string) $code);
 
-        $items = collect($order->items ?? [])->map(function ($qty, $code) use ($order, $fallback) {
-            $type = str_starts_with((string) $code, 'kp') ? 'koper' : ($code === 'dimensi_lain' ? 'dimensi_lain' : 'kardus');
-            $size = $code === 'dimensi_lain'
-                ? config('item_sizes.dimensi_lain')
-                : config("item_sizes.{$type}.{$code}", $fallback);
-
-            return [
-                'name' => $size['label'] ?? 'Barang titipan',
-                'value' => 50000,
-                'quantity' => (int) $qty,
-                'weight' => $size['weight'] ?? $size['weight_default'] ?? $fallback['weight'],
-                'length' => $size['length'] ?? $fallback['length'],
-                'width' => $size['width'] ?? $fallback['width'],
-                'height' => $size['height'] ?? $fallback['height'],
-            ];
-        })->values()->all();
+                return [
+                    'name' => StorageSizes::label((string) $code),
+                    'value' => 50000,
+                    'quantity' => (int) $qty,
+                    'weight' => $size['weight'],
+                    'length' => $size['length'],
+                    'width' => $size['width'],
+                    'height' => $size['height'],
+                ];
+            })->values()->all();
 
         return $this->biteship->createOrder(
             origin: [

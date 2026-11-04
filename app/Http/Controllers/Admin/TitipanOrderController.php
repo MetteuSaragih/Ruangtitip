@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ItemSize;
-use App\Models\StorageRoom;
 use App\Models\TitipanOrder;
 use App\Models\TitipanRequest;
+use App\Support\StorageSizes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
@@ -79,20 +78,10 @@ class TitipanOrderController extends Controller
             $requests = collect();
         }
 
-        // Label barang: daftar resmi ukuran dulu (sama dengan form admin dan halaman pengguna),
-        // lalu ditimpa tabel item_sizes bila masih ada isinya.
-        $sizes = ['dimensi_lain' => 'Dimensi lain'];
-        foreach (StorageRoom::SIZE_META as $type => $rows) {
-            foreach ($rows as $code => [$label]) {
-                $sizes[$code] = ucfirst($type) . ' ' . $label;
-            }
-        }
-        try {
-            foreach (ItemSize::get() as $s) {
-                $sizes[$s->code] = trim(ucfirst((string) $s->type) . ' ' . $s->label);
-            }
-        } catch (\Throwable $e) {
-            // tabel item_sizes belum ada: pakai daftar resmi saja
+        // Label barang lewat katalog ukuran (S/M/L/XL); kode lama (ks, kpc, ...) dipetakan otomatis.
+        $sizes = [];
+        foreach (array_keys((array) $order->items) as $code) {
+            $sizes[$code] = StorageSizes::label((string) $code);
         }
 
         return view('admin.titip.show', [

@@ -49,6 +49,11 @@ class Order extends Model
         'needs_admin_attention' => 'boolean',
     ];
 
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
     /**
      * ID barang preloved yang sedang dicadangkan pesanan belum dibayar (batas 24 jam),
      * tidak termasuk pesanan milik $exceptUserId.
