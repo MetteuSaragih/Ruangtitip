@@ -84,16 +84,11 @@ class AccountController extends Controller
         $data = $request->validate([
             'name' => 'required|string|min:3|max:255',
             'phone' => ['nullable', 'string', 'max:20', 'regex:/^(\+62|62|0)8\d{7,12}$/'],
-            'campus' => 'nullable|string|max:255',
-            'major' => 'nullable|string|max:255',
-            'cohort_year' => 'nullable|digits:4',
-            'hometown' => 'nullable|string|max:255',
             'avatar' => 'nullable|image|mimes:jpeg,jpg,png|max:1024',
         ], [
             'name.required' => 'Isi nama lengkap.',
             'name.min' => 'Nama minimal 3 huruf.',
             'phone.regex' => 'Nomor tidak valid. Contoh: 081234567890.',
-            'cohort_year.digits' => 'Angkatan harus 4 angka, misalnya 2022.',
             'avatar.image' => 'File harus berupa foto JPG atau PNG.',
             'avatar.max' => 'Ukuran foto maksimal 1 MB.',
         ]);
