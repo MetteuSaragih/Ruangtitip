@@ -582,3 +582,49 @@ input[type='checkbox'] {
     animation: rt-sk 1.2s infinite;
     opacity: 0.8;
 }
+
+/* ----- Dialog konfirmasi (login berhasil, keluar) ----- */
+.rt-dlg {
+    width: min(420px, calc(100vw - 32px));
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    padding: 28px 24px 22px;
+    text-align: center;
+}
+
+.rt-dlg::backdrop {
+    background: color-mix(in srgb, var(--color-ink) 45%, transparent);
+}
+
+.rt-dlg-ic {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    margin: 0 auto 14px;
+    display: grid;
+    place-items: center;
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
+}
+
+.rt-dlg-ic.out {
+    background: var(--color-aqua);
+    color: var(--color-primary);
+    --acc: var(--color-aqua);
+}
+
+.rt-dlg-ic .ic { width: 28px; height: 28px; }
+.rt-dlg h3 { font-size: 20px; letter-spacing: -0.025em; }
+.rt-dlg p { margin-top: 8px; font-size: 14.5px; color: var(--color-text-secondary); }
+
+.rt-dlg-acts {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 22px 0 0;
+}
+
+.rt-dlg-acts .btn { flex: 1; min-width: 130px; }
