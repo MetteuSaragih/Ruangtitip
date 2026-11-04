@@ -35,12 +35,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="color-scheme" content="dark">
+    <meta name="color-scheme" content="light">
     <title>@yield('title', 'RuangTitip') &middot; RuangTitip</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('assets/favicon.svg') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
     <script>try{if(localStorage.getItem('rt-side')==='1')document.documentElement.classList.add('side-collapsed')}catch(e){}</script>
     @vite(['resources/css/rt.css', 'resources/js/rt-shell.js'])
     @stack('styles')
@@ -54,7 +54,7 @@
     <aside class="rt-side" id="rtSide" aria-label="Navigasi utama">
         <div class="rt-side-head">
             <a class="rt-logo" href="{{ route('dashboard') }}" data-tip="Beranda">
-                <svg aria-hidden="true"><use href="#logo"/></svg><span class="lbl">ruang<em>titip</em></span>
+                <span class="rt-logo-mark" aria-hidden="true"><svg><use href="#n-home"/></svg></span><span class="lbl">ruang<em>titip</em></span>
             </a>
             <button class="rt-side-toggle" id="rtSideToggle" type="button" aria-expanded="true" aria-label="Ciutkan menu" data-tip="Ciutkan menu" data-kbd="[" data-tip-always>
                 <svg class="ic i-close" width="20" height="20" aria-hidden="true"><use href="#n-side-close"/></svg>
@@ -127,7 +127,7 @@
     <div class="rt-main">
         <header class="rt-top">
             <div class="rt-top-in">
-                <a class="rt-logo" href="{{ route('dashboard') }}"><svg aria-hidden="true"><use href="#logo"/></svg><span>ruang<em>titip</em></span></a>
+                <a class="rt-logo" href="{{ route('dashboard') }}"><span class="rt-logo-mark" aria-hidden="true"><svg><use href="#n-home"/></svg></span><span>ruang<em>titip</em></span></a>
                 <div class="rt-crumb">
                     <small>{{ now()->locale('id')->translatedFormat('l, j F Y') }}</small>
                     <h1>@yield('title', 'RuangTitip')</h1>

@@ -106,7 +106,7 @@
                 <div class="wa-note">
                     <svg class="ic" aria-hidden="true"><use href="#n-chat"/></svg>
                     <div><b>Ukuran barangmu tidak ada di pilihan?</b><p>Misalnya terlalu besar, terlalu berat, atau tidak bisa dikemas dalam kardus atau koper. Chat admin dulu, nanti kami bantu cek.</p></div>
-                    <a class="btn btn-sun sm" href="{{ $wa }}" target="_blank" rel="noopener">Chat WhatsApp</a>
+                    <a class="btn btn-primary sm" href="{{ $wa }}" target="_blank" rel="noopener">Chat WhatsApp</a>
                 </div>
 
                 <details class="rules-mini">

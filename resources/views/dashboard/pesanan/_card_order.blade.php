@@ -35,7 +35,7 @@
     </div>
     <div class="oc-acts">
         @if (! $isPaid && $pending && $order->tripay_checkout_url)
-            <a href="{{ $order->tripay_checkout_url }}" class="btn btn-sun sm">Bayar</a>
+            <a href="{{ $order->tripay_checkout_url }}" class="btn btn-primary sm">Bayar</a>
         @endif
         <a href="{{ route('checkout.success', $order->order_number) }}" class="btn btn-ghost sm">Lihat detail</a>
     </div>

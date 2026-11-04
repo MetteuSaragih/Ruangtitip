@@ -52,7 +52,7 @@
                             <p><b>{{ $s->name }}</b></p>
                             <p class="meta">{{ $s->source === 'titip' ? 'Dari titipan ' . $s->titip_ref : 'Diantar sendiri' }}@if ($s->offer && in_array($s->status, ['tawar', 'titip', 'sepakat', 'dibeli'], true)), harga beli {{ rp($s->offer) }}@endif</p>
                         </div>
-                        <div class="oc-acts"><a class="btn {{ $s->needsAction() ? 'btn-sun' : 'btn-ghost' }} sm" href="{{ route('sell.show', $s->code) }}">{{ $s->needsAction() ? 'Tindak lanjuti' : 'Lihat' }}</a></div>
+                        <div class="oc-acts"><a class="btn {{ $s->needsAction() ? 'btn-primary' : 'btn-ghost' }} sm" href="{{ route('sell.show', $s->code) }}">{{ $s->needsAction() ? 'Tindak lanjuti' : 'Lihat' }}</a></div>
                     </article>
                 @endforeach
             </div>

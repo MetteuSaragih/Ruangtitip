@@ -14,7 +14,7 @@
         'crumbs' => [['Toko Preloved', route('preloved.index')], ['Keranjang', null]],
         'title' => 'Keranjang',
         'sub' => 'Produk packing dan preloved yang kamu pilih.',
-        'acts' => '<a class="btn btn-sun" href="' . e(route('preloved.index')) . '">Belanja lagi</a>',
+        'acts' => '<a class="btn btn-ghost" href="' . e(route('preloved.index')) . '">Belanja lagi</a>',
     ])
 
     @if ($errors->any())

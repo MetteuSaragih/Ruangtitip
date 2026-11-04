@@ -6,7 +6,7 @@
     if (! function_exists('rp')) {
         function rp($n) { return 'Rp' . number_format($n, 0, ',', '.'); }
     }
-    $tones = ['#D7F2EE', '#FFF1C7', '#DDEBEA'];
+    $tones = ['var(--color-aqua)', 'var(--color-bg)', 'var(--color-divider)'];
     $wa = 'https://wa.me/6285121091134';
     $startDefault = now()->addDay()->toDateString();
 @endphp

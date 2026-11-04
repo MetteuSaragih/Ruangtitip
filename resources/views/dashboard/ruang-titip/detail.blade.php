@@ -45,7 +45,7 @@
 
     <div class="two">
         <div class="stack">
-            <figure class="gal" style="--tone:#D7F2EE">
+            <figure class="gal" style="--tone:var(--color-aqua)">
                 @if (! empty($images))
                     <img src="{{ asset('storage/' . $images[0]) }}" alt="Foto {{ $storage->name }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
                 @else

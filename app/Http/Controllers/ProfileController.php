@@ -17,39 +17,6 @@ class ProfileController extends Controller
     {
     }
 
-    public function index(Request $request)
-    {
-        $user = Auth::user();
-        $addresses = UserAddress::where('user_id', $user->id)
-            ->orderByDesc('is_primary')
-            ->orderByDesc('id')
-            ->get()
-            ->map(fn (UserAddress $address) => [
-                'id' => $address->id,
-                'label' => $address->label,
-                'address' => $address->address,
-                'areaId' => $address->area_id,
-                'areaName' => $address->area_name,
-                'postalCode' => $address->postal_code,
-                'latitude' => $address->latitude,
-                'longitude' => $address->longitude,
-                'isPrimary' => $address->is_primary,
-            ])
-            ->values();
-
-        $currentTab = $request->query('tab', 'profil');
-        $redirectAfter = session('profile_redirect_after');
-
-        $stats = [
-            'titip' => TitipanOrder::where('user_id', $user->id)->where('status', '!=', 'selesai')->count(),
-            'belanja' => PackingOrder::where('user_id', $user->id)->count()
-                + Order::where('user_id', $user->id)->count(),
-            'alamat' => $addresses->count(),
-        ];
-
-        return view('profile.index', compact('user', 'addresses', 'currentTab', 'redirectAfter', 'stats'));
-    }
-
     public function update(Request $request)
     {
         $data = $request->validate([

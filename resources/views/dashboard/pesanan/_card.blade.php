@@ -22,7 +22,7 @@
     </div>
     <div class="oc-acts">
         @if ($awaitingPay && $order->tripay_checkout_url)
-            <a href="{{ $order->tripay_checkout_url }}" class="btn btn-sun sm">Bayar</a>
+            <a href="{{ $order->tripay_checkout_url }}" class="btn btn-primary sm">Bayar</a>
         @endif
         <a href="{{ route('pesanan.detail', $order) }}" class="btn btn-ghost sm">Lihat detail</a>
     </div>

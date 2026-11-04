@@ -47,7 +47,7 @@
                                 </label>
                             @endforeach
                         </div>
-                        <button type="submit" id="useSelected" disabled class="btn btn-sun wide">Gunakan alamat ini</button>
+                        <button type="submit" id="useSelected" disabled class="btn btn-primary wide">Gunakan alamat ini</button>
                     </section>
                 </form>
             @endif

@@ -52,7 +52,7 @@
             <svg viewBox="0 0 44 40" width="90" height="82" aria-hidden="true"><use href="#box"/></svg>
             <h3>Belum ada pesanan</h3>
             <p>Pesanan penitipan yang kamu buat akan muncul di sini.</p>
-            <div class="acts"><a class="btn btn-sun" href="{{ route('ruang-titip.index') }}">Titip barang</a></div>
+            <div class="acts"><a class="btn btn-primary" href="{{ route('ruang-titip.index') }}">Titip barang</a></div>
         </section>
     @else
         <section class="card state">
