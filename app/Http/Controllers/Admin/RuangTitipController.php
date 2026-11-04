@@ -31,36 +31,13 @@ class RuangTitipController extends Controller
     ];
 
     /* ── INDEX ─────────────────────────────────────────────── */
-    public function index(Request $request)
+    public function index()
     {
-        $tab   = $request->query('tab', 'operasional');
-        $oTab  = $request->query('otab', 'baru');
-        $rooms = StorageRoom::orderBy('id')->get();
-        $orderData = $this->orderData();
-
-        $pendapatanBulanIni = $this->pendapatanDalamRentang(now()->startOfMonth(), now());
-        $pendapatanBulanLalu = $this->pendapatanDalamRentang(now()->subMonth()->startOfMonth(), now()->subMonth()->endOfMonth());
-        $pendapatanGrowth = $pendapatanBulanLalu > 0
-            ? round((($pendapatanBulanIni - $pendapatanBulanLalu) / $pendapatanBulanLalu) * 100)
-            : ($pendapatanBulanIni > 0 ? 100 : 0);
-
         return view('admin.ruang-titip', [
-            'pageTab'             => $tab,
-            'orderTab'            => $oTab,
-            'orderData'           => $orderData,
-            'rooms'               => $rooms,
-            'defaultPricing'      => $this->defaultPricing,
-            'allFacilities'       => $this->allFacilities,
-            'pendapatanBulanIni'  => $pendapatanBulanIni,
-            'pendapatanGrowth'    => $pendapatanGrowth,
+            'rooms'          => StorageRoom::orderBy('id')->get(),
+            'defaultPricing' => $this->defaultPricing,
+            'allFacilities'  => $this->allFacilities,
         ]);
-    }
-
-    private function pendapatanDalamRentang($from, $to): int
-    {
-        return (int) TitipanOrder::where('payment_status', 'PAID')
-            ->whereBetween('created_at', [$from, $to])
-            ->sum('total');
     }
 
     /* ── STORE (Tambah Ruangan) ────────────────────────────── */
@@ -93,7 +70,7 @@ class RuangTitipController extends Controller
 
         StorageRoom::create($data);
 
-        return redirect()->route('admin.ruang-titip', ['tab' => 'ruangan'])
+        return redirect()->route('admin.ruang-titip')
             ->with('success', 'Ruangan berhasil ditambahkan.');
     }
 
@@ -131,7 +108,7 @@ class RuangTitipController extends Controller
 
         $room->update($data);
 
-        return redirect()->route('admin.ruang-titip', ['tab' => 'ruangan'])
+        return redirect()->route('admin.ruang-titip')
             ->with('success', 'Ruangan berhasil diperbarui.');
     }
 
@@ -140,7 +117,7 @@ class RuangTitipController extends Controller
     {
         $room->delete();
 
-        return redirect()->route('admin.ruang-titip', ['tab' => 'ruangan'])
+        return redirect()->route('admin.ruang-titip')
             ->with('success', 'Ruangan berhasil dihapus.');
     }
 
@@ -149,7 +126,11 @@ class RuangTitipController extends Controller
     {
         $room->update(['active' => ! $room->active]);
 
-        return response()->json(['active' => $room->active]);
+        if (request()->expectsJson()) {
+            return response()->json(['active' => $room->active]);
+        }
+
+        return back()->with('success', $room->active ? 'Ruangan sekarang tayang.' : 'Ruangan disembunyikan.');
     }
 
     /* ── UPLOAD BUKTI (Operasional) ────────────────────────── */
@@ -163,7 +144,7 @@ class RuangTitipController extends Controller
             'proof_photo' => $request->file('proof_photo')->store('titipan-proofs', 'public'),
         ]);
 
-        return redirect()->route('admin.ruang-titip', ['tab' => 'operasional'])
+        return back()
             ->with('success', 'Bukti penitipan berhasil diunggah.');
     }
 
@@ -176,7 +157,7 @@ class RuangTitipController extends Controller
 
         $order->update(['status' => $data['status']]);
 
-        return redirect()->route('admin.ruang-titip', ['tab' => 'operasional'])
+        return back()
             ->with('success', 'Status pesanan berhasil diperbarui.');
     }
 
@@ -195,113 +176,5 @@ class RuangTitipController extends Controller
     private function uploadedImagesCount(Request $request): int
     {
         return $request->hasFile('images') ? count($request->file('images')) : 0;
-    }
-
-    /** Normalisasi nomor HP ke format internasional (62...) untuk link wa.me. */
-    private function waNumber(?string $phone): ?string
-    {
-        if (! $phone) {
-            return null;
-        }
-
-        $digits = preg_replace('/\D/', '', $phone);
-        if (! $digits) {
-            return null;
-        }
-
-        if (str_starts_with($digits, '0')) {
-            return '62' . substr($digits, 1);
-        }
-        if (str_starts_with($digits, '62')) {
-            return $digits;
-        }
-
-        return '62' . $digits;
-    }
-
-    /** Daftar template pesan WA siap pakai untuk satu pesanan Ruang Titip. */
-    private function waTemplates(string $customer, TitipanOrder $order): array
-    {
-        $code = $order->code();
-        $endDate = optional($order->date_end)->format('d M Y') ?? '-';
-        $daysLeft = $order->date_end ? max(0, now()->startOfDay()->diffInDays($order->date_end->startOfDay(), false)) : null;
-        $daysLeftText = $daysLeft !== null ? $daysLeft . ' hari' : 'beberapa hari';
-
-        return [
-            [
-                'key' => 'sampai',
-                'label' => 'Barang Sudah Sampai di Gudang',
-                'text' => "Halo {$customer}, barang penitipanmu (kode {$code}) sudah sampai dan tersimpan aman di gudang RUTIP. Terima kasih telah menggunakan layanan kami! 📦",
-            ],
-            [
-                'key' => 'bukti',
-                'label' => 'Bukti Foto Sudah Diunggah',
-                'text' => "Halo {$customer}, bukti foto kondisi barang penitipanmu (kode {$code}) sudah kami unggah. Silakan cek di halaman Pesanan Saya ya. 📸",
-            ],
-            [
-                'key' => 'durasi',
-                'label' => 'Sisa Durasi Penitipan',
-                'text' => "Halo {$customer}, masa penitipan barangmu (kode {$code}) tersisa {$daysLeftText} lagi (berakhir {$endDate}). Jangan lupa untuk perpanjang atau ambil barangmu ya! ⏰",
-            ],
-            [
-                'key' => 'proses_keluar',
-                'label' => 'Barang Sedang Diproses Keluar',
-                'text' => "Halo {$customer}, barang penitipanmu (kode {$code}) sedang kami proses untuk pengembalian/pengiriman. Mohon ditunggu ya! 🚚",
-            ],
-            [
-                'key' => 'selesai',
-                'label' => 'Barang Berhasil Dikirim/Diterima',
-                'text' => "Halo {$customer}, barang penitipanmu (kode {$code}) sudah berhasil dikirim/diterima. Terima kasih telah menggunakan RUTIP! 🙏",
-            ],
-        ];
-    }
-
-    private function orderData(): array
-    {
-        $blank = ['baru' => [], 'inspeksi' => [], 'gudang' => [], 'keluar' => []];
-        $returnModeByLogistic = [
-            'self' => 'Ambil Sendiri',
-            'rutip' => 'Minta Diantar',
-            'instant' => 'Ekspedisi Biteship',
-        ];
-
-        return TitipanOrder::with('user')->latest()->get()
-            ->map(function (TitipanOrder $order) use ($returnModeByLogistic) {
-                $customer = $order->user?->name ?? 'Pelanggan';
-                $waNumber = $this->waNumber($order->user?->phone);
-
-                return [
-                    'orderId' => $order->id,
-                    'id' => $order->code(),
-                    'customer' => $customer,
-                    'wa' => $order->user?->phone ?? '-',
-                    'waNumber' => $waNumber,
-                    'items' => collect($order->items ?? [])->map(fn ($qty, $code) => strtoupper($code) . ' x ' . $qty)->implode(', '),
-                    'qty' => $order->totalItems(),
-                    'duration' => optional($order->date_start)->diffInMonths($order->date_end, false) ?: 1,
-                    'deadline' => optional($order->date_end)->format('d M Y') ?? '-',
-                    'status' => $order->statusMeta()['label'],
-                    'statusKey' => $order->status,
-                    'hasProof' => ! empty($order->proof_photo),
-                    'proofUrl' => $order->proof_photo ? asset('storage/' . $order->proof_photo) : null,
-                    'returnMode' => $returnModeByLogistic[$order->logistic] ?? null,
-                    'trackingId' => $order->biteship_tracking_id,
-                    'rackCode' => null,
-                    'needsAttention' => $order->needs_admin_attention,
-                    'biteshipError' => $order->biteship_last_error,
-                    'waTemplates' => $waNumber ? $this->waTemplates($customer, $order) : [],
-                    'group' => match ($order->status) {
-                        'penjadwalan_penjemputan' => 'inspeksi',
-                        'dalam_gudang' => 'gudang',
-                        'proses_pengembalian', 'selesai' => 'keluar',
-                        default => 'baru',
-                    },
-                ];
-            })
-            ->groupBy('group')
-            ->reduce(function ($carry, $items, $group) {
-                $carry[$group] = $items->values()->all();
-                return $carry;
-            }, $blank);
     }
 }

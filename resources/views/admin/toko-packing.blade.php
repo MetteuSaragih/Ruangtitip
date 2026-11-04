@@ -3,332 +3,339 @@
 @section('title', 'Toko Packing')
 
 @php
-if (! function_exists('rt_wa_number')) {
-    function rt_wa_number($phone) {
-        if (! $phone) return null;
-        $digits = preg_replace('/\D/', '', $phone);
-        if (! $digits) return null;
-        if (str_starts_with($digits, '0')) return '62' . substr($digits, 1);
-        if (str_starts_with($digits, '62')) return $digits;
-        return '62' . $digits;
-    }
-}
 $categories = ['Kardus', 'Pelindung', 'Perekat', 'Aksesoris'];
 $units = ['pcs', 'roll', 'meter', 'lembar'];
+$statusOpts = ['pending' => 'Pending', 'diproses' => 'Diproses', 'dikirim' => 'Dikirim', 'selesai' => 'Selesai'];
+$statusTone = ['pending' => 'warn', 'diproses' => 'info', 'dikirim' => 'info', 'selesai' => 'ok'];
+$orderTabs = ['' => 'Semua', 'pending' => 'Pending', 'diproses' => 'Diproses', 'dikirim' => 'Dikirim', 'selesai' => 'Selesai'];
+$editId = old('_edit_id');
+$hasErr = $tab === 'inventaris' && $errors->any() && old('name') !== null;
+$formAction = $editId ? route('admin.packing.update', $editId) : route('admin.packing.store');
 @endphp
 
-@section('content')
-<div class="ph"><div><h1>Toko Packing</h1><p>Stok perlengkapan packing dan pesanan dari pelanggan.</p></div></div>
+@push('styles')
+<style>
+  .pk-stock { display: flex; align-items: center; gap: 6px; }
+  .pk-stock .input { width: 84px; min-height: 34px; padding: 4px 8px; }
+  .pk-sel { min-height: 32px; padding: 2px 8px; font-size: 12.5px; width: auto; }
+  .pk-sub { font-size: 12.5px; color: var(--color-text-secondary); }
+</style>
+@endpush
 
-<div class="stats">
-  <div class="card stat {{ $lowItems->count() > 0 ? 'alert' : '' }}">
-    <div class="stat-top"><span class="stat-ico r">{!! \App\Support\Icons::svg('alert') !!}</span></div>
+@section('content')
+<div class="ph">
+  <div>
+    <h1>Toko Packing</h1>
+    <p>Stok perlengkapan packing dan pesanan dari pelanggan. Penjualan packing untuk pelanggan sedang ditunda; panel ini tetap berfungsi penuh.</p>
+  </div>
+  @if ($tab === 'inventaris')
+    <div class="acts">
+      <button class="btn btn-sun" type="button" id="pkAdd" data-open="pkDialog">
+        <svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg> Tambah produk
+      </button>
+    </div>
+  @endif
+</div>
+
+<div class="g3" style="margin-bottom:16px">
+  <div class="kpi">
     <small>Stok menipis</small>
-    <strong>{{ $lowItems->count() }} produk</strong>
-    <span class="sub">
-      @forelse ($lowItems->take(3) as $low)
-        {{ $low->name }} (sisa {{ $low->stock }} {{ $low->unit }}){{ !$loop->last ? ',' : '' }}
-      @empty
+    <b>{{ $lowItems->count() }}</b>
+    <span>
+      @if ($lowItems->isEmpty())
         Semua stok aman
-      @endforelse
+      @else
+        {{ $lowItems->take(3)->map(fn ($l) => $l->name . ' (sisa ' . $l->stock . ')')->implode(', ') }}
+      @endif
     </span>
   </div>
-  <div class="card stat">
-    <div class="stat-top"><span class="stat-ico g">{!! \App\Support\Icons::svg('trend') !!}</span></div>
-    <small>Terjual bulan ini</small>
-    <strong>{{ $totalSold }} item</strong>
-    <span class="sub">Kardus, lakban, dan pelindung</span>
+  <div class="kpi">
+    <small>Item terjual</small>
+    <b>{{ number_format($totalSold, 0, ',', '.') }}</b>
+    <span>Dari pesanan lunas</span>
   </div>
-  <div class="card stat">
-    <div class="stat-top"><span class="stat-ico s">{!! \App\Support\Icons::svg('wallet') !!}</span></div>
+  <div class="kpi">
     <small>Pendapatan packing</small>
-    <strong>Rp {{ number_format($revenue, 0, ',', '.') }}</strong>
-    <span class="sub"><span class="pill g">Dari pesanan lunas</span></span>
+    <b>Rp {{ number_format($revenue, 0, ',', '.') }}</b>
+    <span>Dari pesanan lunas</span>
   </div>
 </div>
 
-<div class="seg" role="tablist" aria-label="Bagian halaman">
-  <a role="tab" aria-selected="{{ $tab === 'inventaris' ? 'true' : 'false' }}" href="{{ route('admin.packing.index', ['tab' => 'inventaris']) }}">
-    {!! \App\Support\Icons::svg('layers') !!}
-    <span>Inventaris<small>Stock opname dan master produk</small></span>
-  </a>
-  <a role="tab" aria-selected="{{ $tab === 'pesanan' ? 'true' : 'false' }}" href="{{ route('admin.packing.index', ['tab' => 'pesanan']) }}">
-    {!! \App\Support\Icons::svg('clipboard') !!}
-    <span>Pesanan packing<small>Transaksi dan pengiriman</small></span>
-  </a>
+<div class="bar">
+  <div class="tabs">
+    <a href="{{ route('admin.packing.index') }}" @if ($tab === 'inventaris') aria-current="page" @endif>Inventaris <i>{{ $totalProducts }}</i></a>
+    <a href="{{ route('admin.packing.index', ['tab' => 'pesanan']) }}" @if ($tab === 'pesanan') aria-current="page" @endif>Pesanan packing</a>
+  </div>
+  <form method="GET" action="{{ route('admin.packing.index') }}" class="search" role="search">
+    <input type="hidden" name="tab" value="{{ $tab }}">
+    @if ($tab === 'inventaris' && $cat !== '')<input type="hidden" name="cat" value="{{ $cat }}">@endif
+    @if ($tab === 'pesanan' && $st !== '')<input type="hidden" name="st" value="{{ $st }}">@endif
+    <svg class="ic" aria-hidden="true"><use href="#n-search"/></svg>
+    <input type="search" name="q" value="{{ $q }}" placeholder="{{ $tab === 'pesanan' ? 'Cari kode atau pelanggan' : 'Cari nama produk' }}" aria-label="Cari">
+  </form>
 </div>
 
 @if ($tab === 'pesanan')
-  <section class="card">
-    <div class="card-h"><div><h2>Pesanan packing</h2><p>{{ $orders->count() }} pesanan tercatat</p></div></div>
-    <div class="tbl-wrap">
-      @if ($orders->isEmpty())
-        {!! \App\Support\Icons::empty('clipboard', 'Tidak ada pesanan masuk', 'Pesanan dari pelanggan akan muncul di sini.') !!}
-      @else
-        <table>
-          <thead><tr><th>Kode pesanan</th><th>Pelanggan</th><th>Isi pesanan</th><th class="num">Total</th><th>Pembayaran</th><th>Status order</th><th>Tanggal</th><th><span class="sr">Aksi</span></th></tr></thead>
+  <div class="bar">
+    <div class="tabs">
+      @foreach ($orderTabs as $k => $label)
+        @php $cnt = $orderCounts[$k === '' ? 'semua' : $k] ?? 0; @endphp
+        <a href="{{ route('admin.packing.index', array_filter(['tab' => 'pesanan', 'st' => $k ?: null, 'q' => $q ?: null])) }}" @if ($st === (string) $k) aria-current="page" @endif>{{ $label }} <i>{{ $cnt }}</i></a>
+      @endforeach
+    </div>
+  </div>
+
+  <div class="card flush">
+    @if ($orders->isEmpty())
+      <div class="empty"><b>Tidak ada pesanan</b>Pesanan dari pelanggan akan muncul di sini.</div>
+    @else
+      <div class="tw">
+        <table class="tbl">
+          <thead>
+            <tr><th>Kode</th><th>Pelanggan</th><th>Isi pesanan</th><th class="r">Total</th><th>Pembayaran</th><th>Status order</th><th>Tanggal</th></tr>
+          </thead>
           <tbody>
             @foreach ($orders as $order)
               @php
-                $payBadge = match ($order->payment_status) {
-                    'PAID' => ['Lunas', 'g'],
-                    'FAILED', 'EXPIRED' => ['Gagal', 'r'],
-                    default => ['Menunggu', 'y'],
-                };
-                $waNumber = rt_wa_number($order->user->phone ?? null);
-                $waCustomer = $order->user->name ?? 'Pelanggan';
-                $waTemplates = [
-                    ['key' => 'diproses', 'label' => 'Pesanan Sedang Diproses', 'text' => "Halo {$waCustomer}, pesanan packing-mu (kode {$order->order_code}) sedang kami proses. Mohon ditunggu ya! 📦"],
-                    ['key' => 'dikirim', 'label' => 'Pesanan Sudah Dikirim', 'text' => "Halo {$waCustomer}, pesanan packing-mu (kode {$order->order_code}) sudah dikirim. Terima kasih telah berbelanja di RuangTitip! 🚚"],
-                    ['key' => 'selesai', 'label' => 'Pesanan Sudah Diterima/Selesai', 'text' => "Halo {$waCustomer}, terima kasih! Pesanan packing-mu (kode {$order->order_code}) sudah selesai. 🙏"],
-                ];
-                $statusOpts = ['pending' => 'Pending', 'diproses' => 'Diproses', 'dikirim' => 'Dikirim', 'selesai' => 'Selesai'];
-                $statusTone = ['pending' => 'y', 'diproses' => 'n', 'dikirim' => 'o', 'selesai' => 'g'];
+                $payTone = match ($order->payment_status) { 'PAID' => 'ok', 'FAILED', 'EXPIRED' => 'err', default => 'warn' };
+                $payLabel = match ($order->payment_status) { 'PAID' => 'Lunas', 'FAILED', 'EXPIRED' => 'Gagal', default => 'Menunggu' };
                 $orderStatus = $order->status ?? 'pending';
               @endphp
               <tr>
-                <td class="mono">
-                  {{ $order->order_code }}
+                <td>
+                  <b class="mono">{{ $order->order_code }}</b>
                   @if ($order->needs_admin_attention)
-                    <span class="pill r" title="{{ $order->biteship_last_error ?? 'Pemesanan kurir Biteship gagal' }}" style="margin-top:4px">{!! \App\Support\Icons::svg('alert', 'sm') !!} Perlu tindakan</span>
+                    <span class="tag err" title="{{ $order->biteship_last_error ?? 'Pemesanan kurir Biteship gagal' }}">Perlu tindakan</span>
                   @endif
                 </td>
                 <td>{{ $order->user->name ?? '-' }}</td>
-                <td>{{ collect($order->items)->pluck('name')->implode(', ') }}</td>
-                <td class="num"><b>Rp {{ number_format($order->total, 0, ',', '.') }}</b></td>
-                <td><span class="pill {{ $payBadge[1] }}">{{ $payBadge[0] }}</span></td>
+                <td>{{ \Illuminate\Support\Str::limit(collect($order->items)->pluck('name')->implode(', '), 60) }}</td>
+                <td class="r num">Rp {{ number_format($order->total, 0, ',', '.') }}</td>
+                <td><span class="st {{ $payTone }}">{{ $payLabel }}</span></td>
                 <td>
-                  <form action="{{ route('admin.packing.order.status', $order->id) }}" method="POST" style="display:flex;align-items:center;gap:6px">
+                  <form action="{{ route('admin.packing.order.status', $order->id) }}" method="POST" class="row-flex">
                     @csrf
-                    <span class="pill {{ $statusTone[$orderStatus] ?? 'n' }}">{{ $statusOpts[$orderStatus] ?? 'Pending' }}</span>
-                    <select name="status" class="select" style="min-height:32px;padding:2px 8px;font-size:12px" onchange="this.form.submit()">
+                    <span class="st {{ $statusTone[$orderStatus] ?? 'mute' }}">{{ $statusOpts[$orderStatus] ?? 'Pending' }}</span>
+                    <select name="status" class="input pk-sel" aria-label="Ubah status {{ $order->order_code }}" onchange="this.form.submit()">
                       @foreach ($statusOpts as $val => $label)
-                        <option value="{{ $val }}" {{ $orderStatus === $val ? 'selected' : '' }}>{{ $label }}</option>
+                        <option value="{{ $val }}" @selected($orderStatus === $val)>{{ $label }}</option>
                       @endforeach
                     </select>
                   </form>
                 </td>
-                <td>{{ $order->created_at->format('d M Y, H:i') }}</td>
-                <td>
-                  <div class="t-actions">
-                    <button type="button" class="btn btn-sm btn-green" {{ $waNumber ? '' : 'disabled' }}
-                      title="{{ $waNumber ? 'Kirim pesan WhatsApp ke ' . $waCustomer : 'Nomor WA pelanggan belum diisi' }}"
-                      onclick="openWaModal(@js($waNumber), @js($waTemplates), @js('Kirim ke ' . $waCustomer))">
-                      {!! \App\Support\Icons::svg('send', 'sm') !!} WA
-                    </button>
-                  </div>
-                </td>
+                <td>{{ optional($order->created_at)->format('d M Y, H:i') }}</td>
               </tr>
             @endforeach
           </tbody>
         </table>
-      @endif
-    </div>
-  </section>
-@else
-  <section class="card">
-    <div class="card-h">
-      <div class="chips" id="kFilter" role="group" aria-label="Filter kategori">
-        <button class="chip" type="button" aria-pressed="true" data-c="Semua">Semua</button>
-        @foreach ($categories as $c)
-          <button class="chip" type="button" aria-pressed="false" data-c="{{ $c }}">{{ $c }}</button>
-        @endforeach
       </div>
-      <button class="btn btn-primary" type="button" id="btnTambahProduk">{!! \App\Support\Icons::svg('plus', 'sm') !!} Tambah produk</button>
+      @include('admin.preloved-pager', ['p' => $orders])
+    @endif
+  </div>
+@else
+  <div class="bar">
+    <div class="tabs">
+      <a href="{{ route('admin.packing.index', array_filter(['q' => $q ?: null])) }}" @if ($cat === '') aria-current="page" @endif>Semua kategori</a>
+      @foreach ($categories as $c)
+        <a href="{{ route('admin.packing.index', array_filter(['cat' => $c, 'q' => $q ?: null])) }}" @if ($cat === $c) aria-current="page" @endif>{{ $c }}</a>
+      @endforeach
     </div>
-    <div class="tbl-wrap" id="kTable">
-      @if ($items->isEmpty())
-        {!! \App\Support\Icons::empty('box', 'Belum ada produk', 'Klik "Tambah produk" untuk mulai mengisi inventaris.') !!}
-      @else
-        <table>
-          <thead><tr><th>Produk</th><th>Kategori</th><th class="num">Harga</th><th>Stok sistem</th><th>Stok fisik (opname)</th><th><span class="sr">Aksi</span></th></tr></thead>
+  </div>
+
+  <div class="card flush">
+    @if ($items->isEmpty())
+      <div class="empty">
+        <b>{{ ($q !== '' || $cat !== '') ? 'Produk tidak ditemukan' : 'Belum ada produk' }}</b>
+        {{ ($q !== '' || $cat !== '') ? 'Coba kata kunci atau kategori lain.' : 'Klik "Tambah produk" untuk mengisi inventaris.' }}
+      </div>
+    @else
+      <div class="tw">
+        <table class="tbl">
+          <thead>
+            <tr><th>Produk</th><th>Kategori</th><th class="r">Harga</th><th>Stok sistem</th><th>Stok fisik (opname)</th><th class="acts">Aksi</th></tr>
+          </thead>
           <tbody>
             @foreach ($items as $item)
               @php $isLow = $item->stock <= $item->low_threshold; @endphp
-              <tr data-category="{{ $item->category }}">
+              <tr>
                 <td>
-                  <div class="who">
+                  <div class="row-flex">
                     <span class="thumb">
                       @if ($item->primary_image)
-                        <img src="{{ asset('storage/' . $item->primary_image) }}" alt="{{ $item->name }}">
+                        <img src="{{ asset('storage/' . $item->primary_image) }}" alt="">
                       @else
-                        {!! \App\Support\Icons::svg('box') !!}
+                        <svg class="ic" aria-hidden="true"><use href="#n-box"/></svg>
                       @endif
                     </span>
-                    <div><b>{{ $item->name }}</b><small>{{ $item->category }}</small></div>
+                    <div><b>{{ $item->name }}</b></div>
                   </div>
                 </td>
-                <td><span class="pill n">{{ $item->category }}</span></td>
-                <td class="num"><b>Rp {{ number_format($item->price, 0, ',', '.') }}</b><br><small style="color:var(--muted)">per {{ $item->unit }}</small></td>
+                <td>{{ $item->category }}</td>
+                <td class="r num">Rp {{ number_format($item->price, 0, ',', '.') }}<small>per {{ $item->unit }}</small></td>
                 <td>
-                  <div class="stock">
-                    <b>{{ $item->stock }}</b>
-                    <span class="pill {{ $item->stock <= 0 ? 'r' : ($isLow ? 'y' : 'g') }}">{{ $item->stock <= 0 ? 'Habis' : ($isLow ? 'Menipis' : 'Aman') }}</span>
-                  </div>
+                  <b class="num">{{ $item->stock }}</b>
+                  <span class="st {{ $item->stock <= 0 ? 'err' : ($isLow ? 'warn' : 'ok') }}">{{ $item->stock <= 0 ? 'Habis' : ($isLow ? 'Menipis' : 'Aman') }}</span>
                 </td>
                 <td>
-                  <form action="{{ route('admin.packing.update', $item->id) }}" method="POST" class="stock-form" data-original="{{ $item->stock }}" style="display:flex;align-items:center;gap:8px">
-                    @csrf @method('PUT')
+                  <form action="{{ route('admin.packing.update', $item->id) }}" method="POST" class="pk-stock">
+                    @csrf
+                    @method('PUT')
                     <input type="hidden" name="quick_stock" value="1">
-                    <div class="stepper">
-                      <button type="button" data-d="-1">−</button>
-                      <input type="number" min="0" name="stock" value="{{ $item->stock }}">
-                      <button type="button" data-d="1">+</button>
-                    </div>
-                    <button class="btn btn-sm btn-ghost save-stock-btn" type="submit" disabled>Simpan</button>
+                    <input class="input num" type="number" min="0" name="stock" value="{{ $item->stock }}" aria-label="Stok fisik {{ $item->name }}">
+                    <button class="btn btn-ghost sm" type="submit">Simpan</button>
                   </form>
                 </td>
-                <td>
-                  <div class="t-actions">
-                    <button class="btn btn-sm btn-ghost" type="button" data-edit-item="{{ e($item->toJson()) }}">{!! \App\Support\Icons::svg('edit', 'sm') !!}</button>
-                    <form action="{{ route('admin.packing.destroy', $item->id) }}" method="POST" data-confirm="Hapus {{ addslashes($item->name) }}?|Produk ini akan dihapus permanen dari katalog." data-confirm-ok="Hapus">
-                      @csrf @method('DELETE')
-                      <button class="btn btn-sm btn-danger" type="submit">{!! \App\Support\Icons::svg('trash', 'sm') !!}</button>
-                    </form>
-                  </div>
+                <td class="acts">
+                  <button class="btn btn-ghost sm" type="button" data-edit-item="{{ e($item->toJson()) }}">Ubah</button>
+                  <form action="{{ route('admin.packing.destroy', $item->id) }}" method="POST" style="display:inline"
+                        data-confirm="Produk {{ $item->name }} akan dihapus permanen." data-confirm-title="Hapus produk?" data-confirm-ok="Hapus" data-danger>
+                    @csrf
+                    @method('DELETE')
+                    <button class="btn btn-danger sm" type="submit">Hapus</button>
+                  </form>
                 </td>
               </tr>
             @endforeach
           </tbody>
         </table>
-      @endif
-    </div>
-    <div class="card-f"><span>{{ $items->count() }} produk ditampilkan</span></div>
-  </section>
-@endif
+      </div>
+      @include('admin.preloved-pager', ['p' => $items])
+    @endif
+  </div>
 
-{{-- ── Modal Tambah/Edit Produk ── --}}
-<div class="modal" id="pkModal" hidden>
-  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="pkModalT">
-    <form id="packing-product-form" action="{{ route('admin.packing.store') }}" method="POST" enctype="multipart/form-data"
-          data-store-url="{{ route('admin.packing.store') }}" data-base-url="{{ url('/admin/toko-packing') }}" style="display:contents">
+  <dialog class="dlg" id="pkDialog" @if ($hasErr) data-reopen @endif>
+    <form method="POST" id="pkForm" action="{{ $formAction }}" enctype="multipart/form-data">
       @csrf
-      <input id="packing-form-method" type="hidden" name="_method" value="PUT" disabled>
-      <div class="d-head">
-        <div><h2 id="pkModalT">Tambah produk packing</h2><p id="packing-form-subtitle">Produk baru akan muncul di katalog Toko Packing.</p></div>
-        <button class="icon-btn" type="button" id="btnCloseProdukModal" aria-label="Tutup"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <input type="hidden" name="_method" value="PUT" id="pkMethod" @if (! $editId) disabled @endif>
+      <input type="hidden" name="_edit_id" value="{{ $editId }}" id="pkEditId" @if (! $editId) disabled @endif>
+      <div class="dh">
+        <h3 id="pkTitle">{{ $editId ? 'Ubah produk' : 'Tambah produk packing' }}</h3>
+        <button class="x" type="button" data-close aria-label="Tutup"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
       </div>
-      <div class="d-body">
-        <div class="field"><label for="kName">Nama produk <span class="req">*</span></label><input class="input" id="kName" name="name" required placeholder="Contoh: Kardus ukuran M"></div>
+      <div class="db">
         <div class="field">
-          <span class="lbl">Foto <span style="color:var(--tape)">*</span></span>
-          <div class="drop" id="kDrop" role="button" tabindex="0" aria-describedby="kHelp">
-            <span class="thumb">{!! \App\Support\Icons::svg('image') !!}</span>
-            <span><b>Klik untuk pilih / tambah foto</b><small>JPG / PNG &middot; maks 5 MB per foto &middot; rasio 1:1, min. 500&times;500 px</small></span>
-          </div>
-          <input type="file" id="kFile" name="images[]" accept="image/png,image/jpeg" multiple hidden>
-          <div class="previews" id="kPrev"></div>
-          <span class="help" id="kHelp">Wajib minimal 1 foto, maksimal 10 foto per produk.</span>
-          @error('images')<span class="help" style="color:var(--danger)">{{ $message }}</span>@enderror
+          <label for="pkImages">Foto <span class="muted">(wajib minimal 1, maksimal 10, JPG/PNG, 5 MB per foto)</span></label>
+          <input type="file" id="pkImages" name="images[]" accept="image/png,image/jpeg" multiple>
+          <span class="help">Foto baru ditambahkan ke foto yang sudah ada.</span>
+          @error('images')<span class="err-t">{{ $message }}</span>@enderror
+          @error('images.*')<span class="err-t">{{ $message }}</span>@enderror
         </div>
-        <div class="grid2">
-          <div class="field"><label for="kCat">Kategori</label>
-            <select class="select" id="kCat" name="category">
-              @foreach ($categories as $c)<option value="{{ $c }}">{{ $c }}</option>@endforeach
+        <div class="fgrid">
+          <div class="field full">
+            <label for="pkName">Nama produk</label>
+            <input class="input" id="pkName" name="name" value="{{ old('name') }}" required placeholder="Contoh: Kardus ukuran M">
+            @error('name')<span class="err-t">{{ $message }}</span>@enderror
+          </div>
+          <div class="field">
+            <label for="pkCat">Kategori</label>
+            <select class="input" id="pkCat" name="category">
+              @foreach ($categories as $c)<option value="{{ $c }}" @selected(old('category') === $c)>{{ $c }}</option>@endforeach
             </select>
+            @error('category')<span class="err-t">{{ $message }}</span>@enderror
           </div>
-          <div class="field"><label for="kUnit">Satuan</label>
-            <select class="select" id="kUnit" name="unit">
-              @foreach ($units as $u)<option value="{{ $u }}">{{ $u }}</option>@endforeach
+          <div class="field">
+            <label for="pkUnit">Satuan</label>
+            <select class="input" id="pkUnit" name="unit">
+              @foreach ($units as $u)<option value="{{ $u }}" @selected(old('unit') === $u)>{{ $u }}</option>@endforeach
             </select>
+            @error('unit')<span class="err-t">{{ $message }}</span>@enderror
           </div>
-        </div>
-        <div class="field"><label for="kPrice">Harga jual <span class="req">*</span></label><div class="affix"><span>Rp</span><input id="kPrice" name="price" type="number" min="0" placeholder="6000" inputmode="numeric" required></div></div>
-        <div class="grid2">
-          <div class="field"><label for="kStock">Stok awal</label><input class="input" id="kStock" name="stock" type="number" min="0" value="0" inputmode="numeric"></div>
-          <div class="field"><label for="kMin">Ambang peringatan</label><input class="input" id="kMin" name="low_threshold" type="number" min="1" value="10" inputmode="numeric"><span class="help">Peringatan muncul kalau stok di bawah angka ini.</span></div>
-        </div>
-        <div class="field">
-          <span class="lbl">Berat &amp; dimensi <span style="color:var(--tape)">*</span></span>
-          <span class="help">Dipakai untuk menghitung ongkir Biteship secara akurat.</span>
-        </div>
-        <div class="grid2">
-          <div class="field"><label for="kWeight">Berat (gram)</label><input class="input" id="kWeight" name="weight" type="number" min="1" value="500" inputmode="numeric" required></div>
-          <div class="field"><label for="kLength">Panjang (cm)</label><input class="input" id="kLength" name="length" type="number" min="1" value="30" inputmode="numeric" required></div>
-          <div class="field"><label for="kWidth">Lebar (cm)</label><input class="input" id="kWidth" name="width" type="number" min="1" value="20" inputmode="numeric" required></div>
-          <div class="field"><label for="kHeight">Tinggi (cm)</label><input class="input" id="kHeight" name="height" type="number" min="1" value="15" inputmode="numeric" required></div>
+          <div class="field full">
+            <label for="pkPrice">Harga jual (Rp)</label>
+            <input class="input num" id="pkPrice" name="price" type="number" min="0" inputmode="numeric" value="{{ old('price') }}" required placeholder="6000">
+            @error('price')<span class="err-t">{{ $message }}</span>@enderror
+          </div>
+          <div class="field">
+            <label for="pkStock">Stok</label>
+            <input class="input num" id="pkStock" name="stock" type="number" min="0" value="{{ old('stock', 0) }}" required>
+            @error('stock')<span class="err-t">{{ $message }}</span>@enderror
+          </div>
+          <div class="field">
+            <label for="pkMin">Ambang peringatan</label>
+            <input class="input num" id="pkMin" name="low_threshold" type="number" min="1" value="{{ old('low_threshold', 10) }}" required>
+            <span class="help">Peringatan muncul bila stok di bawah angka ini.</span>
+            @error('low_threshold')<span class="err-t">{{ $message }}</span>@enderror
+          </div>
+          <div class="field full"><span class="pk-sub">Berat dan dimensi dipakai untuk menghitung ongkir Biteship.</span></div>
+          <div class="field">
+            <label for="pkWeight">Berat (gram)</label>
+            <input class="input num" id="pkWeight" name="weight" type="number" min="1" value="{{ old('weight', 500) }}" required>
+            @error('weight')<span class="err-t">{{ $message }}</span>@enderror
+          </div>
+          <div class="field">
+            <label for="pkLength">Panjang (cm)</label>
+            <input class="input num" id="pkLength" name="length" type="number" min="1" value="{{ old('length', 30) }}" required>
+            @error('length')<span class="err-t">{{ $message }}</span>@enderror
+          </div>
+          <div class="field">
+            <label for="pkWidth">Lebar (cm)</label>
+            <input class="input num" id="pkWidth" name="width" type="number" min="1" value="{{ old('width', 20) }}" required>
+            @error('width')<span class="err-t">{{ $message }}</span>@enderror
+          </div>
+          <div class="field">
+            <label for="pkHeight">Tinggi (cm)</label>
+            <input class="input num" id="pkHeight" name="height" type="number" min="1" value="{{ old('height', 15) }}" required>
+            @error('height')<span class="err-t">{{ $message }}</span>@enderror
+          </div>
         </div>
       </div>
-      <div class="d-foot">
-        <button class="btn btn-ghost" type="button" id="btnBatalProdukModal">Batal</button>
-        <button class="btn btn-primary" type="submit">{!! \App\Support\Icons::svg('check', 'sm') !!} <span id="packing-form-submit-label">Tambah produk</span></button>
+      <div class="df">
+        <button class="btn btn-ghost" type="button" data-close>Batal</button>
+        <button class="btn btn-primary" type="submit" id="pkSubmit">{{ $editId ? 'Simpan perubahan' : 'Tambah produk' }}</button>
       </div>
     </form>
-  </div>
-</div>
-
-<x-admin-wa-modal />
+  </dialog>
+@endif
 @endsection
 
 @push('scripts')
+@if ($tab === 'inventaris')
 <script>
 (function () {
-  /* Filter kategori (client-side) */
-  var fEl = document.getElementById('kFilter');
-  if (fEl) {
-    fEl.addEventListener('click', function (e) {
-      var b = e.target.closest('[data-c]'); if (!b) return;
-      fEl.querySelectorAll('.chip').forEach(function (c) { c.setAttribute('aria-pressed', String(c === b)); });
-      document.querySelectorAll('#kTable [data-category]').forEach(function (row) {
-        row.hidden = b.dataset.c !== 'Semua' && row.dataset.category !== b.dataset.c;
-      });
+  var form = document.getElementById('pkForm');
+  if (!form) return;
+  var storeUrl = @json(route('admin.packing.store'));
+  var baseUrl = @json(url('/admin/toko-packing'));
+  var method = document.getElementById('pkMethod');
+  var editId = document.getElementById('pkEditId');
+  var title = document.getElementById('pkTitle');
+  var submit = document.getElementById('pkSubmit');
+  var dialog = document.getElementById('pkDialog');
+  var keys = ['name', 'category', 'unit', 'price', 'stock', 'low_threshold', 'weight', 'length', 'width', 'height'];
+  var defaults = { name: '', category: 'Kardus', unit: 'pcs', price: '', stock: 0, low_threshold: 10, weight: 500, length: 30, width: 20, height: 15 };
+  var images = document.getElementById('pkImages');
+
+  function fill(data) {
+    keys.forEach(function (k) {
+      if (form.elements[k]) form.elements[k].value = data[k] === undefined || data[k] === null ? '' : data[k];
     });
   }
 
-  /* Stepper stok fisik */
-  document.querySelectorAll('.stock-form').forEach(function (form) {
-    var input = form.querySelector('input[name="stock"]');
-    var save = form.querySelector('.save-stock-btn');
-    var original = Number(form.dataset.original || 0);
-    function sync() { save.disabled = Number(input.value || 0) === original; }
-    form.querySelector('[data-d="-1"]').addEventListener('click', function () { input.value = Math.max(0, Number(input.value || 0) - 1); sync(); });
-    form.querySelector('[data-d="1"]').addEventListener('click', function () { input.value = Number(input.value || 0) + 1; sync(); });
-    input.addEventListener('input', sync);
-  });
-
-  /* Modal tambah/edit produk */
-  var modal = document.getElementById('pkModal');
-  var form = document.getElementById('packing-product-form');
-  var methodInput = document.getElementById('packing-form-method');
-  var title = document.getElementById('pkModalT');
-  var subtitle = document.getElementById('packing-form-subtitle');
-  var submitLabel = document.getElementById('packing-form-submit-label');
-  var photos = RA.photoInput('kDrop', 'kFile', 'kPrev', 10, 0);
-
-  function fillForm(data) {
-    ['name', 'category', 'unit', 'price', 'stock', 'low_threshold', 'weight', 'length', 'width', 'height'].forEach(function (key) {
-      if (form.elements[key]) form.elements[key].value = data[key] ?? '';
-    });
-  }
-
-  function openCreate() {
-    form.action = form.dataset.storeUrl;
-    methodInput.disabled = true;
+  document.getElementById('pkAdd').addEventListener('click', function () {
+    form.reset();
+    form.action = storeUrl;
+    method.disabled = true;
+    editId.disabled = true;
     title.textContent = 'Tambah produk packing';
-    subtitle.textContent = 'Produk baru akan muncul di katalog Toko Packing.';
-    submitLabel.textContent = 'Tambah produk';
-    fillForm({ name: '', category: 'Kardus', unit: 'pcs', price: '', stock: 0, low_threshold: 10, weight: 500, length: 30, width: 20, height: 15 });
-    photos.reset(0);
-    RA.open('pkModal');
-  }
-
-  function openEdit(item) {
-    form.action = form.dataset.baseUrl + '/' + item.id;
-    methodInput.disabled = false;
-    title.textContent = 'Ubah produk';
-    subtitle.textContent = item.name || '';
-    submitLabel.textContent = 'Simpan perubahan';
-    fillForm(item);
-    photos.reset(Array.isArray(item.images) ? item.images.length : 0);
-    RA.open('pkModal');
-  }
-
-  document.getElementById('btnTambahProduk')?.addEventListener('click', openCreate);
-  document.querySelectorAll('[data-edit-item]').forEach(function (btn) {
-    btn.addEventListener('click', function () { openEdit(JSON.parse(btn.dataset.editItem)); });
+    submit.textContent = 'Tambah produk';
+    fill(defaults);
   });
-  document.getElementById('btnCloseProdukModal')?.addEventListener('click', function () { RA.close(modal); });
-  document.getElementById('btnBatalProdukModal')?.addEventListener('click', function () { RA.close(modal); });
+
+  document.querySelectorAll('[data-edit-item]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var item = JSON.parse(btn.dataset.editItem);
+      form.reset();
+      form.action = baseUrl + '/' + item.id;
+      method.disabled = false;
+      editId.disabled = false;
+      editId.value = item.id;
+      title.textContent = 'Ubah produk';
+      submit.textContent = 'Simpan perubahan';
+      fill(item);
+      dialog.showModal();
+    });
+  });
 })();
 </script>
+@endif
 @endpush

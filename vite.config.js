@@ -14,6 +14,8 @@ export default defineConfig({
                 'resources/js/rt-landing.js',
                 'resources/css/rt-auth.css',
                 'resources/css/rt-legal.css',
+                'resources/css/rt-admin.css',
+                'resources/js/rt-admin.js',
             ],
             refresh: true,
         }),

@@ -155,6 +155,11 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
+        // Route admin per area (routes/admin/*.php) dimuat di sini, nama otomatis berawalan admin.
+        foreach (glob(base_path('routes/admin/*.php')) as $adminRoutes) {
+            require $adminRoutes;
+        }
+
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
         Route::get('/profil', [AdminDashboardController::class, 'profile'])->name('profile');
         Route::post('/profil/update', [AdminDashboardController::class, 'updateProfile'])->name('profile.update');

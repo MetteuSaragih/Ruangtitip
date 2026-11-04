@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\PrelovedItem;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class TokoPrelovedController extends Controller
 {
@@ -34,48 +35,106 @@ class TokoPrelovedController extends Controller
         'cancelled'  => 'Dibatalkan',
     ];
 
-    /* ── INDEX ─────────────────────────────────────────────── */
+    /* ── INDEX (katalog) ───────────────────────────────────── */
     public function index(Request $request)
     {
-        $tab      = $request->query('tab', 'katalog');
-        $filter   = $request->query('filter', 'Semua');
-        $items    = PrelovedItem::latest()->get();
+        $tab = $request->query('tab', 'semua');
+        if (! in_array($tab, ['semua', 'tersedia', 'draft', 'terjual'], true)) {
+            $tab = 'semua';
+        }
+        $q = trim((string) $request->query('q', ''));
 
-        // Pesanan asli yang sudah lunas via Tripay, hanya yang mengandung item preloved
-        // (keranjang campuran packing + preloved tetap disimpan dalam satu Order yang sama).
-        $orders = Order::where('payment_status', 'PAID')
-            ->latest()
+        $query = PrelovedItem::query()->latest();
+        $map = ['tersedia' => 'Tersedia', 'draft' => 'Draft', 'terjual' => 'Terjual'];
+        if (isset($map[$tab])) {
+            $query->where('status', $map[$tab]);
+        }
+        if ($q !== '') {
+            $query->where(function ($w) use ($q) {
+                $w->where('name', 'like', "%{$q}%")
+                    ->orWhere('category', 'like', "%{$q}%")
+                    ->orWhere('seller', 'like', "%{$q}%")
+                    ->orWhere('description', 'like', "%{$q}%");
+            });
+        }
+
+        $counts = [
+            'semua'    => PrelovedItem::count(),
+            'tersedia' => PrelovedItem::where('status', 'Tersedia')->count(),
+            'draft'    => PrelovedItem::where('status', 'Draft')->count(),
+            'terjual'  => PrelovedItem::where('status', 'Terjual')->count(),
+        ];
+
+        return view('admin.toko-preloved', [
+            'tab'        => $tab,
+            'q'          => $q,
+            'items'      => $query->paginate(15)->withQueryString(),
+            'counts'     => $counts,
+            'categories' => $this->categories,
+            'conditions' => $this->conditions,
+            'conditionLabels' => $this->conditionLabels,
+        ]);
+    }
+
+    /* ── PESANAN PRELOVED ──────────────────────────────────── */
+    public function orders(Request $request)
+    {
+        $tab = $request->query('tab', 'semua');
+        $q = trim((string) $request->query('q', ''));
+
+        // Order yang memuat item preloved (keranjang campuran packing + preloved ikut dihitung).
+        $all = Order::latest()
             ->get()
             ->map(function (Order $o) {
-                $prelovedItems = collect($o->items)->filter(fn ($i) => ($i['type'] ?? 'preloved') === 'preloved');
-                $o->preloved_item_names = $prelovedItems->pluck('name')->implode(', ');
-                $o->preloved_subtotal   = $prelovedItems->sum(fn ($i) => ($i['price'] ?? 0) * ($i['qty'] ?? 1));
-                $o->preloved_count      = $prelovedItems->count();
+                $pre = collect($o->items ?? [])->filter(fn ($i) => ($i['type'] ?? 'preloved') === 'preloved');
+                $o->preloved_item_names = $pre->pluck('name')->implode(', ');
+                $o->preloved_subtotal   = $pre->sum(fn ($i) => ($i['price'] ?? 0) * ($i['qty'] ?? 1));
+                $o->preloved_count      = $pre->count();
+                $o->is_paid             = strtoupper((string) $o->payment_status) === 'PAID';
 
                 return $o;
             })
             ->filter(fn (Order $o) => $o->preloved_count > 0)
             ->values();
 
-        $filteredOrders = $filter === 'Semua'
-            ? $orders
-            : $orders->where('status', array_search($filter, $this->orderStatusLabels, true));
+        $tabFilter = [
+            'bayar'    => fn (Order $o) => ! $o->is_paid && $o->status !== 'cancelled',
+            'diproses' => fn (Order $o) => $o->is_paid && in_array($o->status, ['paid', 'processing'], true),
+            'dikirim'  => fn (Order $o) => $o->is_paid && $o->status === 'shipped',
+            'selesai'  => fn (Order $o) => $o->is_paid && $o->status === 'delivered',
+        ];
+        $counts = ['semua' => $all->count()];
+        foreach ($tabFilter as $k => $fn) {
+            $counts[$k] = $all->filter($fn)->count();
+        }
 
-        $available = $items->where('status', 'Tersedia')->count();
-        $sold      = $items->where('status', 'Terjual')->count();
-        $revenue   = $orders->where('status', 'delivered')->sum('preloved_subtotal');
+        $list = isset($tabFilter[$tab]) ? $all->filter($tabFilter[$tab]) : $all;
+        if (! isset($tabFilter[$tab])) {
+            $tab = 'semua';
+        }
+        if ($q !== '') {
+            $needle = mb_strtolower($q);
+            $list = $list->filter(fn (Order $o) => str_contains(mb_strtolower(
+                $o->order_number . ' ' . $o->customer_name . ' ' . $o->customer_email . ' ' . $o->preloved_item_names
+            ), $needle));
+        }
+        $list = $list->values();
 
-        return view('admin.toko-preloved', [
-            'pageTab'          => $tab,
-            'filter'           => $filter,
-            'items'            => $items,
-            'orders'           => $filteredOrders,
-            'available'        => $available,
-            'sold'             => $sold,
-            'revenue'          => $revenue,
-            'categories'       => $this->categories,
-            'conditions'       => $this->conditions,
-            'conditionLabels'  => $this->conditionLabels,
+        $perPage = 15;
+        $page = max(1, (int) $request->query('page', 1));
+        $orders = new LengthAwarePaginator(
+            $list->forPage($page, $perPage)->values(),
+            $list->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return view('admin.preloved-orders', [
+            'tab'    => $tab,
+            'q'      => $q,
+            'orders' => $orders,
+            'counts' => $counts,
             'orderStatusLabels' => $this->orderStatusLabels,
         ]);
     }
@@ -117,7 +176,7 @@ class TokoPrelovedController extends Controller
         $data['status'] = 'Tersedia';
         PrelovedItem::create($data);
 
-        return redirect()->route('admin.preloved', ['tab' => 'katalog'])
+        return redirect()->route('admin.preloved')
             ->with('success', 'Barang berhasil ditambahkan.');
     }
 
@@ -159,7 +218,7 @@ class TokoPrelovedController extends Controller
 
         $item->update($data);
 
-        return redirect()->route('admin.preloved', ['tab' => 'katalog'])
+        return redirect()->route('admin.preloved')
             ->with('success', 'Barang berhasil diperbarui.');
     }
 
@@ -168,7 +227,7 @@ class TokoPrelovedController extends Controller
     {
         $item->delete();
 
-        return redirect()->route('admin.preloved', ['tab' => 'katalog'])
+        return redirect()->route('admin.preloved')
             ->with('success', 'Barang berhasil dihapus.');
     }
 
@@ -178,7 +237,7 @@ class TokoPrelovedController extends Controller
         $newStatus = $item->status === 'Draft' ? 'Tersedia' : 'Draft';
         $item->update(['status' => $newStatus]);
 
-        return redirect()->route('admin.preloved', ['tab' => 'katalog'])
+        return redirect()->route('admin.preloved')
             ->with('success', 'Status barang diperbarui.');
     }
 
@@ -196,8 +255,7 @@ class TokoPrelovedController extends Controller
             $order->update(['status' => $next]);
         }
 
-        return redirect()->route('admin.preloved', ['tab' => 'pesanan'])
-            ->with('success', 'Status pesanan diperbarui.');
+        return back()->with('success', 'Status pesanan diperbarui.');
     }
 
     private function storeImages(Request $request): array

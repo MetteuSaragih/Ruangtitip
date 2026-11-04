@@ -1,122 +1,162 @@
+{{--
+    Shell panel admin RuangTitip: sidebar bergrup, topbar, dialog konfirmasi, toast.
+    Halaman mengisi @section('title'), @section('content'), dan boleh @push('styles') / @push('scripts').
+    Kelas UI didokumentasikan di resources/css/rt-admin.css.
+--}}
+@php
+    use App\Models\Order;
+    use App\Models\PackingOrder;
+    use App\Models\PackingProduct;
+    use App\Models\PrelovedSubmission;
+    use App\Models\TitipanOrder;
+    use App\Models\TitipanRequest;
+    use Illuminate\Support\Facades\Route;
+    use Illuminate\Support\Facades\Schema;
+
+    // Hitung aman: tabel yang belum dimigrasi tidak boleh membuat panel error.
+    $safe = function (callable $fn) {
+        try { return (int) $fn(); } catch (\Throwable $e) { return 0; }
+    };
+
+    $cTitip = $safe(fn () => TitipanOrder::whereIn('status', ['menunggu_pembayaran', 'penjadwalan_penjemputan'])->count() + TitipanOrder::where('needs_admin_attention', true)->count());
+    $cReq = fn (string $type) => $safe(fn () => Schema::hasTable('titipan_requests') ? TitipanRequest::where('type', $type)->whereIn('status', ['menunggu', 'diproses'])->count() : 0);
+    $cJual = $safe(fn () => Schema::hasTable('preloved_submissions') ? PrelovedSubmission::whereIn('status', ['seleksi', 'periksa', 'sepakat'])->count() : 0);
+    $cPre = $safe(fn () => Order::where('needs_admin_attention', true)->count());
+    $cPack = $safe(fn () => PackingProduct::whereColumn('stock', '<=', 'low_threshold')->count() + PackingOrder::where('needs_admin_attention', true)->count());
+
+    // [label, nama route, ikon, parameter route, badge, penanda aktif (pola routeIs / query)]
+    $adminNav = [
+        'Utama' => [
+            ['Ringkasan', 'admin.dashboard', 'n-home', [], 0, ['admin.dashboard']],
+        ],
+        'Penitipan' => [
+            ['Pesanan titip', 'admin.titip.index', 'n-receipt', [], $cTitip, ['admin.titip.*']],
+            ['Pengambilan', 'admin.permintaan.index', 'n-hand', ['type' => 'ambil'], $cReq('ambil'), ['admin.permintaan.*'], 'ambil'],
+            ['Pengiriman', 'admin.permintaan.index', 'n-truck', ['type' => 'kirim'], $cReq('kirim'), ['admin.permintaan.*'], 'kirim'],
+            ['Perpanjangan', 'admin.permintaan.index', 'n-cal', ['type' => 'perpanjang'], $cReq('perpanjang'), ['admin.permintaan.*'], 'perpanjang'],
+            ['Ruang & kapasitas', 'admin.ruang-titip', 'n-ware', [], 0, ['admin.ruang-titip']],
+        ],
+        'Toko Preloved' => [
+            ['Pengajuan jual', 'admin.jual.index', 'n-coin', [], $cJual, ['admin.jual.*']],
+            ['Katalog', 'admin.preloved', 'n-tag', [], 0, ['admin.preloved']],
+            ['Pesanan preloved', 'admin.preloved.orders', 'n-bag', [], $cPre, ['admin.preloved.orders*']],
+            ['Toko Packing', 'admin.packing.index', 'n-tape', [], $cPack, ['admin.packing.*']],
+        ],
+        'Keuangan' => [
+            ['Tagihan & pembayaran', 'admin.tagihan.index', 'n-card', [], 0, ['admin.tagihan.*']],
+            ['Laporan', 'admin.laporan', 'n-chart', [], 0, ['admin.laporan']],
+        ],
+        'Pengguna' => [
+            ['Pelanggan', 'admin.accounts', 'n-user', [], 0, ['admin.accounts*']],
+            ['Tim admin', 'admin.tim', 'n-team', [], 0, ['admin.tim']],
+        ],
+    ];
+
+    $adminUser = auth()->user();
+    $adminInitials = \Illuminate\Support\Str::of($adminUser->name ?? 'Admin')->trim()->explode(' ')->map(fn ($w) => mb_substr($w, 0, 1))->take(2)->implode('');
+    $reqType = request()->query('type');
+@endphp
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<meta name="robots" content="noindex">
-<title>@yield('title', 'Dashboard') &middot; Admin RuangTitip</title>
-<link rel="icon" href="{{ asset('assets/favicon.svg') }}" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="{{ asset('assets/admin.css') }}">
-<script src="{{ asset('assets/admin-icons.js') }}"></script>
-<script src="{{ asset('assets/admin.js') }}"></script>
-@stack('styles')
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="color-scheme" content="light">
+    <meta name="robots" content="noindex">
+    <title>@yield('title', 'Ringkasan') &middot; Admin RuangTitip</title>
+    <link rel="icon" href="{{ asset('assets/favicon.svg') }}" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+    @vite(['resources/css/rt-admin.css', 'resources/js/rt-admin.js'])
+    @stack('styles')
 </head>
-<body>
-@php
-    $navItems = [
-        ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'href' => route('admin.dashboard'), 'icon' => 'home'],
-        ['label' => 'Ruang Titip', 'route' => 'admin.ruang-titip', 'href' => route('admin.ruang-titip'), 'icon' => 'warehouse',
-            'badge' => \App\Models\TitipanOrder::whereIn('status', ['menunggu_pembayaran', 'penjadwalan_penjemputan'])->count()
-                + \App\Models\TitipanOrder::where('needs_admin_attention', true)->count()],
-        ['label' => 'Toko Preloved', 'route' => 'admin.preloved', 'href' => route('admin.preloved'), 'icon' => 'bag',
-            'badge' => \App\Models\Order::where('needs_admin_attention', true)->count()],
-        ['label' => 'Toko Packing', 'route' => 'admin.packing.index', 'href' => route('admin.packing.index'), 'icon' => 'box',
-            'badge' => \App\Models\PackingProduct::whereColumn('stock', '<=', 'low_threshold')->count()
-                + \App\Models\PackingOrder::where('needs_admin_attention', true)->count()],
-        ['label' => 'Manajemen Akun', 'route' => 'admin.accounts', 'href' => route('admin.accounts'), 'icon' => 'users'],
-    ];
-    $adminUser = Auth::user();
-    $adminInitials = \Illuminate\Support\Str::of($adminUser->name ?? 'Admin')->trim()->explode(' ')->map(fn($w) => mb_substr($w, 0, 1))->take(2)->implode('');
-@endphp
+<body class="adm">
+@include('admin.partials.icons')
 
-<aside class="sb" aria-label="Navigasi admin">
-  <div class="sb-head">
-    <a class="sb-logo" href="{{ route('admin.dashboard') }}" aria-label="RuangTitip Admin, ke dashboard">
-      <img class="full" src="{{ asset('assets/logo-ruangtitip-putih.svg') }}" alt="RuangTitip">
-      <svg class="mark" viewBox="0 0 198 198" xmlns="http://www.w3.org/2000/svg"><g transform="translate(24.00 24.00) scale(1.5000)"><polyline points="10,50 50,13 90,50" fill="none" stroke="#F5F1E8" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><rect x="22" y="46" width="56" height="42" rx="5" fill="#C9A27A"/><rect x="44" y="46" width="12" height="21" fill="#B4531D"/><rect x="22" y="46" width="56" height="42" rx="5" fill="none" stroke="#F5F1E8" stroke-width="6"/></g></svg>
-    </a>
-    <button class="sb-toggle" id="sbToggle" type="button" aria-expanded="true" aria-label="Ciutkan sidebar"><svg class="ico sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
-  </div>
-  <p class="sb-label">Panel admin</p>
-  <nav class="sb-nav">
-    @foreach ($navItems as $item)
-      @php $active = request()->routeIs($item['route']); @endphp
-      <a class="sb-link {{ $active ? 'active' : '' }}" @if($active) aria-current="page" @endif href="{{ $item['href'] }}" data-tip="{{ $item['label'] }}">
-        {!! \App\Support\Icons::svg($item['icon']) !!}
-        <span class="txt">{{ $item['label'] }}</span>
-        @if (!empty($item['badge']))
-          <span class="badge" aria-label="{{ $item['badge'] }} perlu tindakan">{{ $item['badge'] }}</span>
-        @endif
-      </a>
-    @endforeach
-  </nav>
-  <div class="sb-foot">
-    <a class="sb-user {{ request()->routeIs('admin.profile') ? 'active' : '' }}" href="{{ route('admin.profile') }}" data-tip="Profil admin">
-      <span class="avatar">{{ $adminInitials ?: 'A' }}</span>
-      <span class="txt"><b>{{ $adminUser->name ?? 'Admin RuangTitip' }}</b><small>Admin gudang</small></span>
-    </a>
-  </div>
-</aside>
-<div class="scrim" id="scrim"></div>
+<div class="app">
+    <aside class="side" id="adminSide" aria-label="Navigasi admin">
+        <a class="brand" href="{{ route('admin.dashboard') }}" aria-label="RuangTitip Admin, ke ringkasan">
+            <span class="brand-mark" aria-hidden="true"><svg><use href="#n-home"/></svg></span>
+            <b>ruang<em>titip</em></b><span class="role">ADMIN</span>
+        </a>
 
-<div class="main">
-  <header class="top">
-    <button class="icon-btn menu" id="menuBtn" type="button" aria-label="Buka menu"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-    <nav class="crumb" aria-label="Breadcrumb"><a href="{{ route('admin.dashboard') }}">Admin</a><span class="sep">/</span><b>@yield('title', 'Dashboard')</b></nav>
-    <div class="top-right">
-      <button class="icon-btn" type="button" id="bellBtn" aria-label="Notifikasi" aria-expanded="false" aria-controls="notif"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-        @php $hasNotif = collect($navItems)->sum('badge') > 0; @endphp
-        @if ($hasNotif)<span class="dot"></span>@endif
-      </button>
-      <a class="me" href="{{ route('admin.profile') }}"><span class="avatar">{{ $adminInitials ?: 'A' }}</span><span class="txt"><b>{{ $adminUser->name ?? 'Admin' }}</b><small>Admin gudang</small></span></a>
+        @foreach ($adminNav as $group => $items)
+            @php $visible = array_filter($items, fn ($i) => Route::has($i[1])); @endphp
+            @if ($visible)
+                <div class="ng">
+                    <p>{{ $group }}</p>
+                    <ul class="nav">
+                        @foreach ($visible as $i)
+                            @php
+                                [$label, $name, $icon, $params, $count, $patterns] = $i;
+                                $active = request()->routeIs(...$patterns);
+                                if (isset($i[6])) { $active = $active && $reqType === $i[6]; }
+                            @endphp
+                            <li>
+                                <a href="{{ route($name, $params) }}" @if ($active) aria-current="page" @endif>
+                                    <svg class="ic" aria-hidden="true"><use href="#{{ $icon }}"/></svg>
+                                    <span>{{ $label }}</span>
+                                    @if ($count)<span class="cnt hot">{{ $count }}</span>@endif
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+        @endforeach
+
+        <div class="side-foot"><div class="env">Panel khusus tim RuangTitip. Semua perubahan tersimpan di database.</div></div>
+    </aside>
+
+    <div class="main">
+        <header class="top">
+            <button class="menu-t" id="adminMenuT" type="button" aria-label="Buka menu" aria-controls="adminSide"><svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg></button>
+            <nav class="crumb" aria-label="Breadcrumb">
+                <a href="{{ route('admin.dashboard') }}">Admin</a><span>/</span><b>@yield('title', 'Ringkasan')</b>
+            </nav>
+            @if (Route::has('admin.titip.index'))
+                <form class="gsearch" method="GET" action="{{ route('admin.titip.index') }}" role="search">
+                    <svg class="ic" aria-hidden="true"><use href="#n-search"/></svg>
+                    <input name="q" type="search" placeholder="Cari kode pesanan atau pelanggan" aria-label="Cari pesanan titip">
+                </form>
+            @endif
+            <details class="who">
+                <summary class="who-btn" aria-label="Menu akun admin">
+                    <span class="av">{{ $adminInitials ?: 'A' }}</span>
+                    <span><b>{{ $adminUser->name ?? 'Admin' }}</b><small>Admin gudang</small></span>
+                </summary>
+                <div class="menu">
+                    <a href="{{ route('admin.profile') }}">Profil admin</a>
+                    <a href="{{ route('dashboard') }}">Lihat sisi pelanggan</a>
+                    <hr>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" data-confirm="Keluar dari panel admin?">Keluar</button>
+                    </form>
+                </div>
+            </details>
+        </header>
+
+        <main class="content" id="adminView" tabindex="-1">
+            @yield('content')
+        </main>
     </div>
-    <div class="card notif" id="notif" hidden>
-      <div class="card-h"><h2>Perlu tindakan</h2></div>
-      @php $anyTask = false; @endphp
-      @foreach ($navItems as $item)
-        @if (!empty($item['badge']))
-          @php $anyTask = true; @endphp
-          <a href="{{ $item['href'] }}" class="n-item">
-            <span class="stat-ico o">{!! \App\Support\Icons::svg($item['icon'], 'sm') !!}</span>
-            <span><b>{{ $item['badge'] }} item di {{ $item['label'] }}</b><small>Butuh tindakan admin</small></span>
-          </a>
-        @endif
-      @endforeach
-      @if (!$anyTask)
-        <p style="padding:18px;color:var(--muted);font-size:13px">Tidak ada tugas yang menumpuk. Mantap!</p>
-      @endif
-    </div>
-  </header>
-  <main class="content" id="main">
-    @yield('content')
-  </main>
 </div>
 
-@php
-    $flashMap = ['success' => 'success', 'error' => 'error', 'save_toast' => 'success'];
-@endphp
-@foreach ($flashMap as $sessionKey => $toastType)
-  @if (session($sessionKey))
-    <div data-flash="{{ $toastType }}" data-flash-msg="{{ $sessionKey === 'save_toast' ? 'Stok ' . session($sessionKey) . ' diperbarui' : session($sessionKey) }}" hidden></div>
-  @endif
-@endforeach
-@if ($errors->any())
-  <div data-flash="error" data-flash-msg="{{ $errors->first() }}" hidden></div>
-@endif
+{{-- Dialog konfirmasi bersama: dipicu atribut data-confirm pada form/tombol. --}}
+<dialog class="dlg" id="aConfirm" aria-labelledby="aConfirmT">
+    <div class="dh"><h3 id="aConfirmT">Konfirmasi</h3><button class="x" type="button" data-close aria-label="Tutup"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <div class="db"><p id="aConfirmP"></p></div>
+    <div class="df"><button class="btn btn-ghost" type="button" data-close>Batal</button><button class="btn btn-primary" type="button" id="aConfirmOk">Lanjutkan</button></div>
+</dialog>
 
-<script>
-(function () {
-  var b = document.getElementById('bellBtn'), n = document.getElementById('notif');
-  if (b && n) {
-    b.addEventListener('click', function (e) { e.stopPropagation(); n.hidden = !n.hidden; b.setAttribute('aria-expanded', String(!n.hidden)); });
-    document.addEventListener('click', function (e) { if (!n.hidden && !n.contains(e.target) && e.target !== b) { n.hidden = true; b.setAttribute('aria-expanded', 'false'); } });
-  }
-})();
-</script>
+<div class="toast" id="adminToast" role="status" aria-live="polite"
+     @if (session('success') || session('save_toast')) data-msg="{{ session('success') ?? 'Perubahan tersimpan.' }}" @endif
+     @if (session('error')) data-msg="{{ session('error') }}" data-type="err" @endif
+     @if ($errors->any()) data-msg="{{ $errors->first() }}" data-type="err" @endif></div>
+
 @stack('scripts')
 </body>
 </html>

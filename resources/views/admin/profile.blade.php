@@ -2,53 +2,58 @@
 
 @section('title', 'Profil admin')
 
-@section('content')
-@php
-    $initials = \Illuminate\Support\Str::of($user->name ?? 'Admin')->trim()->explode(' ')->map(fn($w) => mb_substr($w, 0, 1))->take(2)->implode('');
-@endphp
+@push('styles')
+<style>
+    .pf-av { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; background: var(--color-primary); color: #fff; font-family: var(--display); font-weight: 800; font-size: 26px; }
+</style>
+@endpush
 
+@section('content')
 <div class="ph"><div><h1>Profil admin</h1><p>Kelola informasi akun administrator.</p></div></div>
 
-<div class="profile">
-  <section class="card card-pop p-card">
-    <span class="avatar lg">{{ $initials ?: 'A' }}</span>
-    <h2>{{ $user->name ?? 'Admin RuangTitip' }}</h2>
-    <p>{{ $user->email }}</p>
-    <span class="pill o">{!! \App\Support\Icons::svg('shield', 'sm') !!} Admin gudang</span>
-    <dl class="p-meta">
-      <div><dt>Bergabung</dt><dd>{{ $user->created_at?->translatedFormat('d M Y') ?? '-' }}</dd></div>
-      <div><dt>Login terakhir</dt><dd>{{ $user->updated_at?->diffForHumans() ?? '-' }}</dd></div>
-    </dl>
+<div class="cols">
+  <section class="card">
+    <h2 class="sec-t">Informasi akun</h2>
+    <form method="POST" action="{{ route('admin.profile.update') }}" class="stack" novalidate>
+      @csrf
+      <div style="display:flex;align-items:center;gap:14px">
+        @if ($user->avatar_url)
+          <img class="pf-av" src="{{ $user->avatar_url }}" alt="Foto profil {{ $user->name }}">
+        @else
+          <span class="pf-av" aria-hidden="true">{{ $user->initials }}</span>
+        @endif
+        <div><b>{{ $user->name }}</b><p class="muted">Admin RuangTitip</p></div>
+      </div>
+      <div class="field">
+        <label for="fName">Nama tampilan</label>
+        <input class="input" id="fName" name="name" value="{{ old('name', $user->name) }}" required @error('name') aria-invalid="true" @enderror>
+        @error('name')<span class="err-t">{{ $message }}</span>@enderror
+      </div>
+      <div class="field">
+        <label for="fMail">Email</label>
+        <input class="input" id="fMail" value="{{ $user->email }}" readonly>
+        <span class="help">Email tidak bisa diubah dari panel ini.</span>
+      </div>
+      <div><button class="btn btn-primary" type="submit">Simpan perubahan</button></div>
+    </form>
   </section>
 
-  <div class="stack">
+  <aside>
     <section class="card">
-      <div class="card-h"><div><h2>Informasi akun</h2><p>Nama ini tampil di panel admin dan riwayat aktivitas.</p></div></div>
-      <form class="card-b" method="POST" action="{{ route('admin.profile.update') }}" style="display:grid;gap:16px" novalidate>
-        @csrf
-        <div class="field">
-          <label for="fName">Nama tampilan <span class="req">*</span></label>
-          <input class="input" id="fName" name="name" value="{{ old('name', $user->name) }}" required @error('name') aria-invalid="true" @enderror>
-          @error('name')<span class="help" style="color:var(--danger)">{{ $message }}</span>@enderror
-        </div>
-        <div class="field">
-          <label for="fMail">Email</label>
-          <input class="input" id="fMail" value="{{ $user->email }}" disabled>
-          <span class="help">Email tidak bisa diubah dari panel ini.</span>
-        </div>
-        <div><button class="btn btn-primary" type="submit">{!! \App\Support\Icons::svg('check', 'sm') !!} Simpan perubahan</button></div>
-      </form>
-    </section>
-
-    <section class="card danger-card">
-      <div class="card-b" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
-        <div><h2 style="font-size:18px">Keluar dari panel admin</h2><p style="color:var(--body);font-size:14px;margin-top:2px">Kamu perlu login lagi untuk masuk ke panel ini.</p></div>
-        <form method="POST" action="{{ route('logout') }}">
-          @csrf
-          <button class="btn btn-danger" type="submit">{!! \App\Support\Icons::svg('logout', 'sm') !!} Keluar</button>
-        </form>
+      <h2 class="sec-t">Akun</h2>
+      <div class="kv">
+        <div><span>Bergabung</span><b>{{ $user->created_at?->translatedFormat('d M Y') ?? '-' }}</b></div>
+        <div><span>Masuk dengan</span><b>{{ $user->isGoogleUser() ? 'Google' : 'Email' }}</b></div>
       </div>
     </section>
-  </div>
+    <section class="card">
+      <h2 class="sec-t">Keluar</h2>
+      <p class="muted">Kamu perlu masuk lagi untuk membuka panel ini.</p>
+      <form method="POST" action="{{ route('logout') }}" style="margin-top:10px">
+        @csrf
+        <button class="btn btn-ghost w" type="submit"><svg class="ic" aria-hidden="true"><use href="#i-out"/></svg> Keluar</button>
+      </form>
+    </section>
+  </aside>
 </div>
 @endsection
