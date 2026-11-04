@@ -162,6 +162,27 @@
 </nav>
 
 <div class="rt-tip" id="rtTip" role="tooltip" aria-hidden="true"></div>
+{{-- ===== Konfirmasi login berhasil (dari flash OTP atau Google) ===== --}}
+@if (session('welcome_name'))
+    <dialog class="rt-dlg" id="rtWelcome" aria-labelledby="rtWelcomeT" data-autoshow>
+        <div class="rt-dlg-ic" aria-hidden="true"><svg class="ic"><use href="#i-check"/></svg></div>
+        <h3 id="rtWelcomeT">Berhasil masuk</h3>
+        <p>{{ session('welcome_type') === 'new' ? 'Selamat datang' : 'Selamat datang kembali' }}, {{ session('welcome_name') }}! Akunmu sudah aktif di perangkat ini.</p>
+        <form method="dialog" class="rt-dlg-acts"><button class="btn btn-primary" value="ok" autofocus>Lanjut ke beranda</button></form>
+    </dialog>
+@endif
+
+{{-- ===== Konfirmasi keluar ===== --}}
+<dialog class="rt-dlg" id="rtLogout" aria-labelledby="rtLogoutT">
+    <div class="rt-dlg-ic out" aria-hidden="true"><svg class="ic"><use href="#i-out"/></svg></div>
+    <h3 id="rtLogoutT">Keluar dari akun?</h3>
+    <p>Kamu perlu masuk lagi dengan kode OTP atau akun Google untuk membuka titipan dan pesananmu.</p>
+    <div class="rt-dlg-acts">
+        <button class="btn btn-ghost" type="button" id="rtLogoutNo" autofocus>Batal</button>
+        <button class="btn btn-primary" type="button" id="rtLogoutYes">Ya, keluar</button>
+    </div>
+</dialog>
+
 <div class="rt-toast" id="rtToast" role="status" aria-live="polite" @if (session('success') || session('status')) data-msg="{{ session('success') ?? session('status') }}" @endif></div>
 
 @stack('scripts')

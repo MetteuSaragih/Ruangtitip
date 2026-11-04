@@ -86,6 +86,29 @@
         });
     });
 
+    // Dialog "Berhasil masuk" setelah login (OTP atau Google).
+    const welcome = $('#rtWelcome');
+    if (welcome && typeof welcome.showModal === 'function') welcome.showModal();
+
+    // Konfirmasi sebelum keluar: berlaku untuk semua form POST ke /logout.
+    const logoutDlg = $('#rtLogout');
+    if (logoutDlg && typeof logoutDlg.showModal === 'function') {
+        let pending = null;
+        document.addEventListener('submit', (e) => {
+            const form = e.target;
+            if (!(form instanceof HTMLFormElement) || !/\/logout\/?$/.test(form.getAttribute('action') || '')) return;
+            e.preventDefault();
+            pending = form;
+            logoutDlg.showModal();
+        });
+        $('#rtLogoutNo').addEventListener('click', () => { pending = null; logoutDlg.close(); });
+        $('#rtLogoutYes').addEventListener('click', () => {
+            const form = pending;
+            logoutDlg.close();
+            if (form) form.submit();
+        });
+    }
+
     // Toast dari flash session: <div id="rtToast" data-msg="...">
     const toast = $('#rtToast');
     if (toast && toast.dataset.msg) {
