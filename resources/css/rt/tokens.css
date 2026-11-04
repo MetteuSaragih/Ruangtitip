@@ -64,6 +64,8 @@
     --info-bg: var(--color-aqua);
     --info-ink: var(--color-primary);
 
+    --box-c: var(--color-primary); /* warna ilustrasi kotak pada keadaan kosong */
+
     /* Tooltip */
     --tip-bg: var(--color-ink);
     --tip-ink: #ffffff;

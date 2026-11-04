@@ -35,7 +35,6 @@
           <tr>
             <th>Nama</th>
             <th>WhatsApp</th>
-            <th>Kampus</th>
             <th class="r">Titipan aktif</th>
             <th>Terdaftar</th>
             <th>Status</th>
@@ -52,7 +51,6 @@
                 </div>
               </td>
               <td class="num">{{ $c->phone ?: '-' }}</td>
-              <td>{{ $c->campus ?: '-' }}</td>
               <td class="r">{{ (int) ($activeOrders[$c->id] ?? 0) }}</td>
               <td class="num">{{ $c->created_at?->translatedFormat('d M Y') }}</td>
               <td>@if ($c->is_active)<span class="st ok">Aktif</span>@else<span class="st err">Diblokir</span>@endif</td>

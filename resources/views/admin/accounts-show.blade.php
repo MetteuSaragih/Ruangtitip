@@ -126,10 +126,6 @@
         <div class="kv">
           <div><span>Status</span><b>@if ($customer->is_active)<span class="st ok">Aktif</span>@else<span class="st err">Diblokir</span>@endif</b></div>
           <div><span>WhatsApp</span><b>{{ $customer->phone ?: '-' }}</b></div>
-          <div><span>Kampus</span><b>{{ $customer->campus ?: '-' }}</b></div>
-          <div><span>Jurusan</span><b>{{ $customer->major ?: '-' }}</b></div>
-          <div><span>Angkatan</span><b>{{ $customer->cohort_year ?: '-' }}</b></div>
-          <div><span>Daerah asal</span><b>{{ $customer->hometown ?: '-' }}</b></div>
           <div><span>Terdaftar</span><b>{{ $customer->created_at?->translatedFormat('d M Y') }}</b></div>
           <div><span>Masuk dengan</span><b>{{ $customer->isGoogleUser() ? 'Google' : 'Email' }}</b></div>
         </div>

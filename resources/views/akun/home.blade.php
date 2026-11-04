@@ -37,9 +37,6 @@
                     <div class="meta">
                         <span><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg>{{ $user->email }}</span>
                         <span><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg>{{ $user->phone ?: 'WhatsApp belum diisi' }}</span>
-                        @if ($user->campus)
-                            <span><svg class="ic" aria-hidden="true"><use href="#i-school"/></svg>{{ $user->campus }}{{ $user->cohort_year ? ', ' . $user->cohort_year : '' }}</span>
-                        @endif
                     </div>
                     <p class="help mt">Bergabung {{ $user->created_at?->locale('id')->translatedFormat('F Y') }}</p>
                 </div>

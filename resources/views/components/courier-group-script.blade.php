@@ -70,7 +70,7 @@ if (! window.__courierGroupsReady) {
                             <button type="button" data-i="${i}"
                                     class="courier-opt w-full flex items-center gap-4 p-3.5 rounded-2xl text-left transition-all hover:scale-[1.01]"
                                     style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.09);">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-bold" style="color:#fff;">${pricing[i].courier_service_name || pricing[i].courier_name}</p>
                                     <p class="text-xs" style="color:rgba(255,255,255,0.45);">${pricing[i].duration || ''}</p>

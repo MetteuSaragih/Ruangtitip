@@ -43,23 +43,6 @@
         </div>
     </section>
 
-    <section class="card stack" style="gap:16px">
-        <div><h3>Kampus dan asal</h3><p class="help">Opsional. Membantu kami menyiapkan layanan di sekitar kampusmu.</p></div>
-        <div class="field">
-            <label for="pCampus">Kampus atau instansi</label>
-            <input class="input" id="pCampus" name="campus" value="{{ old('campus', $user->campus) }}" placeholder="Contoh: Universitas Brawijaya">
-        </div>
-        <div class="grid3">
-            <div class="field"><label for="pMajor">Jurusan</label><input class="input" id="pMajor" name="major" value="{{ old('major', $user->major) }}"></div>
-            <div class="field">
-                <label for="pYear">Angkatan</label>
-                <input class="input" id="pYear" name="cohort_year" inputmode="numeric" maxlength="4" value="{{ old('cohort_year', $user->cohort_year) }}" @error('cohort_year') aria-invalid="true" aria-describedby="e-pYear" @enderror>
-                @error('cohort_year')<p class="msg" id="e-pYear">{{ $message }}</p>@enderror
-            </div>
-            <div class="field"><label for="pCity">Kota asal</label><input class="input" id="pCity" name="hometown" value="{{ old('hometown', $user->hometown) }}"></div>
-        </div>
-    </section>
-
     <div class="savebar" role="region" aria-label="Simpan perubahan">
         <span>Periksa datamu, lalu simpan.</span>
         <div style="display:flex;gap:8px">
