@@ -63,6 +63,7 @@ class PrelovedController extends Controller
     public function caraJual()
     {
         $submissions = \Illuminate\Support\Facades\Auth::check()
+            && \Illuminate\Support\Facades\Schema::hasTable('preloved_submissions')
             ? \App\Models\PrelovedSubmission::where('user_id', \Illuminate\Support\Facades\Auth::id())->latest()->get()
             : collect();
 
