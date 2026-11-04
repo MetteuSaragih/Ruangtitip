@@ -12,16 +12,26 @@ return new class extends Migration
             if (! Schema::hasColumn('preloved_items', 'description')) {
                 $table->text('description')->nullable();
             }
-            $table->string('function_note')->nullable();
-            $table->string('completeness')->nullable();
-            $table->string('flaws')->nullable();
+            if (! Schema::hasColumn('preloved_items', 'function_note')) {
+                $table->string('function_note')->nullable();
+            }
+            if (! Schema::hasColumn('preloved_items', 'completeness')) {
+                $table->string('completeness')->nullable();
+            }
+            if (! Schema::hasColumn('preloved_items', 'flaws')) {
+                $table->string('flaws')->nullable();
+            }
         });
     }
 
     public function down(): void
     {
         Schema::table('preloved_items', function (Blueprint $table) {
-            $table->dropColumn(['function_note', 'completeness', 'flaws']);
+            foreach (['function_note', 'completeness', 'flaws'] as $column) {
+                if (Schema::hasColumn('preloved_items', $column)) {
+                    $table->dropColumn($column);
+                }
+            }
         });
     }
 };

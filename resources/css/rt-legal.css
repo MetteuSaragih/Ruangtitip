@@ -37,7 +37,6 @@ body.p-legal :focus-visible{outline:3px solid #FFC93C;outline-offset:3px;border-
 .lg-sec li{margin:6px 0}
 .lg-sec li::marker{color:#2DD4BF}
 .lg-sec b{color:#fff}
-.lg-note{background:rgba(255,201,60,.08);border:1px dashed rgba(255,201,60,.4);border-radius:10px;padding:10px 14px;font-size:14px;color:#FFD86B!important}
 .lg-end{margin-top:12px;padding:20px;border:1px solid #24504B;border-radius:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:#11332F}
 .lg-end p{margin:0;color:#A5C6C2;font-size:14px}
 .lg-end a{font-weight:700;text-decoration:none}
