@@ -5,6 +5,9 @@ return [
     'base_url' => env('BITESHIP_BASE_URL', 'https://api.biteship.com/v1'),
     'is_production' => env('BITESHIP_IS_PRODUCTION', false),
 
+    // Token rahasia untuk webhook Biteship (tanpa token, webhook ditolak).
+    'webhook_token' => env('BITESHIP_WEBHOOK_TOKEN'),
+
     // Gudang/toko RuTip — dipakai sebagai titik asal pengiriman untuk
     // Toko Preloved, Toko Packing, dan tujuan drop-off Ruang Titip.
     'warehouse' => [

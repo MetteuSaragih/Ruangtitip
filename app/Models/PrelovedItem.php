@@ -7,10 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class PrelovedItem extends Model
 {
     /** Kategori resmi: dipakai form admin, form "Jual barang" pengguna, dan filter katalog. */
-    public const CATEGORIES = [
-        'Elektronik', 'Perabot', 'Peralatan dapur', 'Koper & tas',
-        'Buku', 'Dekorasi', 'Olahraga', 'Lainnya',
-    ];
+    public const CATEGORIES = ['Elektronik', 'Perabot', 'Peralatan dapur', 'Buku', 'Lainnya'];
 
     /** Tingkat kondisi (persen disimpan di kolom condition) dan labelnya, sama dengan form "Jual barang". */
     public const CONDITIONS = [

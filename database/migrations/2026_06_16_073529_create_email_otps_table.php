@@ -14,7 +14,7 @@ return new class extends Migration
 Schema::create('email_otps', function (Blueprint $table) {
     $table->id();
     $table->string('email')->index();
-    $table->string('code', 6);           // 6 digit OTP
+    $table->string('code', 64);          // hash HMAC-SHA256 dari kode 6 digit
     $table->unsignedTinyInteger('attempts')->default(0); // proteksi brute force
     $table->timestamp('expires_at');
     $table->timestamp('used_at')->nullable();

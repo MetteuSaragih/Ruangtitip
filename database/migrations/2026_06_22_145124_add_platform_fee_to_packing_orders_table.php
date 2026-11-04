@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('packing_orders', function (Blueprint $table) {
-            $table->unsignedInteger('platform_fee')->default(1000)->after('shipping_cost');
+            if (! Schema::hasColumn('packing_orders', 'platform_fee')) {
+                $table->unsignedInteger('platform_fee')->default(1000)->after('shipping_cost');
+            }
         });
     }
 

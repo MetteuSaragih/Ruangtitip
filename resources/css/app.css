@@ -1,12 +1,5 @@
 @import "tailwindcss";
-@source "../views"; /* Wajib ditambahkan agar warna RUTIP terdeteksi! */
-
-/* ==========================================================================
-   Font family tokens...
-
-
-
-@import "tailwindcss";
+@source "../views";
 
 /* ==========================================================================
    Font family tokens (used as font-[var(--font-display)] / var(--font-body))
@@ -29,27 +22,27 @@ h1, h2, h3, h4, h5, h6 {
    used incidentally across the app (badges, cards, etc).
    ========================================================================== */
 :root {
-    --background: #FAFAFF;
+    --background: #f3faf9;
     --foreground: #1F2937;
     --card: #ffffff;
     --card-foreground: #1F2937;
     --popover: #ffffff;
     --popover-foreground: #1F2937;
-    --primary: #7C3AED;
+    --primary: #0f766e;
     --primary-foreground: #ffffff;
-    --secondary: #6366F1;
+    --secondary: #0c5f58;
     --secondary-foreground: #ffffff;
-    --muted: #EEF2FF;
+    --muted: #d7f2ee;
     --muted-foreground: #6B7280;
-    --accent: #F472B6;
-    --accent-foreground: #ffffff;
+    --accent: #ffc93c;
+    --accent-foreground: #0c2b2a;
     --destructive: #d4183d;
     --destructive-foreground: #ffffff;
-    --border: rgba(99, 102, 241, 0.15);
+    --border: #ddeae7;
     --input: transparent;
-    --input-background: #EEF2FF;
-    --switch-background: #c4b5fd;
-    --ring: #7C3AED;
+    --input-background: #f3faf9;
+    --switch-background: #b5e1da;
+    --ring: #0f766e;
     --radius: 0.625rem;
 }
 

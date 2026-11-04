@@ -60,6 +60,12 @@ class TagihanController extends Controller
         ]);
     }
 
+    /** Cegah CSV/formula injection: sel yang diawali = + - @ diberi apostrof. */
+    private static function csvSafe($v)
+    {
+        return is_string($v) && $v !== '' && in_array($v[0], ['=', '+', '-', '@', "	", ""], true) ? "'".$v : $v;
+    }
+
     public function csv(Request $request)
     {
         [$tab, $source, $q] = $this->params($request);
@@ -74,8 +80,8 @@ class TagihanController extends Controller
                 fputcsv($out, [
                     $r['code'],
                     $r['type_label'],
-                    $r['customer'],
-                    $r['email'],
+                    self::csvSafe($r['customer']),
+                    self::csvSafe($r['email']),
                     $r['method'],
                     $r['amount'],
                     $r['label'],

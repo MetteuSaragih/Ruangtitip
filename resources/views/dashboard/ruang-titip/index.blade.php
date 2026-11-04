@@ -63,17 +63,21 @@
                     </div>
                     <div class="room-body">
                         <div>
-                            <h3>{{ $s->name }}</h3>
+                            <h3>{{ $s->name }}@if ($s->title)<small class="where"> &middot; {{ $s->title }}</small>@endif</h3>
                             <p class="where">{{ $s->location ?: $s->address }}</p>
                         </div>
                         <p class="desc">{{ $s->description ?: $s->address }}</p>
+                        <div class="chips" aria-label="Ukuran yang diterima">
+                            <span class="help">Ukuran:</span>
+                            @foreach ($s->accepted_sizes as $zc)<span class="chip sm">{{ $zc }}</span>@endforeach
+                        </div>
                         <div class="cap">
-                            <div class="cap-top"><span>Sisa kapasitas</span><b>{{ $rem > 0 ? '±' . $rem . ' unit' : 'Habis' }}</b></div>
+                            <div class="cap-top"><span>Sisa kapasitas</span><b>{{ $rem > 0 ? '±' . $rem . ' setara ukuran S' : 'Habis' }}</b></div>
                             <div class="bar is-{{ $status === 'full' ? 'err' : ($status === 'few' ? 'warn' : 'ok') }}" aria-hidden="true"><i style="width:{{ min(100, $s->capacity_pct) }}%"></i></div>
                             <small>Terisi {{ $s->capacity_pct }}%</small>
                         </div>
                         <div class="room-foot">
-                            <p class="price"><small>Mulai</small><b>{{ rp($s->min_price) }}</b><small>per barang per bulan</small></p>
+                            <p class="price"><small>Mulai</small><b>{{ rp($s->min_price) }}</b><small>per barang per hari</small></p>
                             <a class="btn btn-ink" href="{{ route('ruang-titip.detail', $s) }}">Lihat Detail</a>
                         </div>
                     </div>

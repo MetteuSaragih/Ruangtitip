@@ -146,7 +146,7 @@
     function addToCart(buyNow) {
         return fetch(cartUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
             body: JSON.stringify({ type: 'packing', product_id: productId, qty, buy_now: buyNow })
         }).then(r => r.json());
     }

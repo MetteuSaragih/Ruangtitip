@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', fn () => view('landing.index'))->name('home');
-Route::post('/survei', [LandingSurveyController::class, 'store'])->name('survey.store');
+Route::post('/survei', [LandingSurveyController::class, 'store'])->middleware('throttle:10,1')->name('survey.store');
 Route::get('/syarat-ketentuan', fn () => view('legal.syarat-ketentuan'))->name('legal.terms');
 Route::get('/kebijakan-privasi', fn () => view('legal.kebijakan-privasi'))->name('legal.privacy');
 Route::post('/tripay/callback', [TripayCallbackController::class, 'handle'])
@@ -44,10 +44,10 @@ Route::post('/biteship/webhook', [BiteshipWebhookController::class, 'handle'])
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [OtpController::class, 'showLogin'])->name('login');
-    Route::post('/login', [OtpController::class, 'sendOtp'])->name('otp.send');
+    Route::post('/login', [OtpController::class, 'sendOtp'])->middleware('throttle:otp-send')->name('otp.send');
     Route::get('/login/otp', [OtpController::class, 'showOtp'])->name('otp.form');
-    Route::post('/login/otp', [OtpController::class, 'verifyOtp'])->name('otp.verify');
-    Route::post('/login/otp/resend', [OtpController::class, 'resendOtp'])->name('otp.resend');
+    Route::post('/login/otp', [OtpController::class, 'verifyOtp'])->middleware('throttle:otp-verify')->name('otp.verify');
+    Route::post('/login/otp/resend', [OtpController::class, 'resendOtp'])->middleware('throttle:otp-send')->name('otp.resend');
 
     Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('auth.google');
     Route::get('/auth/google/callback', [GoogleController::class, 'callback'])
@@ -118,7 +118,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/pembelian/{order}', [\App\Http\Controllers\PurchaseController::class, 'show'])->name('purchases.show');
     // --- akhir blok jual dan pembelian ---
 
-    Route::get('/api/biteship/areas', [BiteshipAreaController::class, 'search'])->name('api.biteship.areas');
+    Route::get('/api/biteship/areas', [BiteshipAreaController::class, 'search'])->middleware('throttle:60,1')->name('api.biteship.areas');
     Route::get('/api/tripay/channels', [\App\Http\Controllers\Api\TripayChannelController::class, 'index'])->name('api.tripay.channels');
 
     Route::prefix('dashboard/packing')->name('packing.')->group(function () {

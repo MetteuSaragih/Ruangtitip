@@ -29,13 +29,25 @@ class TripayService
     {
         return Http::baseUrl($this->baseUrl)
             ->withToken($this->apiKey)
+            ->connectTimeout(5)
+            ->timeout(20)
             ->acceptJson();
     }
 
     /** Daftar channel pembayaran aktif di akun Tripay (VA, QRIS, e-wallet, gerai, dst). */
     public function getPaymentChannels(): array
     {
-        $response = $this->client()->get('/merchant/payment-channel');
+        if (! $this->isConfigured()) {
+            return [];
+        }
+
+        try {
+            $response = $this->client()->get('/merchant/payment-channel');
+        } catch (\Throwable $e) {
+            Log::warning('Tripay getPaymentChannels error', ['error' => $e->getMessage()]);
+
+            return [];
+        }
 
         if (! $response->successful()) {
             Log::warning('Tripay getPaymentChannels gagal', ['status' => $response->status(), 'body' => $response->body()]);
@@ -43,7 +55,9 @@ class TripayService
             return [];
         }
 
-        return $response->json('data', []);
+        $data = $response->json('data');
+
+        return is_array($data) ? $data : [];
     }
 
     /**
@@ -53,43 +67,72 @@ class TripayService
      */
     public function createTransaction(array $params): array
     {
+        if (! $this->isConfigured()) {
+            throw new \RuntimeException('Pembayaran belum dikonfigurasi (kunci Tripay kosong).');
+        }
+
+        $amount = (int) $params['amount'];
         $signature = hash_hmac(
             'sha256',
-            $this->merchantCode . $params['merchant_ref'] . $params['amount'],
+            $this->merchantCode . $params['merchant_ref'] . $amount,
             $this->privateKey
         );
 
         $payload = array_merge($params, [
-            'amount' => (int) $params['amount'],
+            'amount' => $amount,
             'signature' => $signature,
         ]);
 
-        $response = $this->client()->post('/transaction/create', $payload);
+        try {
+            $response = $this->client()->post('/transaction/create', $payload);
+        } catch (\Throwable $e) {
+            Log::error('Tripay createTransaction error koneksi', ['error' => $e->getMessage()]);
 
-        if (! $response->successful() || ! ($response->json('success'))) {
-            Log::error('Tripay createTransaction gagal', ['status' => $response->status(), 'body' => $response->body(), 'payload' => $payload]);
-
-            throw new \RuntimeException('Gagal membuat transaksi Tripay: ' . $response->body());
+            throw new \RuntimeException('Layanan pembayaran tidak dapat dihubungi. Coba lagi sebentar.', 0, $e);
         }
 
-        return $response->json('data');
+        $data = $response->json('data');
+
+        if (! $response->successful() || ! $response->json('success') || ! is_array($data)) {
+            // Detail lengkap hanya di log; pesan pengecualian dipakai controller untuk ditampilkan ke pengguna.
+            Log::error('Tripay createTransaction gagal', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+                'merchant_ref' => $params['merchant_ref'] ?? null,
+            ]);
+
+            $reason = (string) ($response->json('message') ?? '');
+
+            throw new \RuntimeException('Gagal membuat transaksi Tripay' . ($reason !== '' ? ': ' . $reason : '.'));
+        }
+
+        return $data;
     }
 
     public function getTransactionDetail(string $reference): array
     {
-        $response = $this->client()->get('/transaction/detail', ['reference' => $reference]);
-
-        if (! $response->successful()) {
-            throw new \RuntimeException('Gagal mengambil detail transaksi Tripay: ' . $response->body());
+        try {
+            $response = $this->client()->get('/transaction/detail', ['reference' => $reference]);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('Layanan pembayaran tidak dapat dihubungi.', 0, $e);
         }
 
-        return $response->json('data', []);
+        if (! $response->successful()) {
+            Log::warning('Tripay getTransactionDetail gagal', ['status' => $response->status(), 'body' => $response->body()]);
+
+            throw new \RuntimeException('Gagal mengambil detail transaksi Tripay.');
+        }
+
+        $data = $response->json('data');
+
+        return is_array($data) ? $data : [];
     }
 
     /** Verifikasi signature callback Tripay (header X-Callback-Signature, HMAC-SHA256 atas raw body). */
     public function verifyCallbackSignature(string $rawBody, ?string $signatureHeader): bool
     {
-        if (! $signatureHeader) {
+        // Kunci kosong berarti HMAC bisa dipalsukan siapa saja: tolak.
+        if ($this->privateKey === '' || ! $signatureHeader) {
             return false;
         }
 

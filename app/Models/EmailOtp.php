@@ -33,6 +33,19 @@ class EmailOtp extends Model
     }
 
     /**
+     * Hash kode OTP (kode asli tidak pernah disimpan di database).
+     */
+    public static function hashCode(string $code): string
+    {
+        return hash_hmac('sha256', $code, (string) config('app.key'));
+    }
+
+    public function matches(string $code): bool
+    {
+        return hash_equals((string) $this->code, static::hashCode($code));
+    }
+
+    /**
      * Buat OTP baru untuk sebuah email.
      * Menghapus OTP lama email tsb agar hanya ada satu kode aktif.
      */
@@ -43,11 +56,18 @@ class EmailOtp extends Model
         // Hapus kode lama yang belum terpakai
         static::where('email', $email)->whereNull('used_at')->delete();
 
-        return static::create([
+        $plain = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        $otp = static::create([
             'email'      => $email,
-            'code'       => str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT),
+            'code'       => static::hashCode($plain),
             'attempts'   => 0,
             'expires_at' => Carbon::now()->addMinutes(10),
         ]);
+
+        // Kode asli hanya ada di memori untuk dikirim lewat email.
+        $otp->plain_code = $plain;
+
+        return $otp;
     }
 }

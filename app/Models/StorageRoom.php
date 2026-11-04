@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\StorageSizes;
 use Illuminate\Database\Eloquent\Model;
 
 class StorageRoom extends Model
@@ -16,27 +17,22 @@ class StorageRoom extends Model
         'sunday' => 'Tutup',
     ];
 
-    /** Label dan dimensi resmi tiap ukuran (kode sama dengan kolom harga di form admin). */
-    public const SIZE_META = [
-        'kardus' => [
-            'ks' => ['S', '20×15×10 cm'], 'km' => ['M', '30×20×15 cm'],
-            'kl' => ['L', '40×30×20 cm'], 'kxl' => ['XL', '50×40×30 cm'],
-        ],
-        'koper' => [
-            'kpc' => ['Cabin', '35×23×15 cm'], 'kpm' => ['Medium', '50×33×20 cm'],
-            'kpl' => ['Large', '65×43×25 cm'], 'kpxl' => ['XL', '75×50×30 cm'],
-        ],
+    protected $fillable = [
+        'name', 'title', 'location', 'address', 'description', 'long_description',
+        'sizes', 'pricing', 'capacity_total', 'capacity_used',
+        'facilities', 'rules', 'photo', 'photos', 'active', 'opening_hours',
     ];
 
-    protected $fillable = [
-        'name', 'location', 'address', 'description',
-        'pricing', 'capacity_total', 'capacity_used',
-        'facilities', 'photo', 'photos', 'active', 'opening_hours',
+    /** Kolom pricing lama tidak dipakai lagi (harga per ukuran sekarang global), tapi wajib terisi. */
+    protected $attributes = [
+        'pricing' => '[]',
     ];
 
     protected $casts = [
+        'sizes'         => 'array',
         'pricing'       => 'array',
         'facilities'    => 'array',
+        'rules'         => 'array',
         'photos'        => 'array',
         'opening_hours' => 'array',
         'active'        => 'boolean',
@@ -50,8 +46,8 @@ class StorageRoom extends Model
     }
 
     /**
-     * Slot terpakai dihitung langsung dari pesanan yang sudah dibayar, jadi selalu
-     * sama di halaman admin dan halaman pengguna. Satu barang dalam pesanan = satu slot.
+     * Kapasitas terpakai dalam satuan "setara ukuran S" (S=1, M=2, L=3, XL=5), dihitung langsung
+     * dari pesanan yang sudah dibayar, jadi selalu sama di halaman admin dan pengguna.
      */
     public function getCapacityUsedAttribute($value): int
     {
@@ -67,7 +63,14 @@ class StorageRoom extends Model
             return $this->usedCache = (int) TitipanOrder::where('storage_id', $this->id)
                 ->whereIn('status', self::ACTIVE_ORDER_STATUSES)
                 ->get(['id', 'items'])
-                ->sum(fn (TitipanOrder $order) => $order->totalItems());
+                ->sum(function (TitipanOrder $order) {
+                    $units = 0;
+                    foreach ((array) ($order->items ?? []) as $code => $qty) {
+                        $units += StorageSizes::unit((string) $code) * (int) $qty;
+                    }
+
+                    return $units;
+                });
         } catch (\Throwable $e) {
             return (int) $value;
         }
@@ -83,54 +86,51 @@ class StorageRoom extends Model
     }
 
     /**
-     * Harga per ukuran dalam bentuk baris [id, label, dims, price] untuk kardus, koper, dan dimensi.
-     * Menerima dua format simpanan: peta kode => harga (dari form admin) atau baris berlabel.
+     * Kode ukuran yang diterima ruang ini (urut S, M, L, XL). Ruang lama tanpa pilihan ukuran
+     * memakai ukuran dari harga lamanya, dan bila tidak ada, semua ukuran.
      */
-    public function getPricingRowsAttribute(): array
+    public function getAcceptedSizesAttribute(): array
     {
-        $pricing = (array) ($this->pricing ?? []);
-        $out = ['kardus' => [], 'koper' => [], 'dimensi' => []];
-
-        foreach (['kardus', 'koper'] as $type) {
-            foreach ((array) ($pricing[$type] ?? []) as $key => $row) {
-                $id = is_array($row) ? (string) ($row['id'] ?? $key) : (string) $key;
-                $meta = self::SIZE_META[$type][$id] ?? null;
-                $price = is_array($row) ? (int) ($row['price'] ?? 0) : (int) $row;
-
-                if ($price <= 0) {
-                    continue;
-                }
-
-                $out[$type][] = [
-                    'id' => $id,
-                    'label' => (is_array($row) ? ($row['label'] ?? null) : null) ?: ($meta[0] ?? strtoupper($id)),
-                    'dims' => (is_array($row) ? ($row['dims'] ?? null) : null) ?: ($meta[1] ?? null),
-                    'price' => $price,
-                ];
+        $wanted = [];
+        foreach ((array) ($this->sizes ?? []) as $code) {
+            if ($normalized = StorageSizes::normalize((string) $code)) {
+                $wanted[$normalized] = true;
             }
         }
 
-        $other = (int) ($pricing['dimensiLain'] ?? 0);
-        if ($other > 0) {
-            $out['dimensi'][] = [
-                'id' => 'dimensi_lain',
-                'label' => 'Dimensi lain',
-                'dims' => '30×30×30 sampai 100×100×100 cm',
-                'price' => $other,
-            ];
+        if (! $wanted) {
+            foreach (['kardus', 'koper'] as $type) {
+                foreach ((array) (($this->pricing ?? [])[$type] ?? []) as $key => $row) {
+                    $id = is_array($row) ? (string) ($row['id'] ?? $key) : (string) $key;
+                    $price = is_array($row) ? (int) ($row['price'] ?? 0) : (int) $row;
+                    if ($price > 0 && ($normalized = StorageSizes::normalize($id))) {
+                        $wanted[$normalized] = true;
+                    }
+                }
+            }
         }
 
-        return $out;
+        $ordered = array_values(array_filter(StorageSizes::codes(), fn ($code) => isset($wanted[$code])));
+
+        return $ordered ?: StorageSizes::codes();
+    }
+
+    /** Spesifikasi + harga terkini tiap ukuran yang diterima ruang ini. */
+    public function getSizeRowsAttribute(): array
+    {
+        $all = StorageSizes::all();
+
+        return array_values(array_filter(array_map(fn ($code) => $all[$code] ?? null, $this->accepted_sizes)));
     }
 
     public function getMinPriceAttribute(): int
     {
-        return (int) (collect($this->pricing_rows)->flatten(1)->min('price') ?? 0);
+        return (int) (collect($this->size_rows)->min('price') ?? 0);
     }
 
     public function getMaxPriceAttribute(): int
     {
-        return (int) (collect($this->pricing_rows['koper'])->max('price') ?? 0);
+        return (int) (collect($this->size_rows)->max('price') ?? 0);
     }
 
     public function getPrimaryPhotoAttribute(): ?string

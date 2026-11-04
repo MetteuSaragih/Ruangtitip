@@ -87,7 +87,7 @@
       @else
         <div class="tw">
           <table class="tbl">
-            <thead><tr><th>Ruang</th><th class="r">Terpakai</th><th style="min-width:140px">Okupansi</th></tr></thead>
+            <thead><tr><th>Ruang</th><th class="r">Terpakai (setara ukuran S)</th><th style="min-width:140px">Okupansi</th></tr></thead>
             <tbody>
               @foreach ($rooms as $room)
                 @php

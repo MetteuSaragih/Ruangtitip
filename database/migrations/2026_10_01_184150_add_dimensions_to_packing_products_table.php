@@ -10,9 +10,15 @@ return new class extends Migration
     {
         Schema::table('packing_products', function (Blueprint $table) {
             // Dimensi dalam cm, dipakai untuk cek ongkir Biteship.
-            $table->unsignedInteger('length')->default(30)->after('weight');
-            $table->unsignedInteger('width')->default(20)->after('length');
-            $table->unsignedInteger('height')->default(15)->after('width');
+            if (! Schema::hasColumn('packing_products', 'length')) {
+                $table->unsignedInteger('length')->default(30)->after('weight');
+            }
+            if (! Schema::hasColumn('packing_products', 'width')) {
+                $table->unsignedInteger('width')->default(20)->after('length');
+            }
+            if (! Schema::hasColumn('packing_products', 'height')) {
+                $table->unsignedInteger('height')->default(15)->after('width');
+            }
         });
     }
 

@@ -249,7 +249,7 @@ class CheckoutController extends Controller
         $total = $subtotal + $serviceFee + $shippingCost;
 
         $order = Order::create([
-            'order_number' => 'RT-' . now()->year . '-' . random_int(10000, 99999),
+            'order_number' => $this->newOrderNumber(),
             'user_id' => Auth::id(),
             'customer_name' => Auth::user()->name ?? 'Pelanggan',
             'customer_email' => Auth::user()->email ?? 'noreply@rutip.test',
@@ -305,7 +305,7 @@ class CheckoutController extends Controller
             report($e);
             $order->update(['payment_status' => 'FAILED']);
 
-            return response()->json(['success' => false, 'message' => 'Gagal memulai pembayaran: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Gagal memulai pembayaran. Coba lagi atau pilih metode lain.'], 500);
         }
 
         // Hanya hapus item yang benar-benar di-checkout; sisanya tetap di keranjang.
@@ -377,6 +377,20 @@ class CheckoutController extends Controller
     }
 
     /** Biaya layanan platform: Rp 2.000 jika pengiriman pakai Biteship, Rp 1.000 jika tidak. */
+    /** Nomor pesanan unik: coba beberapa kali, lalu perpanjang agar tidak pernah bentrok. */
+    private function newOrderNumber(): string
+    {
+        $prefix = 'RT-' . now()->year . '-';
+        for ($i = 0; $i < 8; $i++) {
+            $code = $prefix . random_int(10000, 99999);
+            if (! Order::where('order_number', $code)->exists()) {
+                return $code;
+            }
+        }
+
+        return $prefix . random_int(10000, 99999) . random_int(100, 999);
+    }
+
     private function serviceFeeFor(string $shippingMethod): int
     {
         return $shippingMethod === 'biteship' ? 2000 : 1000;

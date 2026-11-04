@@ -66,14 +66,14 @@
             courierCode.value = c.courier_code;
             serviceCode.value = c.courier_service_code || '';
             nextBtn.disabled = false;
-        }, 'light');
+        });
     }
 
     fetch(@json(route('packing.courier.rates')), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token()) }
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token()) }
     })
-        .then(function (r) { return r.json(); })
+        .then(function (r) { if (!r.ok) { throw new Error('http ' + r.status); } return r.json(); })
         .then(function (data) { renderCouriers(data.pricing || []); })
         .catch(function () { renderCouriers([]); });
 })();

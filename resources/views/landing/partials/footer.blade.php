@@ -19,7 +19,7 @@
     <div class="wrap">
         <div class="f-main">
             <div class="f-brand">
-                <a class="logo" href="#top" style="color:#fff"><img class="logo-img" src="{{ asset('assets/logo/logo-horizontal-light.png') }}" alt="RuTip" width="104" height="42"></a>
+                <a class="logo" href="#top" style="color:#fff"><img class="logo-img" src="{{ asset('assets/logo/logo-horizontal-light.png') }}" alt="RuangTitip" width="104" height="42"></a>
                 <p>Titip barangmu, simpan uangmu. Penitipan barang untuk mahasiswa di Malang sejak 2026.</p>
             </div>
             <div class="f-col">

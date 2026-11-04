@@ -10,7 +10,7 @@
         default => null,
     };
     $sumDateText = isset($s['date_start'], $s['date_end'])
-        ? \Illuminate\Support\Carbon::parse($s['date_start'])->translatedFormat('j M Y') . ' sampai ' . \Illuminate\Support\Carbon::parse($s['date_end'])->translatedFormat('j M Y') . ' (' . $calc['months'] . ' bln)'
+        ? \Illuminate\Support\Carbon::parse($s['date_start'])->translatedFormat('j M Y') . ' sampai ' . \Illuminate\Support\Carbon::parse($s['date_end'])->translatedFormat('j M Y') . ' (' . $calc['days'] . ' hari)'
         : null;
 @endphp
 <aside class="aside" aria-label="Ringkasan pesanan">
@@ -21,7 +21,7 @@
             <div><span>Periode</span><b id="s-date">{{ $sumDateText ?? 'Belum dipilih' }}</b></div>
             <div><span>Barang</span>
                 <b id="s-items">
-                    @if ($calc['totalItems'] > 0){{ $calc['totalItems'] }} item dipilih<small>{{ $calc['months'] }} bln</small>@else Belum ada barang @endif
+                    @if ($calc['totalItems'] > 0){{ $calc['totalItems'] }} item dipilih<small>{{ $calc['days'] }} hari</small>@else Belum ada barang @endif
                 </b>
             </div>
             <div><span>Pengiriman</span><b id="s-log">{{ $sumLogisticLabel ?? 'Belum dipilih' }}</b></div>
@@ -38,6 +38,6 @@
             </span>
             <div class="tot"><span>Estimasi total</span><b id="s-total">{{ $calc['totalItems'] > 0 ? rp($calc['total']) : 'Rp0' }}</b></div>
         </div>
-        <p class="help mt" id="s-tip">Bingung butuh berapa kardus? Chat tim Ruru dan kirim foto barangmu.</p>
+        <p class="help mt" id="s-tip">Bingung pilih ukuran? Chat tim Ruru dan kirim foto barangmu.</p>
     </section>
 </aside>

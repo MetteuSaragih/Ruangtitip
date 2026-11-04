@@ -28,6 +28,17 @@ return new class extends Migration
             });
         }
 
+        // Pesanan lama yang merujuk ruang yang sudah tidak ada akan membuat penambahan FK gagal
+        // ("Cannot add or update a child row"): lewati FK dan catat, jangan menggagalkan seluruh migrate.
+        $orphans = DB::table('titipan_orders')
+            ->whereNotIn('storage_id', DB::table('storage_rooms')->select('id'))
+            ->count();
+        if ($orphans > 0) {
+            logger()->warning("Migrasi FK titipan_orders.storage_id dilewati: {$orphans} pesanan merujuk storage_rooms yang tidak ada. Perbaiki datanya lalu tambahkan FK manual.");
+
+            return;
+        }
+
         if (! $this->foreignKeyExists('titipan_orders', 'titipan_orders_storage_id_foreign')) {
             Schema::table('titipan_orders', function (Blueprint $table) {
                 $table->foreign('storage_id')->references('id')->on('storage_rooms')->cascadeOnDelete();

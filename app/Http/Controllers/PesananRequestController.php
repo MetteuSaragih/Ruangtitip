@@ -21,15 +21,15 @@ class PesananRequestController extends Controller
         $this->guard($order, 'perpanjang');
 
         $data = $r->validate([
-            'months' => ['required', 'integer', 'min:1', 'max:12'],
+            'days' => ['required', 'integer', 'min:1', 'max:365'],
             'catatan' => ['nullable', 'string', 'max:500'],
         ]);
 
         $base = $order->date_end && $order->date_end->isFuture() ? $order->date_end->copy() : now();
-        $newEnd = $base->addMonthsNoOverflow((int) $data['months'])->toDateString();
+        $newEnd = $base->addDays((int) $data['days'])->toDateString();
 
         return $this->store($order, 'perpanjang', [
-            'months' => (int) $data['months'],
+            'days' => (int) $data['days'],
             'new_date_end' => $newEnd,
         ], $data['catatan'] ?? null, 'Permintaan tambah periode sudah dikirim. Admin akan mengonfirmasi dan menerbitkan tagihan.');
     }
