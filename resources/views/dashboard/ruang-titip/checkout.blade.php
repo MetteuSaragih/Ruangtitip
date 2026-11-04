@@ -1,90 +1,113 @@
-@extends('layouts.ruang-titip')
-@section('title', 'Checkout')
+@extends('layouts.rt')
+@section('title', 'Ruang Titip')
 
-@php function rp($n){ return 'Rp'.number_format($n,0,',','.'); } @endphp
-
-@section('content')
 @php
+    if (! function_exists('rp')) {
+        function rp($n) { return 'Rp' . number_format($n, 0, ',', '.'); }
+    }
     $back = $s['logistic'] === 'instant' ? route('ruang-titip.kurir')
           : ($s['logistic'] === 'rutip' ? route('ruang-titip.alamat') : route('ruang-titip.logistik'));
+    $logLabel = match ($s['logistic']) {
+        'self' => 'Antar sendiri',
+        'rutip' => 'Packing + Anjem RuTip',
+        'instant' => $courier ? trim($courier->name . ' ' . ($courier->service ?? '')) : 'Kurir instan',
+        default => '-',
+    };
+    $dStart = \Illuminate\Support\Carbon::parse($s['date_start']);
+    $dEnd = \Illuminate\Support\Carbon::parse($s['date_end']);
 @endphp
-<div class="wrap">
-  <a class="back-link" href="{{ $back }}">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
-    Kembali
-  </a>
 
-  <div class="layout">
-    <div>
-      @include('dashboard.ruang-titip._progress', ['step' => 4])
-
-      <div class="step-head">
-        <h1>Cek lagi, lalu bayar</h1>
-        <p>Pastikan semua sudah benar sebelum lanjut.</p>
-      </div>
-
-      @if ($errors->any())
-        <p class="err" style="margin-top:12px">{{ $errors->first() }}</p>
-      @endif
-
-      <div class="panel">
-        <h2>Rincian tagihan</h2>
-        <div class="lines">
-          <div class="line"><span>Biaya Penitipan ({{ $calc['totalItems'] }} item &middot; {{ $calc['months'] }} bln)</span><span>{{ rp($calc['itemSubtotal']) }}</span></div>
-          @if ($s['logistic'] === 'rutip')
-            <div class="line"><span>Antar-Jemput RuTip ({{ $calc['km'] }} km)</span><span>{{ rp($calc['kmCost']) }}</span></div>
-            <div class="line"><span>Jasa Packing ({{ $calc['totalItems'] }} &times; Rp15.000)</span><span>{{ rp($calc['packingCost']) }}</span></div>
-          @elseif ($s['logistic'] === 'instant' && $courier)
-            <div class="line"><span>Pengiriman ({{ $courier->name }} {{ $courier->service }})</span><span>{{ rp($calc['courierCost']) }}</span></div>
-          @endif
-          <div class="line"><span>Biaya Layanan Platform</span><span>{{ rp($calc['platform_fee']) }}</span></div>
+@section('content')
+@include('dashboard.ruang-titip._icons')
+<div class="ttp">
+<div class="stack">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="{{ route('ruang-titip.index') }}">Ruang Titip</a><span aria-hidden="true">/</span>@if ($storage)<a href="{{ route('ruang-titip.detail', $storage) }}">{{ $storage->name }}</a>@else<span>Pesan</span>@endif<span aria-hidden="true">/</span><span aria-current="page">Pesan</span></nav>
+    <div class="ph">
+        <div>
+            <h2 class="pt" tabindex="-1">Ringkasan pesanan</h2>
+            <p class="ps">Periksa semua data sebelum pesanan dibuat.</p>
         </div>
-        <div class="total"><span style="font-weight:700">Total bayar</span><strong>{{ rp($calc['total']) }}</strong></div>
-        @if ($s['logistic'] === 'rutip')
-          <p class="note">Estimasi jarak {{ $calc['km'] }} km dari alamatmu ke gudang.</p>
-        @endif
-      </div>
-
-      <form method="POST" action="{{ route('ruang-titip.place') }}">
-        @csrf
-
-        @if ($s['logistic'] !== 'self')
-          <div class="panel">
-            <h2>Waktu penjemputan</h2>
-            <x-pickup-slot-picker
-              :old-date="old('pickup_date')"
-              :old-start="old('pickup_time')"
-              :old-end="old('pickup_time_end')" />
-          </div>
-        @endif
-
-        <div class="panel">
-          <label class="agree">
-            <input type="checkbox" name="agree" value="1">
-            <span>Saya menyetujui <a href="{{ route('legal.terms') }}" target="_blank">Syarat &amp; Ketentuan</a> Garansi Batas Tetap dan <a href="{{ route('legal.privacy') }}" target="_blank">Kebijakan Privasi</a> RuangTitip.</span>
-          </label>
-        </div>
-
-        <div class="panel">
-          <h2>Metode pembayaran</h2>
-          <p class="hint">Pembayaran diproses aman lewat Tripay.</p>
-          <input type="hidden" name="payment_method">
-          <div style="margin-top:16px">
-            <x-tripay-channel-picker theme="light" button-id="placeBtn" />
-          </div>
-        </div>
-
-        <div class="actions">
-          <a href="{{ $back }}" class="btn btn-outline">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-            Kembali
-          </a>
-          <button type="submit" id="placeBtn" disabled class="btn btn-primary">Bayar {{ rp($calc['total']) }}</button>
-        </div>
-      </form>
     </div>
 
-    @include('dashboard.ruang-titip._summary', ['storage' => $storage, 's' => $s, 'calc' => $calc, 'courier' => $courier])
-  </div>
+    @include('dashboard.ruang-titip._progress', ['step' => 4])
+
+    <div class="two">
+        <form method="POST" action="{{ route('ruang-titip.place') }}" class="stack">
+            @csrf
+            @if ($errors->any())
+                <div class="alert a-err"><svg class="ic" aria-hidden="true"><use href="#i-warn"/></svg><div><b>{{ $errors->first() }}</b></div></div>
+            @endif
+
+            <section class="card">
+                <div class="card-h"><h3>Gudang, periode, dan pengiriman</h3><a class="more-link" href="{{ route('ruang-titip.detail-item') }}">Ubah</a></div>
+                <div class="rows">
+                    <div><span>Gudang</span><b>{{ $storage->name ?? '-' }}<small>{{ $storage->location ?? '' }}</small></b></div>
+                    <div><span>Periode</span><b>{{ $dStart->translatedFormat('l, j F Y') }} sampai {{ $dEnd->translatedFormat('l, j F Y') }}<small>{{ $calc['months'] }} bulan</small></b></div>
+                    <div><span>Pengiriman</span><b>{{ $logLabel }}</b></div>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-h"><h3>Barang dan rincian biaya</h3><a class="more-link" href="{{ route('ruang-titip.detail-item') }}">Ubah</a></div>
+                <div class="tbl-wrap">
+                    <table class="tbl">
+                        <thead><tr><th>Rincian</th><th>Subtotal</th></tr></thead>
+                        <tbody>
+                            <tr><td><b>Biaya penitipan</b><small>{{ $calc['totalItems'] }} item, {{ $calc['months'] }} bulan</small></td><td><b>{{ rp($calc['itemSubtotal']) }}</b></td></tr>
+                            @if ($s['logistic'] === 'rutip')
+                                <tr><td><b>Antar-jemput RuTip</b><small>{{ $calc['km'] }} km dari alamatmu ke gudang</small></td><td><b>{{ rp($calc['kmCost']) }}</b></td></tr>
+                                <tr><td><b>Jasa packing</b><small>{{ $calc['totalItems'] }} &times; Rp15.000</small></td><td><b>{{ rp($calc['packingCost']) }}</b></td></tr>
+                            @elseif ($s['logistic'] === 'instant' && $courier)
+                                <tr><td><b>Pengiriman</b><small>{{ $courier->name }} {{ $courier->service }}</small></td><td><b>{{ rp($calc['courierCost']) }}</b></td></tr>
+                            @endif
+                            <tr><td><b>Biaya layanan platform</b></td><td><b>{{ rp($calc['platform_fee']) }}</b></td></tr>
+                            <tr class="tot"><td>Total bayar</td><td>{{ rp($calc['total']) }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            @if ($s['logistic'] !== 'self')
+                <section class="card">
+                    <h3>Waktu penjemputan</h3>
+                    <x-pickup-slot-picker
+                        :old-date="old('pickup_date')"
+                        :old-start="old('pickup_time')"
+                        :old-end="old('pickup_time_end')" />
+                </section>
+            @endif
+
+            <section class="card">
+                <h3>Persetujuan</h3>
+                <label class="pick">
+                    <input type="checkbox" name="agree" value="1">
+                    <span>Saya menyetujui <a href="{{ route('legal.terms') }}" target="_blank" rel="noopener">Syarat dan Ketentuan RuangTitip</a>, termasuk ketentuan blind box: isi kemasan tidak dibuka, petugas hanya memeriksa jumlah, kategori, ukuran, kemasan, dan kondisi luar, dan saya bertanggung jawab atas isi barang serta memastikan tidak ada barang yang dilarang. Saya juga menyetujui <a href="{{ route('legal.privacy') }}" target="_blank" rel="noopener">Kebijakan Privasi</a>.</span>
+                </label>
+            </section>
+
+            <section class="card">
+                <h3>Metode pembayaran</h3>
+                <p class="help" style="margin-bottom:12px">Pembayaran diproses aman lewat Tripay.</p>
+                <input type="hidden" name="payment_method">
+                <x-tripay-channel-picker theme="light" button-id="placeBtn" />
+            </section>
+
+            <div class="nav-btns">
+                <a href="{{ $back }}" class="btn btn-ghost">Kembali</a>
+                <button type="submit" id="placeBtn" disabled class="btn btn-sun">Bayar {{ rp($calc['total']) }}</button>
+            </div>
+        </form>
+
+        <aside class="aside">
+            <section class="card">
+                <h3>Pembayaran</h3>
+                <div class="rows">
+                    <div class="tot"><span>Total bayar</span><b>{{ rp($calc['total']) }}</b></div>
+                </div>
+                <p class="help mt">Setelah pesanan dibuat, tagihan wajib dibayar sebelum batas waktu. Pembayaran diverifikasi otomatis lewat Tripay.</p>
+            </section>
+        </aside>
+    </div>
+</div>
 </div>
 @endsection

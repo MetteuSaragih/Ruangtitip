@@ -66,7 +66,31 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/notifikasi', [DashboardController::class, 'notifications'])->name('notifikasi.index');
     Route::post('/notifikasi/baca', [DashboardController::class, 'markNotificationsRead'])->name('notifikasi.read');
-    Route::get('/profil', [ProfileController::class, 'index'])->name('profile.index');
+    // --- Akun saya (ringkasan, profil, alamat, rekening, keamanan, notifikasi, bantuan) ---
+    Route::get('/akun', [\App\Http\Controllers\AccountController::class, 'home'])->name('profile.index');
+    Route::redirect('/profil', '/akun');
+    Route::prefix('akun')->name('akun.')->controller(\App\Http\Controllers\AccountController::class)->group(function () {
+        Route::get('/profil', 'profil')->name('profil');
+        Route::post('/profil', 'saveProfil')->name('profil.save');
+        Route::get('/alamat', 'alamat')->name('alamat');
+        Route::post('/alamat', 'storeAlamat')->name('alamat.store');
+        Route::put('/alamat/{id}', 'updateAlamat')->name('alamat.update');
+        Route::post('/alamat/{id}/utama', 'mainAlamat')->name('alamat.main');
+        Route::delete('/alamat/{id}', 'destroyAlamat')->name('alamat.destroy');
+        Route::get('/rekening', 'rekening')->name('rekening');
+        Route::post('/rekening', 'storeRekening')->name('rekening.store');
+        Route::put('/rekening/{id}', 'updateRekening')->name('rekening.update');
+        Route::post('/rekening/{id}/utama', 'mainRekening')->name('rekening.main');
+        Route::delete('/rekening/{id}', 'destroyRekening')->name('rekening.destroy');
+        Route::get('/keamanan', 'keamanan')->name('keamanan');
+        Route::delete('/keamanan/perangkat', 'revokeOtherSessions')->name('sesi.others');
+        Route::delete('/keamanan/perangkat/{id}', 'revokeSession')->name('sesi.revoke');
+        Route::delete('/keamanan/akun', 'destroyAccount')->name('hapus');
+        Route::get('/notifikasi', 'notifikasi')->name('notifikasi');
+        Route::post('/notifikasi', 'saveNotifikasi')->name('notifikasi.save');
+        Route::get('/bantuan', 'bantuan')->name('bantuan');
+    });
+    // --- akhir blok akun ---
     Route::post('/profil/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profil/avatar', [ProfileController::class, 'uploadAvatar'])->name('profile.avatar');
     Route::post('/profil/lewati-banner', [ProfileController::class, 'dismissCompleteBanner'])->name('profile.dismiss-banner');
@@ -76,6 +100,22 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard/pesanan', [PesananController::class, 'index'])->name('pesanan.index');
     Route::get('/dashboard/pesanan/{order}', [PesananController::class, 'show'])->name('pesanan.detail');
+
+    // --- Permintaan atas titipan di gudang: tambah periode, kirim barang, ambil di gudang ---
+    Route::post('/dashboard/pesanan/{order}/perpanjang', [\App\Http\Controllers\PesananRequestController::class, 'perpanjang'])->name('pesanan.request.perpanjang');
+    Route::post('/dashboard/pesanan/{order}/kirim', [\App\Http\Controllers\PesananRequestController::class, 'kirim'])->name('pesanan.request.kirim');
+    Route::post('/dashboard/pesanan/{order}/ambil', [\App\Http\Controllers\PesananRequestController::class, 'ambil'])->name('pesanan.request.ambil');
+    // --- akhir blok permintaan titipan ---
+
+    // --- Jual barang (pengajuan preloved) dan Pembelian Saya ---
+    Route::get('/jual/baru', [\App\Http\Controllers\PrelovedSellController::class, 'create'])->name('sell.create');
+    Route::post('/jual', [\App\Http\Controllers\PrelovedSellController::class, 'store'])->name('sell.store');
+    Route::get('/jual/{submission}', [\App\Http\Controllers\PrelovedSellController::class, 'show'])->name('sell.show');
+    Route::post('/jual/{submission}/jadwal', [\App\Http\Controllers\PrelovedSellController::class, 'schedule'])->name('sell.schedule');
+    Route::post('/jual/{submission}/tawaran', [\App\Http\Controllers\PrelovedSellController::class, 'offer'])->name('sell.offer');
+    Route::get('/pembelian', [\App\Http\Controllers\PurchaseController::class, 'index'])->name('purchases.index');
+    Route::get('/pembelian/{order}', [\App\Http\Controllers\PurchaseController::class, 'show'])->name('purchases.show');
+    // --- akhir blok jual dan pembelian ---
 
     Route::get('/api/biteship/areas', [BiteshipAreaController::class, 'search'])->name('api.biteship.areas');
     Route::get('/api/tripay/channels', [\App\Http\Controllers\Api\TripayChannelController::class, 'index'])->name('api.tripay.channels');

@@ -20,11 +20,12 @@
         'Toko Preloved' => [
             ['Katalog', 'preloved.index', 'n-tag', $rtActive('preloved.index', 'preloved.show'), null],
             ['Keranjang', 'preloved.cart.index', 'n-cart', $rtActive('preloved.cart.*', 'checkout.*'), $rtCart ?: null],
-            ['Jual Barang', 'preloved.cara-jual', 'n-coin', $rtActive('preloved.cara-jual'), null],
+            ['Pembelian Saya', 'purchases.index', 'n-bag', $rtActive('purchases.*'), null],
+            ['Jual Barang', 'preloved.cara-jual', 'n-coin', $rtActive('preloved.cara-jual', 'sell.*'), null],
         ],
     ];
-    $rtOnProfile = request()->routeIs('profile.*');
-    $rtHelpTab = $rtOnProfile && request('tab') === 'bantuan';
+    $rtOnProfile = request()->routeIs('profile.*', 'akun.*');
+    $rtHelpTab = request()->routeIs('akun.bantuan');
     $rtProfileActive = $rtOnProfile && ! $rtHelpTab ? 'page' : null;
     $rtHelpActive = $rtHelpTab ? 'page' : null;
 @endphp
@@ -87,7 +88,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('profile.index', ['tab' => 'bantuan']) }}" data-tip="Bantuan" @if ($rtHelpActive) aria-current="page" @endif>
+                    <a href="{{ route('akun.bantuan') }}" data-tip="Bantuan" @if ($rtHelpActive) aria-current="page" @endif>
                         <svg class="ic" aria-hidden="true"><use href="#n-chat"/></svg><span class="lbl">Bantuan</span>
                     </a>
                 </li>

@@ -1,91 +1,85 @@
-@extends('layouts.ruang-titip')
-@section('title', 'Ringkasan Pembayaran')
+@extends('layouts.rt')
+@section('title', 'Keranjang')
 
-@php function rp($n){ return 'Rp'.number_format($n,0,',','.'); } @endphp
+@php
+    if (! function_exists('rp')) {
+        function rp($n) { return 'Rp' . number_format($n, 0, ',', '.'); }
+    }
+    $isPickup = ($shipping['method'] ?? 'pickup') === 'pickup';
+    $back = $isPickup ? route('checkout.shipping') : route('checkout.courier');
+@endphp
 
 @section('content')
-@php
-    $back = ($shipping['method'] ?? 'pickup') === 'biteship' ? route('checkout.courier') : route('checkout.shipping');
-@endphp
-<div class="wrap">
-  <a class="back-link" href="{{ $back }}">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
-    Kembali
-  </a>
+<div class="mp">
+<div class="stack">
+    @include('partials.mp-head', [
+        'crumbs' => [['Toko Preloved', route('preloved.index')], ['Keranjang', route('preloved.cart.index')], ['Checkout', null]],
+        'title' => 'Ringkasan pesanan',
+        'sub' => 'Pastikan pesanan dan pengirimannya sudah benar, lalu bayar.',
+    ])
+    @include('checkout._wiz', ['step' => 4])
 
-  <div class="layout">
-    <div>
-      <ol class="stepper" aria-label="Langkah checkout">
-        <li class="done"><button type="button"><span class="bar"></span><span class="lbl"><span class="num"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Pengambilan</span></span></button></li>
-        <li class="done {{ ($shipping['method'] ?? 'pickup') === 'pickup' ? 'skip' : '' }}"><button type="button"><span class="bar"></span><span class="lbl"><span class="num"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Alamat</span></span></button></li>
-        <li class="done {{ ($shipping['method'] ?? 'pickup') === 'pickup' ? 'skip' : '' }}"><button type="button"><span class="bar"></span><span class="lbl"><span class="num"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Kurir</span></span></button></li>
-        <li class="now"><button type="button"><span class="bar"></span><span class="lbl"><span class="num">4</span><span>Bayar</span></span></button></li>
-      </ol>
+    <div class="two">
+        <div class="stack">
+            @if (session('error'))
+                <div class="alert a-err"><svg class="ic" aria-hidden="true"><use href="#i-warn"/></svg><div><b>{{ session('error') }}</b></div></div>
+            @endif
 
-      <div class="step-head">
-        <h1>Cek lagi, lalu bayar</h1>
-        <p>Pastikan pesanan dan pengirimannya sudah benar.</p>
-      </div>
+            <section class="card">
+                <div class="card-h"><h3>Barang dan penerimaan</h3><a class="more-link" href="{{ route('checkout.shipping') }}">Ubah</a></div>
+                <div class="rows">
+                    @foreach ($cart as $item)
+                        <div><span>Barang</span><b>{{ $item['name'] }}<small>Jumlah {{ $item['qty'] }}</small></b></div>
+                    @endforeach
+                    <div><span>Penerimaan</span><b>{{ $isPickup ? 'Jemput sendiri ke gudang' : 'Dikirim RuangTitip' }}</b></div>
+                    <div>
+                        <span>{{ $isPickup ? 'Lokasi' : 'Tujuan' }}</span>
+                        <b>@if ($isPickup)Gudang Ruru, Lowokwaru, Malang<small>Datang ke gudang dan tunjukkan kode pesanan yang muncul setelah bayar.</small>@else{{ $shipping['address']['full'] ?? '-' }}@if (! empty($shipping['courier_name']))<small>{{ $shipping['courier_name'] }}</small>@endif @endif</b>
+                    </div>
+                </div>
+            </section>
 
-      @if (session('error'))
-        <p class="err" style="margin-top:12px">{{ session('error') }}</p>
-      @endif
+            <form id="payForm" class="stack">
+                @csrf
 
-      <div class="panel">
-        <h2>{{ ($shipping['method'] ?? 'pickup') === 'pickup' ? 'Ambil di Gudang RuangTitip' : 'Dikirim ke ' . ($shipping['address']['full'] ?? '-') }}</h2>
-        <p class="hint" style="margin-top:6px">
-          @if (($shipping['method'] ?? 'pickup') === 'pickup')
-            Datang ke gudang RuangTitip dan tunjukkan kode pesanan yang muncul setelah bayar.
-          @else
-            {{ $shipping['courier_name'] ?? '' }}
-          @endif
-        </p>
-      </div>
+                @if (! $isPickup)
+                    <section class="card">
+                        <x-pickup-schedule theme="light" :old-date="old('pickup_date')" :old-time="old('pickup_time')" />
+                    </section>
+                @endif
 
-      <div class="panel">
-        <h2>Rincian tagihan</h2>
-        <div class="lines">
-          @foreach ($cart as $item)
-            <div class="line"><span>{{ $item['name'] }} &times;{{ $item['qty'] }}</span><span>{{ rp($item['subtotal']) }}</span></div>
-          @endforeach
-          <div class="line"><span>Biaya Layanan dan Platform</span><span>{{ rp($serviceFee) }}</span></div>
-          <div class="line"><span>Biaya Pengiriman</span><span>{{ $shippingCost === 0 ? 'Gratis' : rp($shippingCost) }}</span></div>
-        </div>
-        <div class="total"><span style="font-weight:700">Total bayar</span><strong>{{ rp($total) }}</strong></div>
-      </div>
+                <section class="card stack" style="gap:12px">
+                    <div><h3>Metode pembayaran</h3><p class="help">Pembayaran diproses aman lewat Tripay.</p></div>
+                    <input type="hidden" name="payment_method">
+                    <x-tripay-channel-picker theme="light" button-id="payBtn" />
+                </section>
 
-      <form id="payForm">
-        @csrf
-
-        @if (($shipping['method'] ?? 'pickup') === 'biteship')
-          <div class="panel">
-            <x-pickup-schedule theme="light" :old-date="old('pickup_date')" :old-time="old('pickup_time')" />
-          </div>
-        @endif
-
-        <div class="panel">
-          <h2>Metode pembayaran</h2>
-          <p class="hint">Pembayaran diproses aman lewat Tripay.</p>
-          <input type="hidden" name="payment_method">
-          <div style="margin-top:16px">
-            <x-tripay-channel-picker theme="light" button-id="payBtn" />
-          </div>
+                <div class="nav-btns">
+                    <a href="{{ $back }}" class="btn btn-ghost">Kembali</a>
+                    <button type="button" id="payBtn" disabled class="btn btn-sun" onclick="processPayment()">Bayar {{ rp($total) }}</button>
+                </div>
+                <p class="msg" id="payErr"></p>
+            </form>
         </div>
 
-        <div class="actions">
-          <a href="{{ $back }}" class="btn btn-outline">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-            Kembali
-          </a>
-          <button type="button" id="payBtn" disabled class="btn btn-primary" onclick="processPayment()">Bayar {{ rp($total) }}</button>
-        </div>
-        <p class="err" id="payErr"></p>
-      </form>
+        <aside class="aside">
+            <section class="card">
+                <h3>Total pembayaran</h3>
+                <div class="rows">
+                    @foreach ($cart as $item)
+                        <div><span>{{ $item['name'] }} &times;{{ $item['qty'] }}</span><b>{{ rp($item['subtotal']) }}</b></div>
+                    @endforeach
+                    <div><span>Biaya layanan</span><b>{{ rp($serviceFee) }}</b></div>
+                    <div><span>Ongkir</span><b>{{ $shippingCost === 0 ? 'Rp0' : rp($shippingCost) }}</b></div>
+                    <div class="tot"><span>Total</span><b>{{ rp($total) }}</b></div>
+                </div>
+                <p class="help mt">Dibayar penuh lewat Tripay. Status pesanan bisa dicek di Pesanan Saya setelah bayar.</p>
+            </section>
+        </aside>
     </div>
-
-    @include('checkout._summary', ['cart' => $cart, 'shipping' => $shipping])
-  </div>
 </div>
+</div>
+@endsection
 
 @push('scripts')
 <script>
@@ -95,7 +89,7 @@ function processPayment() {
 
     const btn = document.getElementById('payBtn');
     const originalLabel = btn.innerHTML;
-    btn.innerHTML = 'Memproses...';
+    btn.innerHTML = '<span class="spin"></span>Memproses...';
     btn.disabled = true;
 
     const pickupDate = document.querySelector('input[name="pickup_date"]');
@@ -128,4 +122,3 @@ function processPayment() {
 }
 </script>
 @endpush
-@endsection

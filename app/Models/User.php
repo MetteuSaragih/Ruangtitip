@@ -22,6 +22,11 @@ class User extends Authenticatable
         'phone',
         'role',
         'is_active',
+        'campus',
+        'major',
+        'cohort_year',
+        'hometown',
+        'notif_prefs',
     ];
 
     /**
@@ -42,6 +47,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'notif_prefs' => 'array',
         ];
     }
 

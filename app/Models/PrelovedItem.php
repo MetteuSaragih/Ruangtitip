@@ -9,6 +9,7 @@ class PrelovedItem extends Model
     protected $fillable = [
         'name', 'category', 'condition', 'price', 'status', 'photo', 'photos', 'seller',
         'weight', 'length', 'width', 'height',
+        'description', 'function_note', 'completeness', 'flaws',
     ];
 
     protected $casts = [

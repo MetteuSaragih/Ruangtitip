@@ -13,11 +13,8 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
     @vite(['resources/css/rt-landing.css', 'resources/js/rt-landing.js'])
 </head>
-<body class="lp">
-@include('partials.rt-icons')
+<body class="p-landing">
 @include('landing.partials.symbols')
-
-<a class="skip" href="#top">Lewati ke konten</a>
 
 @include('landing.partials.navbar')
 
@@ -28,7 +25,6 @@
     @include('landing.partials.harga')
     @include('landing.partials.preloved')
     @include('landing.partials.testimoni')
-    @include('landing.partials.survey')
     @include('landing.partials.faq')
 </main>
 

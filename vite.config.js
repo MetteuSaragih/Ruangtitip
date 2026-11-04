@@ -13,6 +13,7 @@ export default defineConfig({
                 'resources/css/rt-landing.css',
                 'resources/js/rt-landing.js',
                 'resources/css/rt-auth.css',
+                'resources/css/rt-legal.css',
             ],
             refresh: true,
         }),

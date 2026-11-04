@@ -20,7 +20,7 @@ class EnsureProfileComplete
         if ($user && (empty($user->name) || empty($user->phone))) {
             session(['profile_redirect_after' => $request->fullUrl()]);
 
-            return redirect()->route('profile.index')
+            return redirect()->route('akun.profil')
                 ->with('error', 'Lengkapi profil kamu (nama & nomor WhatsApp) terlebih dahulu sebelum melanjutkan pemesanan.');
         }
 
