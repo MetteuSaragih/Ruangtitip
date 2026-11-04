@@ -125,7 +125,20 @@ class OtpController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
-        return redirect()->intended(route('dashboard'));
+        // Tampilkan layar "Berhasil masuk" dulu, lalu lanjut ke tujuan semula.
+        $request->session()->put('login_done_to', $request->session()->pull('url.intended', route('dashboard')));
+
+        return redirect()->route('login.done');
+    }
+
+    /**
+     * Layar konfirmasi setelah login berhasil (OTP), lalu lanjut otomatis.
+     */
+    public function done(Request $request)
+    {
+        $to = $request->session()->get('login_done_to', route('dashboard'));
+
+        return view('auth.done', ['to' => $to]);
     }
 
     /**

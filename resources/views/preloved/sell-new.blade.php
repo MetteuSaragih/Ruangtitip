@@ -15,6 +15,16 @@
         'sub' => 'Isi selengkap dan sejujur mungkin supaya seleksi dan pemeriksaan berjalan cepat.',
     ])
 
+    @if (session('error'))
+        <div class="alert a-err" role="alert"><svg class="ic" aria-hidden="true"><use href="#i-warn"/></svg><div><b>Pengajuan belum terkirim</b><p>{{ session('error') }}</p></div></div>
+    @elseif ($errors->any())
+        <div class="alert a-err" role="alert" id="formErr" tabindex="-1">
+            <svg class="ic" aria-hidden="true"><use href="#i-warn"/></svg>
+            <div><b>Pengajuan belum terkirim</b><p>Periksa {{ $errors->count() }} isian yang ditandai di bawah, lalu kirim lagi.</p>
+                <ul style="margin:6px 0 0 18px;padding:0">@foreach ($errors->all() as $msg)<li>{{ $msg }}</li>@endforeach</ul></div>
+        </div>
+    @endif
+
     <form method="POST" action="{{ route('sell.store') }}" enctype="multipart/form-data" novalidate>
         @csrf
         <div class="two">
@@ -92,7 +102,7 @@
                         <span class="lab">Foto barang (2 sampai 8)</span>
                         <label class="drop"><svg class="ic" aria-hidden="true"><use href="#i-cam"/></svg><span id="dropLabel">Pilih foto</span><input type="file" name="photos[]" accept="image/*" multiple id="photoInput"></label>
                         <div class="thumbs" id="thumbs"></div>
-                        <p class="help">Foto bagian depan, belakang, dan bagian yang rusak kalau ada.</p>
+                        <p class="help">Foto bagian depan, belakang, dan bagian yang rusak kalau ada. Format JPG, PNG, atau WEBP, maksimal 4 MB per foto.</p>
                         @error('photos')<p class="msg">{{ $message }}</p>@enderror
                         @error('photos.*')<p class="msg">{{ $message }}</p>@enderror
                     </div>
@@ -147,6 +157,8 @@
 @push('scripts')
 <script>
 (function () {
+    var err = document.getElementById('formErr');
+    if (err) err.scrollIntoView({ block: 'center' });
     var box = document.getElementById('titipBox');
     document.querySelectorAll('input[name="source"]').forEach(function (r) {
         r.addEventListener('change', function () { box.hidden = r.value !== 'titip' || !r.checked; });
