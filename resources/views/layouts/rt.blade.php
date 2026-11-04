@@ -115,7 +115,7 @@
             @if ($rtUser)
                 <a class="rt-me" href="{{ route('profile.index') }}" data-tip="{{ $rtUser->name }}">
                     <span class="av">
-                        @if ($rtUser->avatar)<img src="{{ \Illuminate\Support\Facades\Storage::url($rtUser->avatar) }}" alt="">@else{{ $rtUser->initials }}@endif
+                        @if ($rtUser->avatar)<img src="{{ $rtUser->avatar_url }}" alt="">@else{{ $rtUser->initials }}@endif
                     </span>
                     <span class="who lbl"><b>{{ $rtUser->name }}</b><span>{{ $rtUser->email }}</span></span>
                 </a>
@@ -139,7 +139,7 @@
                     </a>
                     @if ($rtUser)
                         <a class="av" href="{{ route('profile.index') }}" aria-label="Akun saya">
-                            @if ($rtUser->avatar)<img src="{{ \Illuminate\Support\Facades\Storage::url($rtUser->avatar) }}" alt="">@else{{ $rtUser->initials }}@endif
+                            @if ($rtUser->avatar)<img src="{{ $rtUser->avatar_url }}" alt="">@else{{ $rtUser->initials }}@endif
                         </a>
                     @endif
                 </div>

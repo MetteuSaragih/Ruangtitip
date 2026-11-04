@@ -263,8 +263,14 @@
     color: var(--muted);
 }
 
-/* Banner bantuan */
+/* Teks bantuan kecil (dipakai di banyak halaman) */
 .help {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+/* Banner bantuan */
+.help-banner {
     margin-top: 40px;
     display: flex;
     align-items: center;
@@ -275,23 +281,23 @@
     border-radius: var(--r);
 }
 
-.help img {
+.help-banner img {
     width: 84px;
     height: auto;
     flex-shrink: 0;
 }
 
-.help div {
+.help-banner div {
     flex-grow: 1;
 }
 
-.help strong {
+.help-banner strong {
     display: block;
     font-family: var(--display);
     font-size: 20px;
 }
 
-.help p {
+.help-banner p {
     opacity: 0.88;
     font-size: 15px;
 }

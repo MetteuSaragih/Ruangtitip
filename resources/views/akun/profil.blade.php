@@ -12,7 +12,7 @@
         <h3>Foto profil</h3>
         <p class="help">JPG atau PNG, maksimal 1 MB.</p>
         <div class="avatar-edit">
-            <span class="av big-av">@if ($user->avatar)<img src="{{ Storage::url($user->avatar) }}" alt="">@else{{ $user->initials }}@endif</span>
+            <span class="av big-av">@if ($user->avatar)<img src="{{ $user->avatar_url }}" alt="">@else{{ $user->initials }}@endif</span>
             <label class="btn btn-ghost upl"><svg class="ic" aria-hidden="true"><use href="#i-cam"/></svg>{{ $user->avatar ? 'Ganti foto' : 'Unggah foto' }}<input type="file" name="avatar" accept="image/png,image/jpeg" aria-label="Pilih foto profil" onchange="this.form.submit()"></label>
             @if ($user->avatar)
                 <label class="btn btn-link" style="cursor:pointer">Hapus foto<input type="checkbox" name="remove_avatar" value="1" class="sr" onchange="this.form.submit()"></label>
