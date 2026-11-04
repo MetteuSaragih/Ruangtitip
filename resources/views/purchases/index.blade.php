@@ -26,7 +26,7 @@
                 <article class="card oc">
                     <div class="pic" style="--tone:var(--alt)">
                         @if (! empty($o['first']['image']))
-                            <img src="{{ \Illuminate\Support\Facades\Storage::url($o['first']['image']) }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px">
+                            <img src="{{ asset('storage/'.$o['first']['image']) }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px">
                         @else
                             <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#n-tag"/></svg>
                         @endif

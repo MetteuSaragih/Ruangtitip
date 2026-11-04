@@ -35,7 +35,7 @@ class AdminDashboardController extends Controller
         $barangDiGudang = (int) $safe(fn () => TitipanOrder::where('status', 'dalam_gudang')->get(['id', 'items'])->sum(fn (TitipanOrder $o) => $o->totalItems()));
 
         $totalCapacity = (int) $safe(fn () => StorageRoom::sum('capacity_total'));
-        $usedCapacity = (int) $safe(fn () => StorageRoom::sum('capacity_used'));
+        $usedCapacity = (int) $safe(fn () => StorageRoom::all()->sum('capacity_used'));
         $okupansi = $totalCapacity > 0 ? (int) round(($usedCapacity / $totalCapacity) * 100) : 0;
 
         $monthStart = now()->startOfMonth();

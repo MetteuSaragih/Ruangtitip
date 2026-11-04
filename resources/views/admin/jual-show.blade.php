@@ -73,7 +73,7 @@ $logs = collect($s->log ?? [])->reverse()->values();
         <svg class="ic" aria-hidden="true"><use href="#i-truck"/></svg>
         <div>
           <b>Menunggu barang diantar</b>
-          <p>Jadwal: {{ optional($s->schedule_date)->locale('id')->translatedFormat('j F Y') ?? '-' }}{{ $slotLabel ? ', ' . $slotLabel : '' }}</p>
+          <p>Jadwal: {{ $s->schedule_date?->locale('id')->translatedFormat('j F Y') ?? '-' }}{{ $slotLabel ? ', ' . $slotLabel : '' }}</p>
         </div>
         <div class="acts">
           <form method="POST" action="{{ route('admin.jual.act', $s->code) }}" data-confirm="Catat barang {{ $s->name }} sudah sampai di gudang dan mulai diperiksa?" data-confirm-title="Barang datang" data-confirm-ok="Barang datang">
@@ -193,7 +193,7 @@ $logs = collect($s->log ?? [])->reverse()->values();
           <p class="sec-t" style="margin-top:14px">Foto ({{ $photos->count() }})</p>
           <div class="js-photos">
             @foreach ($photos as $p)
-              <a href="{{ \Illuminate\Support\Facades\Storage::url($p) }}" target="_blank" rel="noopener"><img src="{{ \Illuminate\Support\Facades\Storage::url($p) }}" alt="Foto {{ $loop->iteration }}"></a>
+              <a href="{{ asset('storage/' . $p) }}" target="_blank" rel="noopener"><img src="{{ asset('storage/' . $p) }}" alt="Foto {{ $loop->iteration }}"></a>
             @endforeach
           </div>
         @endif

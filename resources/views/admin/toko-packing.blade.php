@@ -186,7 +186,7 @@ $formAction = $editId ? route('admin.packing.update', $editId) : route('admin.pa
                   </form>
                 </td>
                 <td class="acts">
-                  <button class="btn btn-ghost sm" type="button" data-edit-item="{{ e($item->toJson()) }}">Ubah</button>
+                  <button class="btn btn-ghost sm" type="button" data-edit-item="{{ $item->toJson() }}">Ubah</button>
                   <form action="{{ route('admin.packing.destroy', $item->id) }}" method="POST" style="display:inline"
                         data-confirm="Produk {{ $item->name }} akan dihapus permanen." data-confirm-title="Hapus produk?" data-confirm-ok="Hapus" data-danger>
                     @csrf

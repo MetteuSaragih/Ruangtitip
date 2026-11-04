@@ -56,7 +56,7 @@ $tabs = ['perlu' => 'Perlu tindakan', 'berjalan' => 'Berjalan', 'selesai' => 'Se
                   <div class="row-flex">
                     <span class="thumb">
                       @if ($thumb)
-                        <img src="{{ \Illuminate\Support\Facades\Storage::url($thumb) }}" alt="">
+                        <img src="{{ asset('storage/' . $thumb) }}" alt="">
                       @else
                         <svg class="ic" aria-hidden="true"><use href="#n-coin"/></svg>
                       @endif

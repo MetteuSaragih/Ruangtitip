@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\PackingProduct;
 use App\Models\PrelovedItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CartController extends Controller
 {
@@ -12,12 +14,17 @@ class CartController extends Controller
     {
         $type = $request->input('type', 'preloved') === 'packing' ? 'packing' : 'preloved';
         $productId = (int) $request->input('product_id');
-        $qty = max(1, (int) $request->input('qty', 1));
+        // Barang preloved bersifat satuan (stok 1), jadi jumlahnya selalu 1.
+        $qty = $type === 'preloved' ? 1 : max(1, (int) $request->input('qty', 1));
         $buyNow = $request->boolean('buy_now');
 
         $product = $this->resolveProduct($type, $productId);
         if (! $product) {
-            return response()->json(['success' => false, 'message' => 'Produk tidak ditemukan'], 404);
+            return response()->json(['success' => false, 'message' => 'Barang tidak ditemukan atau sudah tidak tersedia.'], 404);
+        }
+
+        if ($type === 'preloved' && $this->isReserved((int) $product->id)) {
+            return response()->json(['success' => false, 'message' => 'Barang ini sedang dicadangkan pembeli lain. Coba lagi nanti.'], 409);
         }
 
         $key = $type . '_' . $productId;
@@ -36,7 +43,7 @@ class CartController extends Controller
         $cart = session('cart', []);
 
         if (isset($cart[$key])) {
-            $cart[$key]['qty'] += $qty;
+            $cart[$key]['qty'] = $type === 'preloved' ? 1 : $cart[$key]['qty'] + $qty;
             $cart[$key]['subtotal'] = $cart[$key]['price'] * $cart[$key]['qty'];
         } else {
             $cart[$key] = $item;
@@ -60,6 +67,9 @@ class CartController extends Controller
         if ($qty <= 0) {
             unset($cart[$key]);
         } elseif (isset($cart[$key])) {
+            if (($cart[$key]['type'] ?? 'preloved') === 'preloved') {
+                $qty = 1;
+            }
             $cart[$key]['qty'] = $qty;
             $cart[$key]['subtotal'] = $cart[$key]['price'] * $qty;
         }
@@ -105,6 +115,12 @@ class CartController extends Controller
         session(['checkout_cart' => $selectedItems]);
 
         return redirect()->route('checkout.shipping');
+    }
+
+    /** Barang sedang dicadangkan pesanan belum dibayar milik pembeli lain (batas 24 jam). */
+    private function isReserved(int $itemId): bool
+    {
+        return in_array($itemId, Order::reservedPrelovedIds(Auth::id()), true);
     }
 
     private function resolveProduct(string $type, int $id)

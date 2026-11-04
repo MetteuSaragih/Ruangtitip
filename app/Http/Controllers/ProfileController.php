@@ -49,7 +49,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'success'    => true,
-            'avatar_url' => Storage::url($path),
+            'avatar_url' => Storage::disk('public')->url($path),
         ]);
     }
 

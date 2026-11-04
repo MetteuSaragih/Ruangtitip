@@ -11,6 +11,7 @@ class Order extends Model
 
     protected $fillable = [
         'order_number',
+        'user_id',
         'customer_name',
         'customer_email',
         'customer_phone',
@@ -47,6 +48,23 @@ class Order extends Model
         'biteship_attempts' => 'integer',
         'needs_admin_attention' => 'boolean',
     ];
+
+    /**
+     * ID barang preloved yang sedang dicadangkan pesanan belum dibayar (batas 24 jam),
+     * tidak termasuk pesanan milik $exceptUserId.
+     */
+    public static function reservedPrelovedIds(?int $exceptUserId = null): array
+    {
+        return static::where('payment_status', 'UNPAID')
+            ->where('created_at', '>=', now()->subDay())
+            ->when($exceptUserId, fn ($q) => $q->where(fn ($w) => $w->whereNull('user_id')->orWhere('user_id', '!=', $exceptUserId)))
+            ->get(['items'])
+            ->flatMap(fn (self $o) => collect($o->items ?? []))
+            ->filter(fn ($i) => ($i['type'] ?? 'preloved') === 'preloved')
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
 
     const STATUS_PENDING = 'pending';
     const STATUS_PAID = 'paid';

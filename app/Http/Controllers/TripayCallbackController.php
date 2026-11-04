@@ -113,9 +113,19 @@ class TripayCallbackController extends Controller
             ->filter()
             ->all();
 
-        if (! empty($prelovedIds)) {
-            PrelovedItem::whereIn('id', $prelovedIds)->update(['status' => 'Terjual']);
+        if (empty($prelovedIds)) {
+            return;
         }
+
+        // Barang yang sudah Terjual lewat pesanan lain: tandai supaya admin menindaklanjuti (refund/batalkan).
+        if (PrelovedItem::whereIn('id', $prelovedIds)->where('status', 'Terjual')->exists()) {
+            $order->update([
+                'needs_admin_attention' => true,
+                'biteship_last_error' => 'Barang preloved di pesanan ini sudah terjual lewat pesanan lain.',
+            ]);
+        }
+
+        PrelovedItem::whereIn('id', $prelovedIds)->update(['status' => 'Terjual']);
     }
 
     private function applyTitipanStatus(TitipanOrder $order, string $status): void

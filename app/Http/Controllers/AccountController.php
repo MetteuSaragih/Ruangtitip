@@ -83,11 +83,12 @@ class AccountController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|min:3|max:255',
-            'phone' => ['nullable', 'string', 'max:20', 'regex:/^(\+62|62|0)8\d{7,12}$/'],
+            'phone' => [session()->has('profile_redirect_after') ? 'required' : 'nullable', 'string', 'max:20', 'regex:/^(\+62|62|0)8\d{7,12}$/'],
             'avatar' => 'nullable|image|mimes:jpeg,jpg,png|max:1024',
         ], [
             'name.required' => 'Isi nama lengkap.',
             'name.min' => 'Nama minimal 3 huruf.',
+            'phone.required' => 'Isi nomor WhatsApp supaya bisa lanjut memesan.',
             'phone.regex' => 'Nomor tidak valid. Contoh: 081234567890.',
             'avatar.image' => 'File harus berupa foto JPG atau PNG.',
             'avatar.max' => 'Ukuran foto maksimal 1 MB.',
@@ -214,9 +215,21 @@ class AccountController extends Controller
 
     /* ===== Rekening ===== */
 
+    private function bankReady(): bool
+    {
+        return Schema::hasTable('user_bank_accounts');
+    }
+
+    private function bankMissing()
+    {
+        return redirect()->route('akun.rekening')->with('error', 'Fitur rekening belum siap dipakai. Coba lagi nanti.');
+    }
+
     public function rekening(Request $request)
     {
-        $banks = UserBankAccount::where('user_id', Auth::id())->orderByDesc('is_primary')->orderByDesc('id')->get();
+        $banks = $this->bankReady()
+            ? UserBankAccount::where('user_id', Auth::id())->orderByDesc('is_primary')->orderByDesc('id')->get()
+            : collect();
         $editing = $request->query('ubah') ? $banks->firstWhere('id', (int) $request->query('ubah')) : null;
 
         return view('akun.rekening', [
@@ -230,6 +243,10 @@ class AccountController extends Controller
 
     public function storeRekening(Request $request)
     {
+        if (! $this->bankReady()) {
+            return $this->bankMissing();
+        }
+
         $data = $this->validateBank($request);
         $first = UserBankAccount::where('user_id', Auth::id())->doesntExist();
         $makeMain = $first || $request->boolean('is_primary');
@@ -245,6 +262,10 @@ class AccountController extends Controller
 
     public function updateRekening(Request $request, int $id)
     {
+        if (! $this->bankReady()) {
+            return $this->bankMissing();
+        }
+
         $bank = UserBankAccount::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
         $data = $this->validateBank($request);
 
@@ -260,6 +281,10 @@ class AccountController extends Controller
 
     public function mainRekening(int $id)
     {
+        if (! $this->bankReady()) {
+            return $this->bankMissing();
+        }
+
         $bank = UserBankAccount::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
         UserBankAccount::where('user_id', Auth::id())->update(['is_primary' => false]);
         $bank->update(['is_primary' => true]);
@@ -269,6 +294,10 @@ class AccountController extends Controller
 
     public function destroyRekening(int $id)
     {
+        if (! $this->bankReady()) {
+            return $this->bankMissing();
+        }
+
         $bank = UserBankAccount::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
         $wasMain = $bank->is_primary;
         $bank->delete();
@@ -306,7 +335,7 @@ class AccountController extends Controller
         $unpaid = UserNotifications::needs($user)->where('pay', true)->count();
 
         $sessions = collect();
-        if (config('session.driver') === 'database') {
+        if (config('session.driver') === 'database' && Schema::hasTable('sessions')) {
             $sessions = DB::table('sessions')
                 ->where('user_id', $user->id)
                 ->orderByDesc('last_activity')
@@ -323,7 +352,7 @@ class AccountController extends Controller
         return view('akun.keamanan', [
             'user' => $user,
             'sessions' => $sessions,
-            'activeTitip' => $stats['titip'],
+            'activeTitip' => $this->openTitipCount($user),
             'unpaid' => $unpaid,
         ]);
     }
@@ -332,17 +361,21 @@ class AccountController extends Controller
     {
         abort_if($id === $request->session()->getId(), 422);
 
-        DB::table('sessions')->where('id', $id)->where('user_id', Auth::id())->delete();
+        if (config('session.driver') === 'database' && Schema::hasTable('sessions')) {
+            DB::table('sessions')->where('id', $id)->where('user_id', Auth::id())->delete();
+        }
 
         return redirect()->route('akun.keamanan')->with('success', 'Perangkat dikeluarkan.');
     }
 
     public function revokeOtherSessions(Request $request)
     {
-        DB::table('sessions')
-            ->where('user_id', Auth::id())
-            ->where('id', '!=', $request->session()->getId())
-            ->delete();
+        if (config('session.driver') === 'database' && Schema::hasTable('sessions')) {
+            DB::table('sessions')
+                ->where('user_id', Auth::id())
+                ->where('id', '!=', $request->session()->getId())
+                ->delete();
+        }
 
         return redirect()->route('akun.keamanan')->with('success', 'Semua perangkat lain dikeluarkan.');
     }
@@ -350,17 +383,18 @@ class AccountController extends Controller
     public function destroyAccount(Request $request)
     {
         $user = Auth::user();
-        $stats = $this->stats($user);
         $unpaid = UserNotifications::needs($user)->where('pay', true)->count();
 
-        if ($stats['titip'] > 0 || $unpaid > 0) {
+        if ($this->openTitipCount($user) > 0 || $unpaid > 0) {
             return redirect()->route('akun.keamanan')->with('error', 'Akun belum bisa dihapus. Selesaikan dulu titipan dan tagihan yang masih berjalan.');
         }
 
         try {
             DB::transaction(function () use ($user) {
                 UserAddress::where('user_id', $user->id)->delete();
-                UserBankAccount::where('user_id', $user->id)->delete();
+                if ($this->bankReady()) {
+                    UserBankAccount::where('user_id', $user->id)->delete();
+                }
                 if ($user->avatar) {
                     Storage::disk('public')->delete($user->avatar);
                 }
@@ -429,6 +463,12 @@ class AccountController extends Controller
                 ? PrelovedSubmission::where('user_id', $user->id)->count()
                 : 0,
         ];
+    }
+
+    /** Titipan yang belum selesai (menunggu bayar, dijemput, di gudang, atau dikembalikan). */
+    private function openTitipCount($user): int
+    {
+        return TitipanOrder::where('user_id', $user->id)->where('status', '!=', 'selesai')->count();
     }
 
     private function deviceLabel(string $ua): string

@@ -56,7 +56,8 @@
                             <tr><td><b>Biaya penitipan</b><small>{{ $calc['totalItems'] }} item, {{ $calc['months'] }} bulan</small></td><td><b>{{ rp($calc['itemSubtotal']) }}</b></td></tr>
                             @if ($s['logistic'] === 'rutip')
                                 <tr><td><b>Antar-jemput RuTip</b><small>{{ $calc['km'] }} km dari alamatmu ke gudang</small></td><td><b>{{ rp($calc['kmCost']) }}</b></td></tr>
-                                <tr><td><b>Jasa packing</b><small>{{ $calc['totalItems'] }} &times; Rp15.000</small></td><td><b>{{ rp($calc['packingCost']) }}</b></td></tr>
+                                <tr><td><b>Jemput per barang</b><small>{{ $calc['totalItems'] }} &times; {{ rp($calc['totalItems'] > 0 ? $calc['pickupBoxCost'] / $calc['totalItems'] : 0) }}</small></td><td><b>{{ rp($calc['pickupBoxCost']) }}</b></td></tr>
+                                <tr><td><b>Jasa packing</b><small>{{ $calc['totalItems'] }} &times; {{ rp($calc['totalItems'] > 0 ? $calc['packingCost'] / $calc['totalItems'] : 0) }}</small></td><td><b>{{ rp($calc['packingCost']) }}</b></td></tr>
                             @elseif ($s['logistic'] === 'instant' && $courier)
                                 <tr><td><b>Pengiriman</b><small>{{ $courier->name }} {{ $courier->service }}</small></td><td><b>{{ rp($calc['courierCost']) }}</b></td></tr>
                             @endif

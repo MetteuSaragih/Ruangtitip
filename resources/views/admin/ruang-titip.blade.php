@@ -23,6 +23,12 @@
     .grp { border: 1px solid var(--color-border); border-radius: 12px; padding: 12px; display: grid; gap: 10px; }
     .grp > .lab { margin: 0; }
     dialog.dlg.wide { width: min(680px, 94vw); }
+    .photo-edit { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; margin-bottom: 8px; }
+    .photo-tile { position: relative; display: grid; gap: 4px; font-size: 12px; color: var(--color-text-secondary); cursor: pointer; }
+    .photo-tile img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; border: 1px solid var(--color-border); }
+    .photo-tile input { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; }
+    .photo-tile input:checked ~ span { color: var(--color-danger-text); font-weight: 700; }
+    .photo-tile:has(input:checked) img { opacity: 0.4; }
     @media (max-width: 860px) { .price-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>
 @endpush
@@ -56,6 +62,9 @@
             'active' => (bool) $room->active,
             'facilities' => $room->facilities ?? [],
             'photos' => count($room->photos ?? []),
+            'photoList' => array_values($room->photos ?? []),
+            'photoBase' => asset('storage') . '/',
+            'hours' => $room->hours,
             'kardus' => $normPrices($room->pricing, 'kardus'),
             'koper' => $normPrices($room->pricing, 'koper'),
             'dimensiLain' => (int) ($room->pricing['dimensiLain'] ?? 0),
@@ -167,17 +176,37 @@
                     <input class="input num" id="rCap" name="capacity_total" type="number" min="1" required value="{{ old('capacity_total') }}" placeholder="500">
                     @error('capacity_total')<span class="err-t">{{ $message }}</span>@enderror
                 </div>
-                <div class="field">
+                <div class="field full">
                     <label for="rImages">Foto ruangan</label>
+                    <div class="photo-edit" id="rPhotos" hidden></div>
                     <input class="input" id="rImages" name="images[]" type="file" accept="image/png,image/jpeg" multiple>
-                    <span class="help" id="rImagesHelp">Wajib minimal 1 foto, maksimal 10 foto, 5 MB per foto.</span>
+                    <span class="help" id="rImagesHelp">Wajib minimal 1 foto, maksimal 10 foto, 5 MB per foto. Foto pertama jadi foto utama di aplikasi pelanggan.</span>
                     @error('images')<span class="err-t">{{ $message }}</span>@enderror
                     @error('images.*')<span class="err-t">{{ $message }}</span>@enderror
                 </div>
             </div>
 
             <div class="grp">
-                <span class="lab">Harga per hari, kardus</span>
+                <span class="lab">Jam operasional (tampil di halaman detail ruang pelanggan)</span>
+                <div class="fgrid">
+                    <div class="field">
+                        <label for="rHWeek">Senin sampai Jumat</label>
+                        <input class="input" id="rHWeek" name="opening_hours[weekday]" value="{{ old('opening_hours.weekday') }}" placeholder="08.00–17.00">
+                    </div>
+                    <div class="field">
+                        <label for="rHSat">Sabtu</label>
+                        <input class="input" id="rHSat" name="opening_hours[saturday]" value="{{ old('opening_hours.saturday') }}" placeholder="08.00–12.00">
+                    </div>
+                    <div class="field">
+                        <label for="rHSun">Minggu</label>
+                        <input class="input" id="rHSun" name="opening_hours[sunday]" value="{{ old('opening_hours.sunday') }}" placeholder="Tutup">
+                    </div>
+                </div>
+                <span class="help">Kosongkan untuk memakai jam bawaan (Senin sampai Jumat 08.00–17.00, Sabtu 08.00–12.00, Minggu tutup).</span>
+            </div>
+
+            <div class="grp">
+                <span class="lab">Harga per barang per bulan, kardus</span>
                 <div class="price-grid">
                     @foreach ($defaultPricing['kardus'] as $row)
                         <div class="field">
@@ -188,7 +217,7 @@
                 </div>
             </div>
             <div class="grp">
-                <span class="lab">Harga per hari, koper</span>
+                <span class="lab">Harga per barang per bulan, koper</span>
                 <div class="price-grid">
                     @foreach ($defaultPricing['koper'] as $row)
                         <div class="field">
@@ -199,7 +228,7 @@
                 </div>
             </div>
             <div class="field">
-                <label for="rDim">Dimensi lain (30x30x30 sampai 100x100x100 cm), harga per hari</label>
+                <label for="rDim">Dimensi lain (30x30x30 sampai 100x100x100 cm), harga per barang per bulan</label>
                 <input class="input num" id="rDim" type="number" min="0" name="pricing[dimensiLain]" data-price="dimensiLain" data-default="{{ $defaultPricing['dimensiLain'] }}" value="{{ old('pricing.dimensiLain', $defaultPricing['dimensiLain']) }}">
                 @error('pricing')<span class="err-t">{{ $message }}</span>@enderror
             </div>
@@ -251,7 +280,7 @@
             form.action = UPDATE_URL + '/' + room.id;
             methodBox.innerHTML = '<input type="hidden" name="_method" value="PUT">';
             idField.value = room.id;
-            imgHelp.textContent = 'Foto sekarang: ' + room.photos + '. Foto baru akan ditambahkan, total maksimal 10.';
+            imgHelp.textContent = 'Centang foto yang ingin dihapus. Foto baru akan ditambahkan, total maksimal 10 dan minimal 1.';
         } else {
             title.textContent = 'Tambah ruang';
             submit.textContent = 'Simpan ruang';
@@ -280,11 +309,41 @@
         });
         document.getElementById('rActive').checked = !!room.active;
         form.elements['images[]'].value = '';
+        form.elements['opening_hours[weekday]'].value = (room.hours && room.hours.weekday) || '';
+        form.elements['opening_hours[saturday]'].value = (room.hours && room.hours.saturday) || '';
+        form.elements['opening_hours[sunday]'].value = (room.hours && room.hours.sunday) || '';
+        renderPhotos(room);
+    }
+
+    // Foto yang sudah ada: bisa dicentang untuk dihapus (tetap harus tersisa minimal satu).
+    function renderPhotos(room) {
+        var box = document.getElementById('rPhotos');
+        box.innerHTML = '';
+        var list = (room && room.photoList) || [];
+        box.hidden = list.length === 0;
+        list.forEach(function (path, i) {
+            var label = document.createElement('label');
+            label.className = 'photo-tile';
+            var img = document.createElement('img');
+            img.src = room.photoBase + path;
+            img.alt = 'Foto ' + (i + 1);
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.name = 'remove_photos[]';
+            cb.value = path;
+            var span = document.createElement('span');
+            span.textContent = i === 0 ? 'Utama, hapus' : 'Hapus';
+            label.appendChild(img);
+            label.appendChild(cb);
+            label.appendChild(span);
+            box.appendChild(label);
+        });
     }
 
     function reset() {
         form.reset();
         form.querySelectorAll('[data-price]').forEach(function (el) { el.value = el.dataset.default; });
+        renderPhotos(null);
     }
 
     document.getElementById('roomAddBtn').addEventListener('click', function () {

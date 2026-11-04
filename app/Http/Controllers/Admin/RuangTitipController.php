@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\StorageRoom;
 use App\Models\TitipanOrder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class RuangTitipController extends Controller
 {
@@ -52,6 +53,13 @@ class RuangTitipController extends Controller
             'active'         => 'boolean',
             'facilities'     => 'nullable|array',
             'pricing'        => 'required|array',
+            'pricing.*'      => 'nullable',
+            'opening_hours'            => 'nullable|array',
+            'opening_hours.weekday'    => 'nullable|string|max:40',
+            'opening_hours.saturday'   => 'nullable|string|max:40',
+            'opening_hours.sunday'     => 'nullable|string|max:40',
+            'remove_photos'            => 'nullable|array',
+            'remove_photos.*'          => 'string',
             'images'         => 'nullable|array|max:10',
             'images.*'       => 'image|max:5120',
         ]);
@@ -65,6 +73,8 @@ class RuangTitipController extends Controller
 
         $data['facilities'] = $request->input('facilities', []);
         $data['active']     = $request->boolean('active', true);
+        $data['opening_hours'] = $this->cleanHours($request);
+        unset($data['remove_photos']);
         $data['photos']     = $this->storeImages($request, 'storage-rooms');
         $data['photo']      = collect($data['photos'])->first();
 
@@ -86,27 +96,44 @@ class RuangTitipController extends Controller
             'active'         => 'boolean',
             'facilities'     => 'nullable|array',
             'pricing'        => 'required|array',
+            'pricing.*'      => 'nullable',
+            'opening_hours'            => 'nullable|array',
+            'opening_hours.weekday'    => 'nullable|string|max:40',
+            'opening_hours.saturday'   => 'nullable|string|max:40',
+            'opening_hours.sunday'     => 'nullable|string|max:40',
+            'remove_photos'            => 'nullable|array',
+            'remove_photos.*'          => 'string',
             'images'         => 'nullable|array|max:10',
             'images.*'       => 'image|max:5120',
         ]);
 
-        $existingCount = count($room->photos ?? []);
-        if ($existingCount + $this->uploadedImagesCount($request) < 1) {
+        // Foto lama yang dicentang untuk dihapus (hanya yang memang milik ruang ini).
+        $current = array_values($room->photos ?? []);
+        $removed = array_values(array_intersect((array) $request->input('remove_photos', []), $current));
+        $kept = array_values(array_diff($current, $removed));
+
+        $total = count($kept) + $this->uploadedImagesCount($request);
+        if ($total < 1) {
             return back()->withErrors(['images' => 'Ruangan wajib memiliki minimal 1 foto.'])->withInput();
         }
-        if ($existingCount + $this->uploadedImagesCount($request) > 10) {
+        if ($total > 10) {
             return back()->withErrors(['images' => 'Maksimal 10 gambar untuk setiap ruangan.'])->withInput();
         }
 
         $data['facilities'] = $request->input('facilities', []);
         $data['active']     = $request->boolean('active', true);
+        $data['opening_hours'] = $this->cleanHours($request);
+        unset($data['remove_photos']);
+
         $newPhotos = $this->storeImages($request, 'storage-rooms');
-        if (! empty($newPhotos)) {
-            $data['photos'] = array_values(array_merge($room->photos ?? [], $newPhotos));
-            $data['photo'] = collect($data['photos'])->first();
-        }
+        $data['photos'] = array_values(array_merge($kept, $newPhotos));
+        $data['photo'] = collect($data['photos'])->first();
 
         $room->update($data);
+
+        if ($removed) {
+            Storage::disk('public')->delete($removed);
+        }
 
         return redirect()->route('admin.ruang-titip')
             ->with('success', 'Ruangan berhasil diperbarui.');
@@ -115,7 +142,18 @@ class RuangTitipController extends Controller
     /* ── DESTROY (Hapus Ruangan) ───────────────────────────── */
     public function destroy(StorageRoom $room)
     {
+        // Pesanan yang masih berjalan menunjuk ke ruang ini, jadi ruang tidak boleh dihapus.
+        $running = TitipanOrder::where('storage_id', $room->id)->where('status', '!=', 'selesai')->count();
+        if ($running > 0) {
+            return back()->with('error', "{$room->name} masih punya {$running} pesanan yang berjalan. Sembunyikan ruang ini dulu, hapus setelah semua pesanan selesai.");
+        }
+
+        $photos = array_values($room->photos ?? []);
         $room->delete();
+
+        if ($photos) {
+            Storage::disk('public')->delete($photos);
+        }
 
         return redirect()->route('admin.ruang-titip')
             ->with('success', 'Ruangan berhasil dihapus.');
@@ -159,6 +197,20 @@ class RuangTitipController extends Controller
 
         return back()
             ->with('success', 'Status pesanan berhasil diperbarui.');
+    }
+
+    /** Jam operasional dari form; kosong semua = pakai jam bawaan. */
+    private function cleanHours(Request $request): ?array
+    {
+        $hours = [];
+        foreach (['weekday', 'saturday', 'sunday'] as $key) {
+            $value = trim((string) $request->input("opening_hours.$key", ''));
+            if ($value !== '') {
+                $hours[$key] = $value;
+            }
+        }
+
+        return $hours ?: null;
     }
 
     private function storeImages(Request $request, string $dir): array

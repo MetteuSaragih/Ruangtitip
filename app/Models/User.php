@@ -70,7 +70,7 @@ class User extends Authenticatable
 
         return preg_match('#^https?://#i', $this->avatar)
             ? $this->avatar
-            : \Illuminate\Support\Facades\Storage::url($this->avatar);
+            : \Illuminate\Support\Facades\Storage::disk('public')->url($this->avatar);
     }
 
     /**

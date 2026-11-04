@@ -9,6 +9,8 @@ use App\Models\PrelovedSubmission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 /**
@@ -70,7 +72,9 @@ class PrelovedSubmissionController extends Controller
         $draft = null;
         if ($submission->status === 'dibeli') {
             try {
-                $draft = PrelovedItem::where('description', 'like', '%' . $submission->code . '%')->first();
+                $draft = Schema::hasColumn('preloved_items', 'source_code')
+                    ? PrelovedItem::where('source_code', $submission->code)->first()
+                    : null;
             } catch (\Throwable $e) {
                 $draft = null;
             }
@@ -208,31 +212,38 @@ class PrelovedSubmissionController extends Controller
             if (! Schema::hasTable('preloved_items')) {
                 return false;
             }
-            if (PrelovedItem::where('description', 'like', '%' . $s->code . '%')->exists()) {
+            $hasSource = Schema::hasColumn('preloved_items', 'source_code');
+            if ($hasSource && PrelovedItem::where('source_code', $s->code)->exists()) {
                 return false;
             }
 
-            $photos = array_values(array_filter((array) ($s->photos ?? [])));
+            // Foto disalin ke folder katalog supaya menghapus barang di katalog tidak merusak data pengajuan.
+            $photos = [];
+            foreach (array_values(array_filter((array) ($s->photos ?? []))) as $path) {
+                if (! Storage::disk('public')->exists($path)) {
+                    continue;
+                }
+                $target = 'preloved/' . Str::random(12) . '-' . basename($path);
+                Storage::disk('public')->copy($path, $target);
+                $photos[] = $target;
+            }
+
             $data = [
                 'name' => $s->name,
                 'category' => $s->category,
-                'condition' => self::CONDITION_PCT[$s->condition] ?? 80,
+                'condition' => self::CONDITION_PCT[$s->condition] ?? 85,
+                // Harga awal = harga beli. Admin menyesuaikan harga jual sebelum mempublikasikan.
                 'price' => max(1000, (int) $s->offer),
                 'status' => 'Draft',
                 'seller' => optional($s->user)->name,
-                'description' => trim(($s->description ?? '') . "\n\nDari pengajuan " . $s->code),
+                'description' => trim((string) $s->description) !== '' ? trim((string) $s->description) : $s->name,
+                'completeness' => $s->completeness,
+                'flaws' => $s->flaws,
+                'photo' => $photos[0] ?? null,
+                'photos' => $photos,
             ];
-            if (Schema::hasColumn('preloved_items', 'photo')) {
-                $data['photo'] = $photos[0] ?? null;
-            }
-            if (Schema::hasColumn('preloved_items', 'photos')) {
-                $data['photos'] = $photos;
-            }
-            if (Schema::hasColumn('preloved_items', 'completeness')) {
-                $data['completeness'] = $s->completeness;
-            }
-            if (Schema::hasColumn('preloved_items', 'flaws')) {
-                $data['flaws'] = $s->flaws;
+            if ($hasSource) {
+                $data['source_code'] = $s->code;
             }
 
             PrelovedItem::create($data);

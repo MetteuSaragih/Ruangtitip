@@ -7,15 +7,6 @@ use Illuminate\Http\Request;
 
 class PrelovedController extends Controller
 {
-    private array $conditionLabels = [
-        95 => '95% Mulus',
-        90 => '90% Mulus',
-        85 => '85% Baik',
-        80 => '80% Baik',
-        75 => '75% Normal',
-        70 => '70% Normal',
-    ];
-
     public function index(Request $request)
     {
         $condition = $request->get('kondisi', 'semua');
@@ -84,40 +75,23 @@ class PrelovedController extends Controller
         return [
             'id' => $item->id,
             'name' => $item->name,
-            'description' => $item->description ?? 'Barang preloved pilihan RUTIP.',
+            'description' => $item->description ?: 'Barang preloved pilihan RUTIP.',
             'price' => (int) $item->price,
             'original_price' => (int) $item->price,
             'discount_percent' => 0,
             'condition' => $this->conditionSlug((int) $item->condition),
             'condition_percent' => (int) $item->condition,
-            'condition_label' => $this->conditionLabels[$item->condition] ?? $item->condition . '% Baik',
             'stock' => 1,
-            'seller_name' => $item->seller ?: 'RUTIP',
-            'seller_rating' => 5,
             'emoji' => null,
             'image' => $item->primary_photo,
             'images' => $item->photos ?? [],
-            'weight' => 1000,
             'category' => strtolower($item->category),
             'category_label' => $item->category ?: 'Lainnya',
-            'cond_text' => $this->conditionText((int) $item->condition),
+            'cond_text' => PrelovedItem::conditionText((int) $item->condition),
             'func' => $item->function_note ?: 'Berfungsi normal sesuai hasil pemeriksaan petugas.',
             'kel' => $item->completeness ?: 'Unit utama',
             'min' => $item->flaws ?: 'Tidak ada yang dicatat petugas.',
         ];
-    }
-
-    private function conditionText(int $condition): string
-    {
-        if ($condition >= 90) {
-            return 'Seperti baru';
-        }
-
-        if ($condition >= 80) {
-            return 'Baik';
-        }
-
-        return 'Cukup, ada bekas pakai';
     }
 
     private function conditionSlug(int $condition): string
