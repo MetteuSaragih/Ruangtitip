@@ -518,3 +518,18 @@
 .ma .acc-nav button, .ma .acc-nav a { font: inherit; cursor: pointer; }
 .ma .faq summary { cursor: pointer; font-weight: 700; padding: 10px 0; }
 .ma .faq p { color: var(--muted); padding-bottom: 10px; }
+
+/* Ukuran ikon (sprite tidak punya ukuran bawaan) */
+.ma .ic { width: 20px; height: 20px; flex: none; }
+.ma .acc-nav a .ic { width: 20px; height: 20px; }
+.ma .hero .meta .ic { width: 16px; height: 16px; }
+.ma .menu .mi .ic { width: 22px; height: 22px; }
+.ma .menu .ch { width: 18px; height: 18px; margin-left: auto; }
+.ma .back .ic { width: 18px; height: 18px; }
+.ma .btn .ic { width: 18px; height: 18px; }
+.ma .alert > .ic { width: 22px; height: 22px; }
+.ma .todo .box .ic { width: 14px; height: 14px; }
+.ma .r-ic .ic { width: 34px; height: 34px; }
+.ma .acc-nav .out .ic { width: 20px; height: 20px; }
+.ma .checks .ic { width: 16px; height: 16px; }
+.ma .av img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }

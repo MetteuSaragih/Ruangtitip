@@ -31,7 +31,7 @@
 
         <div class="stack">
             <section class="card hero">
-                <span class="av big-av">@if ($user->avatar)<img src="{{ Storage::url($user->avatar) }}" alt="">@else{{ $user->initials }}@endif</span>
+                <span class="av big-av">@if ($user->avatar)<img src="{{ $user->avatar_url }}" alt="">@else{{ $user->initials }}@endif</span>
                 <div style="flex:1;min-width:220px">
                     <h2 class="pt" tabindex="-1">{{ $user->name }}</h2>
                     <div class="meta">

@@ -60,6 +60,20 @@ class User extends Authenticatable
     }
 
     /**
+     * URL foto profil: foto Google berupa URL penuh, unggahan sendiri ada di disk public.
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (empty($this->avatar)) {
+            return null;
+        }
+
+        return preg_match('#^https?://#i', $this->avatar)
+            ? $this->avatar
+            : \Illuminate\Support\Facades\Storage::url($this->avatar);
+    }
+
+    /**
      * Accessor untuk inisial nama (Fallback avatar).
      */
     public function getInitialsAttribute(): string
