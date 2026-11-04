@@ -62,6 +62,7 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [OtpController::class, 'logout'])->name('logout');
+    Route::get('/login/berhasil', [OtpController::class, 'done'])->name('login.done');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/notifikasi', [DashboardController::class, 'notifications'])->name('notifikasi.index');

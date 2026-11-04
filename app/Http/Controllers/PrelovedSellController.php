@@ -7,6 +7,7 @@ use App\Models\TitipanOrder;
 use App\Models\UserBankAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -31,7 +32,9 @@ class PrelovedSellController extends Controller
     public function create()
     {
         $user = Auth::user();
-        $bank = UserBankAccount::where('user_id', $user->id)->orderByDesc('is_primary')->first();
+        $bank = Schema::hasTable('user_bank_accounts')
+            ? UserBankAccount::where('user_id', $user->id)->orderByDesc('is_primary')->first()
+            : null;
 
         return view('preloved.sell-new', [
             'titips' => $this->myTitips(),
@@ -44,6 +47,10 @@ class PrelovedSellController extends Controller
 
     public function store(Request $request)
     {
+        if (! Schema::hasTable('preloved_submissions')) {
+            return back()->withInput()->with('error', 'Fitur pengajuan belum aktif di server. Hubungi admin untuk menjalankan pembaruan database (php artisan migrate).');
+        }
+
         $titipCodes = $this->myTitips()->pluck('id')->all();
 
         $data = $request->validate([
