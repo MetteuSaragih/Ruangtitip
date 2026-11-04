@@ -24,7 +24,6 @@
         menuBtn.addEventListener('click', () => {
             const open = menu.classList.toggle('open');
             menuBtn.setAttribute('aria-expanded', open);
-            menuBtn.setAttribute('aria-label', open ? 'Tutup menu' : 'Buka menu');
         });
         $$('a', menu).forEach((a) =>
             a.addEventListener('click', () => {
@@ -137,7 +136,7 @@
     const FAQ = [
         ['Saya masih perlu bayar kos selama pulang kampung?', 'Nggak perlu. Barangmu kami simpan, jadi kamar kos bisa kamu lepas selama pergi.'],
         ['Isi kardus saya dibuka?', 'Tidak. Kami hanya mengecek jumlah, ukuran, kelayakan kemasan, dan kondisi luar. Setelah itu kardus dikode, disegel, dan difoto.'],
-        ['Apakah barang dijemput ke kos?', 'Bisa untuk area Malang. Pilih jadwal jemput saat memesan, atau antar sendiri ke gudang. Saat mengambil, barang juga bisa kami kirim lewat layanan pengiriman.'],
+        ['Apakah barang dijemput ke kos?', 'Untuk saat ini barang diantar sendiri ke gudang, boleh lewat teman atau jasa yang kamu atur. Saat mengambil, barang bisa kami kirim lewat layanan Kirim Barang Saya.'],
         ['Kalau saya telat mengantar, masa titipnya mundur?', 'Tidak. Masa titip dihitung dari tanggal mulai di pesanan, jadi usahakan datang sesuai jadwal.'],
         ['Bisa ambil sebagian barang dulu?', 'Bisa. Lunasi sisa tagihan untuk barang yang diambil saja. Barang lainnya tetap tersimpan.'],
         ['Boleh diambil teman?', 'Boleh. Temanmu cukup membawa nomor pesanan, lalu kamu konfirmasi lewat website sebelum barang diserahkan.'],

@@ -1,21 +1,26 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-bHRhRCDP.css",
+    "file": "assets/app-BTtkEV23.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/css/rt-auth.css": {
-    "file": "assets/rt-auth-D2MgkCRc.css",
+    "file": "assets/rt-auth-BBnp9UVa.css",
     "src": "resources/css/rt-auth.css",
     "isEntry": true
   },
   "resources/css/rt-landing.css": {
-    "file": "assets/rt-landing-Da3ZHMUE.css",
+    "file": "assets/rt-landing-lNCBD96c.css",
     "src": "resources/css/rt-landing.css",
     "isEntry": true
   },
+  "resources/css/rt-legal.css": {
+    "file": "assets/rt-legal-2CFRM1zK.css",
+    "src": "resources/css/rt-legal.css",
+    "isEntry": true
+  },
   "resources/css/rt.css": {
-    "file": "assets/rt-Cb81D8r5.css",
+    "file": "assets/rt-B_OrOjyu.css",
     "src": "resources/css/rt.css",
     "isEntry": true
   },
@@ -26,7 +31,7 @@
     "isEntry": true
   },
   "resources/js/rt-landing.js": {
-    "file": "assets/rt-landing-DroH3elQ.js",
+    "file": "assets/rt-landing-DkuIuwb9.js",
     "name": "rt-landing",
     "src": "resources/js/rt-landing.js",
     "isEntry": true

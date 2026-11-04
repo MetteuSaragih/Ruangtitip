@@ -7,125 +7,84 @@
     }
 @endphp
 
-@push('styles')
-<style>
-.select-all { display: flex; justify-content: space-between; align-items: center; padding: 12px 4px; font-weight: 700; font-size: 14.5px; }
-.select-all label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-.select-all input, .cart-item > input { width: 20px; height: 20px; flex: none; }
-#cartItems { display: grid; gap: 12px; }
-.cart-item { display: grid; grid-template-columns: auto 72px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; }
-.cart-item.off { opacity: .55; }
-.cart-item .th { width: 72px; height: 72px; border-radius: 16px; background: var(--alt); display: grid; place-items: center; overflow: hidden; }
-.cart-item .th img { width: 100%; height: 100%; object-fit: cover; }
-.cart-item .th svg { color: var(--muted); }
-.cart-item .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: var(--ok-bg); color: var(--ok-ink); margin-bottom: 6px; }
-.cart-item .tag.packing { background: var(--info-bg); color: var(--info-ink); }
-.cart-item strong { display: block; font-size: 15.5px; line-height: 1.3; }
-.cart-item .sub { font-size: 13px; color: var(--muted); }
-.cart-item .price { font-family: var(--display); font-weight: 700; color: var(--tape-dark); margin: 4px 0 8px; }
-.cart-item .rm { width: 40px; height: 40px; border: 0; background: none; border-radius: 12px; color: var(--muted); display: grid; place-items: center; }
-.cart-item .rm:hover { background: var(--alt); color: var(--err-ink); }
-.empty-cart { display: grid; justify-items: center; text-align: center; gap: 10px; padding: 48px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
-.empty-cart img { width: 110px; height: auto; }
-.empty-cart p { color: var(--muted); }
-@media (max-width: 560px) { .cart-item { grid-template-columns: auto 56px minmax(0, 1fr); } .cart-item .rm { grid-column: 3; justify-self: end; } .cart-item .th { width: 56px; height: 56px; } }
-</style>
-@endpush
-
 @section('content')
-<div class="wrap">
-  @if ($errors->any())
-    <p class="err" style="margin-top:20px">{{ $errors->first() }}</p>
-  @endif
+<div class="mp">
+<div class="stack">
+    @include('partials.mp-head', [
+        'crumbs' => [['Toko Preloved', route('preloved.index')], ['Keranjang', null]],
+        'title' => 'Keranjang',
+        'sub' => 'Produk packing dan preloved yang kamu pilih.',
+        'acts' => '<a class="btn btn-sun" href="' . e(route('preloved.index')) . '">Belanja lagi</a>',
+    ])
 
-  @if (empty($cart))
-    <section class="empty-cart">
-      <img src="{{ asset('assets/ruru/ruru-kosong.webp') }}" alt="" width="110" height="119">
-      <h1>Keranjangmu masih kosong</h1>
-      <p>Pilih kardus, lakban, atau barang preloved dulu, ya.</p>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <a class="btn btn-primary" href="{{ route('packing.index') }}">Belanja perlengkapan</a>
-        <a class="btn btn-outline" href="{{ route('preloved.index') }}">Lihat preloved</a>
-      </div>
-    </section>
-  @else
-    <div class="layout">
-      <div>
-        <div class="step-head" style="margin-bottom:16px">
-          <h1>Keranjang</h1>
-          <p>Produk packing dan preloved yang kamu pilih.</p>
+    @if ($errors->any())
+        <div class="alert a-err"><svg class="ic" aria-hidden="true"><use href="#i-warn"/></svg><div><b>{{ $errors->first() }}</b></div></div>
+    @endif
+
+    @if (empty($cart))
+        <section class="card state"><svg viewBox="0 0 44 40" width="90" height="82" aria-hidden="true"><use href="#box"/></svg><h3>Keranjangmu masih kosong</h3><p>Pilih barang preloved dulu, ya.</p><div class="acts"><a class="btn btn-sun" href="{{ route('preloved.index') }}">Lihat katalog</a></div></section>
+    @else
+        <div class="two">
+            <div class="stack">
+                <form method="POST" action="{{ route('preloved.cart.checkout') }}" id="cartForm" class="stack">
+                    @csrf
+                    <section class="card">
+                        <div class="card-h">
+                            <label class="pick" style="padding:8px 14px"><input type="checkbox" id="selectAll" checked onchange="toggleSelectAll(this.checked)"><span>Pilih semua</span></label>
+                            <span class="help" id="totalItemCount">{{ count($cart) }} produk</span>
+                        </div>
+                        <div class="olist" id="cartItems">
+                            @foreach ($cart as $key => $item)
+                                @php $type = $item['type'] ?? 'preloved'; @endphp
+                                <article class="oc cart-item" data-key="{{ $key }}" style="grid-template-columns:auto 64px minmax(0,1fr) auto">
+                                    <input type="checkbox" name="selected[]" value="{{ $key }}" class="item-checkbox" checked onchange="recalcSummary()" style="width:20px;height:20px;accent-color:var(--teal)" aria-label="Pilih {{ $item['name'] }}">
+                                    <div class="pic" style="--tone:var(--alt)">
+                                        @if (! empty($item['image']))
+                                            @if ($type === 'packing')
+                                                <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ $item['name'] }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px">
+                                            @else
+                                                <img src="{{ \Illuminate\Support\Facades\Storage::url($item['image']) }}" alt="{{ $item['name'] }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px">
+                                            @endif
+                                        @else
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#n-tag"/></svg>
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <div class="top"><span class="badge {{ $type === 'packing' ? 'b-info' : 'b-ok' }}"><i></i>{{ $type === 'packing' ? 'Toko Packing' : 'Preloved' }}</span></div>
+                                        <p><b>{{ $item['name'] }}</b></p>
+                                        <p class="meta">
+                                            @if ($type === 'packing')Satuan: {{ $item['unit'] ?? 'pcs' }}. @elseif (! empty($item['condition_label'])){{ $item['condition_label'] }}. @endif
+                                            <span data-price="{{ $item['price'] }}">{{ rp($item['price']) }}</span>
+                                        </p>
+                                        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+                                            <button type="button" class="btn btn-ghost sm" aria-label="Kurangi {{ $item['name'] }}" onclick="cartChangeQty('{{ $key }}', -1)">&minus;</button>
+                                            <output class="qty-num" style="min-width:24px;text-align:center;font-weight:800">{{ $item['qty'] }}</output>
+                                            <button type="button" class="btn btn-ghost sm" aria-label="Tambah {{ $item['name'] }}" onclick="cartChangeQty('{{ $key }}', 1)">+</button>
+                                        </div>
+                                    </div>
+                                    <div class="oc-acts"><button type="button" class="btn btn-ghost sm" aria-label="Hapus {{ $item['name'] }}" onclick="cartRemove('{{ $key }}')">Hapus</button></div>
+                                </article>
+                            @endforeach
+                        </div>
+                    </section>
+                </form>
+            </div>
+
+            <aside class="aside" aria-label="Ringkasan keranjang">
+                <section class="card">
+                    <h3>Ringkasan</h3>
+                    <div class="rows">
+                        <div><span>Produk dipilih</span><b id="summarySelectedCount">{{ count($cart) }}</b></div>
+                        <div class="tot"><span>Total</span><b id="summaryTotal">{{ rp(array_sum(array_column($cart, 'subtotal'))) }}</b></div>
+                    </div>
+                    <button type="submit" form="cartForm" id="btnCheckout" class="btn btn-sun wide mt">Checkout</button>
+                </section>
+            </aside>
         </div>
-
-        <form method="POST" action="{{ route('preloved.cart.checkout') }}" id="cartForm">
-          @csrf
-          <div class="select-all">
-            <label>
-              <input type="checkbox" id="selectAll" checked onchange="toggleSelectAll(this.checked)">
-              Pilih Semua
-            </label>
-            <span id="totalItemCount">{{ count($cart) }} produk</span>
-          </div>
-
-          <div id="cartItems">
-            @foreach ($cart as $key => $item)
-              @php $type = $item['type'] ?? 'preloved'; @endphp
-              <div class="cart-item" data-key="{{ $key }}">
-                <input type="checkbox" name="selected[]" value="{{ $key }}" class="item-checkbox" checked onchange="recalcSummary()">
-                <span class="th">
-                  @if (!empty($item['image']))
-                    @if ($type === 'packing')
-                      <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ $item['name'] }}">
-                    @else
-                      <img src="{{ \Illuminate\Support\Facades\Storage::url($item['image']) }}" alt="{{ $item['name'] }}">
-                    @endif
-                  @else
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>
-                  @endif
-                </span>
-                <div class="t">
-                  <span class="tag {{ $type === 'packing' ? 'packing' : '' }}">{{ $type === 'packing' ? 'Toko Packing' : 'Preloved' }}</span>
-                  <strong>{{ $item['name'] }}</strong>
-                  @if ($type === 'packing')
-                    <p class="sub">Satuan: {{ $item['unit'] ?? 'pcs' }}</p>
-                  @elseif (!empty($item['condition_label']))
-                    <p class="sub">{{ $item['condition_label'] }}</p>
-                  @endif
-                  <p class="price" data-price="{{ $item['price'] }}">{{ rp($item['price']) }}</p>
-                  <div class="qty">
-                    <button type="button" aria-label="Kurangi {{ $item['name'] }}" onclick="cartChangeQty('{{ $key }}', -1)">&minus;</button>
-                    <output class="qty-num">{{ $item['qty'] }}</output>
-                    <button type="button" aria-label="Tambah {{ $item['name'] }}" onclick="cartChangeQty('{{ $key }}', 1)">+</button>
-                  </div>
-                </div>
-                <button type="button" class="rm" aria-label="Hapus {{ $item['name'] }}" onclick="cartRemove('{{ $key }}')">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
-                </button>
-              </div>
-            @endforeach
-          </div>
-        </form>
-      </div>
-
-      <aside class="summary" aria-label="Ringkasan keranjang">
-        <div class="sec">
-          <h3>Ringkasan</h3>
-          <div style="display:flex;justify-content:space-between;font-size:15px">
-            <span style="color:var(--body)">Produk dipilih</span>
-            <strong id="summarySelectedCount">{{ count($cart) }}</strong>
-          </div>
-        </div>
-        <div class="foot">
-          <div class="total"><span style="font-weight:700">Total</span><strong id="summaryTotal">{{ rp(array_sum(array_column($cart, 'subtotal'))) }}</strong></div>
-          <button type="submit" form="cartForm" id="btnCheckout" class="btn btn-primary" style="width:100%;margin-top:16px">Checkout</button>
-          <div class="ruru-tip">
-            <img src="{{ asset('assets/ruru/ruru-wajah-happy.webp') }}" alt="">
-            <p>Tip dari Ruru: mau titip barang juga? Kardus bisa dibawakan tim saat jemput.</p>
-          </div>
-        </div>
-      </aside>
-    </div>
-  @endif
+    @endif
 </div>
+</div>
+@endsection
 
 @push('scripts')
 <script>
@@ -137,7 +96,7 @@
         let selectedCount = 0, total = 0;
         document.querySelectorAll('.cart-item').forEach(row => {
             const checked = row.querySelector('.item-checkbox').checked;
-            row.classList.toggle('off', !checked);
+            row.style.opacity = checked ? '' : '.55';
             if (checked) {
                 const qty = parseInt(row.querySelector('.qty-num').textContent, 10);
                 const price = parseInt(row.querySelector('[data-price]').dataset.price, 10);
@@ -146,7 +105,9 @@
             }
         });
 
-        document.getElementById('summarySelectedCount').textContent = selectedCount;
+        const cnt = document.getElementById('summarySelectedCount');
+        if (!cnt) return;
+        cnt.textContent = selectedCount;
         document.getElementById('summaryTotal').textContent = 'Rp' + total.toLocaleString('id-ID');
         document.getElementById('btnCheckout').disabled = selectedCount === 0;
 
@@ -194,4 +155,3 @@
     recalcSummary();
 </script>
 @endpush
-@endsection

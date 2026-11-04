@@ -28,6 +28,7 @@ class TitipanOrder extends Model
 
     public function storage(): BelongsTo { return $this->belongsTo(StorageRoom::class, 'storage_id'); }
     public function user(): BelongsTo { return $this->belongsTo(User::class); }
+    public function requests(): \Illuminate\Database\Eloquent\Relations\HasMany { return $this->hasMany(TitipanRequest::class, 'titipan_order_id'); }
 
     /* ─── Status fase pesanan (urut sesuai dokumen) ─── */
     public const FLOW = [
@@ -46,6 +47,21 @@ class TitipanOrder extends Model
     public function statusMeta(): array
     {
         return self::FLOW[$this->status] ?? ['label' => ucfirst(str_replace('_', ' ', $this->status)), 'color' => '#94a3b8', 'icon' => 'circle'];
+    }
+
+    /**
+     * Label dan nada badge sesuai desain terbaru: [label, tone, tahap 0..6 pada stepper 6 langkah].
+     */
+    public function displayStatus(): array
+    {
+        return match ($this->status) {
+            'menunggu_pembayaran'     => ['Menunggu Pembayaran', 'warn', 1],
+            'penjadwalan_penjemputan' => ['Menunggu Pengantaran', 'info', 2],
+            'dalam_gudang'            => ['Dalam Penyimpanan', 'ok', 4],
+            'proses_pengembalian'     => ['Menunggu Pengambilan', 'info', 4],
+            'selesai'                 => ['Selesai', 'mute', 6],
+            default                   => [ucfirst(str_replace('_', ' ', (string) $this->status)), 'info', 1],
+        };
     }
 
     /** Indeks fase 0..4 untuk progress bar */

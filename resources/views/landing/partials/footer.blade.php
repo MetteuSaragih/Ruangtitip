@@ -13,20 +13,20 @@
         <svg viewBox="0 0 1440 110" preserveAspectRatio="xMidYMax slice">
             <rect x="0" y="86" width="1440" height="24" fill="#0A1F1E"/>
             <path d="M0 98 H1440" stroke="#FFC93C" stroke-width="3" stroke-dasharray="30 30" opacity=".6"/>
-            <g class="ride scene"><use href="#rider" transform="translate(0 4) scale(.62)"/></g>
+            <g class="ride"><use href="#rider" transform="translate(0 4) scale(.62)"/></g>
         </svg>
     </div>
     <div class="wrap">
         <div class="f-main">
             <div class="f-brand">
-                <a class="logo" href="#top"><svg aria-hidden="true"><use href="#logo"/></svg><span>ruang<em>titip</em></span></a>
+                <a class="logo" href="#top" style="color:#fff"><svg aria-hidden="true"><use href="#logo"/></svg><span>ruang<em>titip</em></span></a>
                 <p>Titip barangmu, simpan uangmu. Penitipan barang untuk mahasiswa di Malang sejak 2026.</p>
             </div>
             <div class="f-col">
                 <h3>Layanan</h3>
                 <ul>
                     <li><a href="#cara-kerja">Penitipan barang</a></li>
-                    <li><a href="#cara-kerja">Kirim barang saya</a></li>
+                    <li><a href="#cara-kerja">Kirim Barang Saya</a></li>
                     <li><a href="#preloved">Jual barang</a></li>
                     <li><a href="#preloved">Beli preloved</a></li>
                 </ul>

@@ -42,5 +42,20 @@
         <symbol id="i-cal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></g></symbol>
         <symbol id="i-truck" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M2 6h12v10H2zM14 9h4l4 4v3h-8"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></g></symbol>
         <symbol id="i-pin" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></g></symbol>
+        <symbol id="i-cam" viewBox="0 0 24 24" ><g fill="none" stroke="currentColor" stroke-width="2" ><path d="M3 8.5a2 2 0 0 1 2-2h2.2L9 4h6l1.8 2.5H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="12" cy="13" r="3.5" /></g></symbol>
+        <symbol id="i-refresh" viewBox="0 0 24 24" ><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+        <symbol id="i-copy" viewBox="0 0 24 24" ><g fill="none" stroke="currentColor" stroke-width="2" ><rect x="8" y="8" width="12" height="12" rx="2.5" /><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8" /></g></symbol>
+        <symbol id="i-user" viewBox="0 0 24 24" ><g fill="none" stroke="currentColor" stroke-width="2" ><circle cx="12" cy="8" r="4" /><path d="M4 21c.6-4 3.8-6.5 8-6.5s7.4 2.5 8 6.5" /></g></symbol>
+        <symbol id="i-bank" viewBox="0 0 24 24" ><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" ><path d="M3 9.5 12 4l9 5.5zM5 10v7M10 10v7M14 10v7M19 10v7M3 20h18" /></g></symbol>
+        <symbol id="i-lock" viewBox="0 0 24 24" ><g fill="none" stroke="currentColor" stroke-width="2" ><rect x="4.5" y="10" width="15" height="11" rx="2.5" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></g></symbol>
+        <symbol id="i-bell" viewBox="0 0 24 24" ><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" ><path d="M12 3a6 6 0 0 1 6 6v4l2 3H4l2-3V9a6 6 0 0 1 6-6zM9.5 19a2.5 2.5 0 0 0 5 0" /></g></symbol>
+        <symbol id="i-help" viewBox="0 0 24 24" ><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" ><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7M12 17v.3" /></g></symbol>
+        <symbol id="i-out" viewBox="0 0 24 24" ><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M9 8l-4 4 4 4M5 12h10" /></g></symbol>
+        <symbol id="i-eye" viewBox="0 0 24 24" ><g fill="none" stroke="currentColor" stroke-width="2" ><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></g></symbol>
+        <symbol id="i-phone" viewBox="0 0 24 24" ><g fill="none" stroke="currentColor" stroke-width="2" ><rect x="6.5" y="2.5" width="11" height="19" rx="2.5" /><path d="M10.5 18.5h3" /></g></symbol>
+        <symbol id="i-school" viewBox="0 0 24 24" ><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" ><path d="M2 9l10-5 10 5-10 5zM6 11v5c3 2.5 9 2.5 12 0v-5" /></g></symbol>
+        <symbol id="i-dot" viewBox="0 0 24 24" ><circle cx="12" cy="12" r="4" fill="currentColor" /></symbol>
+        <symbol id="i-device" viewBox="0 0 24 24" ><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" ><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></g></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24" ><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></symbol>
     </defs>
 </svg>

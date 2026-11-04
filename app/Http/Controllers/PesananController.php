@@ -12,9 +12,13 @@ class PesananController extends Controller
 {
     public function index(Request $r)
     {
-        $tab = $r->query('tab', 'berlangsung');
-        if (!in_array($tab, ['berlangsung', 'selesai'], true)) {
-            $tab = 'berlangsung';
+        $tab = $r->query('tab', 'semua');
+        // Tab lama "berlangsung" dipetakan ke "aktif".
+        if ($tab === 'berlangsung') {
+            $tab = 'aktif';
+        }
+        if (!in_array($tab, ['semua', 'tindakan', 'aktif', 'selesai', 'exp'], true)) {
+            $tab = 'semua';
         }
 
         $type = $r->query('jenis', 'semua');
@@ -28,14 +32,28 @@ class PesananController extends Controller
         $packingBase = PackingOrder::where('user_id', $uid)->latest();
         $orderBase = Order::where('user_id', $uid)->latest();
 
+        $unpaid = ['UNPAID', 'pending'];
         if ($tab === 'selesai') {
             $orders        = (clone $titipanBase)->where('status', 'selesai')->get();
             $packingOrders = (clone $packingBase)->where('status', 'selesai')->get();
             $genericOrders = (clone $orderBase)->whereIn('status', [Order::STATUS_DELIVERED, Order::STATUS_CANCELLED])->get();
-        } else {
+        } elseif ($tab === 'exp') {
+            // Belum ada status kedaluwarsa di data, jadi tab ini kosong.
+            $orders        = (clone $titipanBase)->whereRaw('1 = 0')->get();
+            $packingOrders = (clone $packingBase)->whereRaw('1 = 0')->get();
+            $genericOrders = (clone $orderBase)->whereRaw('1 = 0')->get();
+        } elseif ($tab === 'tindakan') {
+            $orders        = (clone $titipanBase)->where('status', 'menunggu_pembayaran')->get();
+            $packingOrders = (clone $packingBase)->where('status', '!=', 'selesai')->whereIn('payment_status', $unpaid)->get();
+            $genericOrders = (clone $orderBase)->where('status', Order::STATUS_PENDING)->get();
+        } elseif ($tab === 'aktif') {
             $orders        = (clone $titipanBase)->where('status', '!=', 'selesai')->get();
             $packingOrders = (clone $packingBase)->where('status', '!=', 'selesai')->get();
             $genericOrders = (clone $orderBase)->whereNotIn('status', [Order::STATUS_DELIVERED, Order::STATUS_CANCELLED])->get();
+        } else {
+            $orders        = (clone $titipanBase)->get();
+            $packingOrders = (clone $packingBase)->get();
+            $genericOrders = (clone $orderBase)->get();
         }
 
         if ($type !== 'semua') {
@@ -59,6 +77,14 @@ class PesananController extends Controller
                           + PackingOrder::where('user_id', $uid)->where('status', 'selesai')->count()
                           + Order::where('user_id', $uid)->whereIn('status', [Order::STATUS_DELIVERED, Order::STATUS_CANCELLED])->count();
 
+        $countSemua = TitipanOrder::where('user_id', $uid)->count()
+                    + PackingOrder::where('user_id', $uid)->count()
+                    + Order::where('user_id', $uid)->count();
+        $countTindakan = TitipanOrder::where('user_id', $uid)->where('status', 'menunggu_pembayaran')->count()
+                       + PackingOrder::where('user_id', $uid)->where('status', '!=', 'selesai')->whereIn('payment_status', $unpaid)->count()
+                       + Order::where('user_id', $uid)->where('status', Order::STATUS_PENDING)->count();
+        $countExp = 0;
+
         $activeTitipan = TitipanOrder::where('user_id', $uid)->where('status', 'dalam_gudang')->get();
         $soonestEnd = $activeTitipan->pluck('date_end')->filter()->sort()->first();
         $pendingPayment = TitipanOrder::where('user_id', $uid)->where('status', '!=', 'selesai')->whereIn('payment_status', ['UNPAID', 'pending', null])->count()
@@ -73,7 +99,7 @@ class PesananController extends Controller
         ];
 
         return view('dashboard.pesanan.index', compact(
-            'orders', 'packingOrders', 'genericOrders', 'tab', 'type', 'countBerlangsung', 'countSelesai', 'overview'
+            'orders', 'packingOrders', 'genericOrders', 'tab', 'type', 'countBerlangsung', 'countSelesai', 'overview', 'countSemua', 'countTindakan', 'countExp'
         ));
     }
 
@@ -81,6 +107,8 @@ class PesananController extends Controller
     {
         abort_unless($order->user_id === Auth::id(), 403);
         $order->load('storage');
-        return view('dashboard.pesanan.detail', compact('order'));
+        $requests = $order->requests()->latest()->get();
+        $addresses = \App\Models\UserAddress::where('user_id', Auth::id())->orderByDesc('is_primary')->get();
+        return view('dashboard.pesanan.detail', compact('order', 'requests', 'addresses'));
     }
 }

@@ -62,7 +62,11 @@ class PrelovedController extends Controller
 
     public function caraJual()
     {
-        return view('preloved.cara-jual');
+        $submissions = \Illuminate\Support\Facades\Auth::check()
+            ? \App\Models\PrelovedSubmission::where('user_id', \Illuminate\Support\Facades\Auth::id())->latest()->get()
+            : collect();
+
+        return view('preloved.cara-jual', compact('submissions'));
     }
 
     public function show($id)
@@ -94,7 +98,25 @@ class PrelovedController extends Controller
             'images' => $item->photos ?? [],
             'weight' => 1000,
             'category' => strtolower($item->category),
+            'category_label' => $item->category ?: 'Lainnya',
+            'cond_text' => $this->conditionText((int) $item->condition),
+            'func' => $item->function_note ?: 'Berfungsi normal sesuai hasil pemeriksaan petugas.',
+            'kel' => $item->completeness ?: 'Unit utama',
+            'min' => $item->flaws ?: 'Tidak ada yang dicatat petugas.',
         ];
+    }
+
+    private function conditionText(int $condition): string
+    {
+        if ($condition >= 90) {
+            return 'Seperti baru';
+        }
+
+        if ($condition >= 80) {
+            return 'Baik';
+        }
+
+        return 'Cukup, ada bekas pakai';
     }
 
     private function conditionSlug(int $condition): string

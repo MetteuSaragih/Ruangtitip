@@ -1,104 +1,72 @@
-@extends('layouts.ruang-titip')
-@section('title', 'Alamat Pengiriman')
+@extends('layouts.rt')
+@section('title', 'Keranjang')
 
-@php function rp($n){ return 'Rp'.number_format($n,0,',','.'); } @endphp
+@php
+    if (! function_exists('rp')) {
+        function rp($n) { return 'Rp' . number_format($n, 0, ',', '.'); }
+    }
+@endphp
 
 @section('content')
-<div class="wrap">
-  <a class="back-link" href="{{ route('checkout.shipping') }}">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
-    Kembali
-  </a>
+<div class="mp">
+<div class="stack">
+    @include('partials.mp-head', [
+        'crumbs' => [['Toko Preloved', route('preloved.index')], ['Keranjang', route('preloved.cart.index')], ['Checkout', null]],
+        'title' => 'Dikirim ke mana?',
+        'sub' => 'Pilih alamat tersimpan atau tambah yang baru.',
+    ])
+    @include('checkout._wiz', ['step' => 2])
 
-  <div class="layout">
-    <div>
-      <ol class="stepper" aria-label="Langkah checkout">
-        <li class="done"><button type="button"><span class="bar"></span><span class="lbl"><span class="num"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>Pengambilan</span></span></button></li>
-        <li class="now"><button type="button"><span class="bar"></span><span class="lbl"><span class="num">2</span><span>Alamat</span></span></button></li>
-        <li><button type="button"><span class="bar"></span><span class="lbl"><span class="num">3</span><span>Kurir</span></span></button></li>
-        <li><button type="button"><span class="bar"></span><span class="lbl"><span class="num">4</span><span>Bayar</span></span></button></li>
-      </ol>
+    <div class="two">
+        <div class="stack">
+            @if ($errors->any())
+                <div class="alert a-err"><svg class="ic" aria-hidden="true"><use href="#i-warn"/></svg><div><b>{{ $errors->first() }}</b></div></div>
+            @endif
 
-      <div class="step-head">
-        <h1>Dikirim ke mana?</h1>
-        <p>Pilih alamat tersimpan atau tambah yang baru.</p>
-      </div>
+            <form method="POST" action="{{ route('checkout.address.save') }}" id="addressForm" class="stack">
+                @csrf
+                <input type="hidden" name="mode" id="modeInput" value="new">
+                <input type="hidden" name="address_id" id="addressId" value="{{ old('address_id') }}">
 
-      @if ($errors->any())
-        <p class="err" style="margin-top:12px">{{ $errors->first() }}</p>
-      @endif
+                @if ($addresses->isNotEmpty())
+                    <section class="card stack" style="gap:12px">
+                        <h3>Alamat tersimpan</h3>
+                        <div class="picks" role="radiogroup" aria-label="Alamat tersimpan">
+                            @foreach ($addresses as $address)
+                                <label class="pick addr" data-id="{{ $address->id }}">
+                                    <input type="radio" name="addr_pick" value="{{ $address->id }}" onchange="pickAddress('{{ $address->id }}')">
+                                    <span>
+                                        <b>{{ $address->label ?: 'Alamat' }}@if ($address->is_primary)<span class="tag">Utama</span>@endif</b>
+                                        <small>{{ $address->address }}</small>
+                                        @if ($address->note)<small>Catatan: {{ $address->note }}</small>@endif
+                                        @if (! $address->area_id)<small style="color:var(--sun-ink)">Belum ada kecamatan tersimpan, lengkapi dulu lewat alamat baru.</small>@endif
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
 
-      <form method="POST" action="{{ route('checkout.address.save') }}" id="addressForm">
-        @csrf
-        <input type="hidden" name="mode" id="modeInput" value="new">
-        <input type="hidden" name="address_id" id="addressId" value="{{ old('address_id') }}">
+                <section class="card stack" style="gap:12px">
+                    <h3>{{ $addresses->count() ? 'Alamat baru' : 'Alamat pengiriman' }}</h3>
+                    <div class="field"><label for="label">Label (opsional)</label><input class="input" type="text" id="label" name="label" placeholder="Kos / Rumah / Kontrakan" value="{{ old('label') }}"></div>
+                    <x-biteship-area-search prefix="address" theme="light" />
+                    <div class="field"><label for="addressInput">Alamat lengkap</label><textarea class="input" id="addressInput" name="address[full]" rows="2" placeholder="Jl. Veteran No. 10, Kec. Lowokwaru, Malang">{{ old('address.full') }}</textarea></div>
+                    <div class="field"><label for="note">Catatan untuk kurir (opsional)</label><textarea class="input" id="note" name="address[note]" rows="2" placeholder="Rumah cat hijau, pagar depan, dekat masjid">{{ old('address.note') }}</textarea></div>
+                    <label class="pick"><input type="checkbox" name="is_primary" value="1" {{ old('is_primary') ? 'checked' : '' }}><span>Jadikan alamat utama</span></label>
+                </section>
 
-        @if ($addresses->isNotEmpty())
-          <div class="panel">
-            <h2 style="margin-bottom:4px">Alamat Tersimpan</h2>
-            <fieldset class="choices" style="border:0;padding:0;margin-top:14px">
-              <legend class="sr">Alamat tersimpan</legend>
-              @foreach ($addresses as $address)
-                <button type="button" class="choice addr" data-id="{{ $address->id }}" onclick="pickAddress('{{ $address->id }}')">
-                  <span class="ic bg-sand" aria-hidden="true">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--tape-dark)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
-                  </span>
-                  <span class="t">
-                    <strong>{{ $address->label ?: 'Alamat' }}</strong>
-                    @if ($address->is_primary)<span class="pill pill-green">Utama</span>@endif
-                    <p class="desc">{{ $address->address }}</p>
-                    @if ($address->note)<p class="meta">Catatan: {{ $address->note }}</p>@endif
-                    @if (! $address->area_id)<p class="meta" style="color:var(--tape-dark)">Belum ada kecamatan tersimpan, lengkapi dulu lewat "tambah alamat baru".</p>@endif
-                  </span>
-                  <span class="radio" aria-hidden="true"></span>
-                </button>
-              @endforeach
-            </fieldset>
-          </div>
-
-          <div style="display:flex;align-items:center;gap:14px;margin:24px 0;color:var(--muted);font-size:14px">
-            <span style="flex:1;height:1px;background:var(--line)"></span>
-            atau tambah alamat baru
-            <span style="flex:1;height:1px;background:var(--line)"></span>
-          </div>
-        @endif
-
-        <div class="panel">
-          <h2>{{ $addresses->count() ? 'Daftarkan Alamat Baru' : 'Masukkan Alamat Pengiriman' }}</h2>
-          <div class="field" style="margin-top:16px">
-            <label for="label">Label <span style="font-weight:400;color:var(--muted)">(opsional)</span></label>
-            <input type="text" id="label" name="label" placeholder="Kos / Rumah / Kontrakan" value="{{ old('label') }}">
-          </div>
-          <div style="margin-top:16px"><x-biteship-area-search prefix="address" theme="light" /></div>
-          <div class="field" style="margin-top:16px">
-            <label for="addressInput">Alamat lengkap <span style="color:var(--danger)">*</span></label>
-            <textarea id="addressInput" name="address[full]" rows="3" placeholder="Jl. Veteran No. 10, Kec. Lowokwaru, Malang">{{ old('address.full') }}</textarea>
-          </div>
-          <div class="field" style="margin-top:16px">
-            <label for="note">Catatan untuk kurir <span style="font-weight:400;color:var(--muted)">(opsional)</span></label>
-            <textarea id="note" name="address[note]" rows="2" placeholder="Rumah cat hijau, pagar depan, dekat masjid">{{ old('address.note') }}</textarea>
-          </div>
-          <label style="display:flex;align-items:center;gap:10px;margin-top:16px;cursor:pointer">
-            <input type="checkbox" name="is_primary" value="1" style="width:18px;height:18px;accent-color:var(--tape)" {{ old('is_primary') ? 'checked' : '' }}>
-            <span style="font-size:14px;color:var(--body)">Jadikan alamat utama</span>
-          </label>
+                <div class="nav-btns">
+                    <a href="{{ route('checkout.shipping') }}" class="btn btn-ghost">Kembali</a>
+                    <button type="submit" id="continueBtn" disabled class="btn btn-sun">Simpan dan lanjutkan</button>
+                </div>
+            </form>
         </div>
-
-        <div class="actions">
-          <a href="{{ route('checkout.shipping') }}" class="btn btn-outline">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-            Kembali
-          </a>
-          <button type="submit" id="continueBtn" disabled class="btn btn-primary">Simpan &amp; Lanjutkan
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </button>
-        </div>
-      </form>
+        @include('checkout._summary', ['cart' => $cart, 'shipping' => $shipping])
     </div>
-
-    @include('checkout._summary', ['cart' => $cart, 'shipping' => $shipping])
-  </div>
 </div>
+</div>
+@endsection
 
 @push('scripts')
 <script>
@@ -116,7 +84,6 @@
     window.pickAddress = (id) => {
         mode.value = 'select';
         addressId.value = id;
-        document.querySelectorAll('.addr').forEach(b => b.classList.toggle('on', b.dataset.id === String(id)));
         refresh();
     };
 
@@ -124,7 +91,7 @@
         if (addr.value.trim().length > 0) {
             mode.value = 'new';
             addressId.value = '';
-            document.querySelectorAll('.addr').forEach(b => b.classList.remove('on'));
+            document.querySelectorAll('input[name="addr_pick"]').forEach(r => { r.checked = false; });
         }
         refresh();
     });
@@ -133,4 +100,3 @@
 })();
 </script>
 @endpush
-@endsection

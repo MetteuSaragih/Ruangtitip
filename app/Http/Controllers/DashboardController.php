@@ -38,9 +38,9 @@ class DashboardController extends Controller
 
         // Kelengkapan profil: akun, nama lengkap, nomor WhatsApp.
         $profileSteps = $user ? [
-            ['Buat akun', true, route('profile.index')],
-            ['Isi nama lengkap', mb_strlen(trim((string) $user->name)) >= 3, route('profile.index')],
-            ['Isi nomor WhatsApp', ! empty($user->phone), route('profile.index')],
+            ['Buat akun', true, route('akun.profil')],
+            ['Isi nama lengkap', mb_strlen(trim((string) $user->name)) >= 3, route('akun.profil')],
+            ['Isi nomor WhatsApp', ! empty($user->phone), route('akun.profil')],
         ] : [];
         $profileDone = collect($profileSteps)->where(1, true)->count();
         $profileNext = collect($profileSteps)->first(fn ($s) => ! $s[1]);
