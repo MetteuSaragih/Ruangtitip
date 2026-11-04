@@ -11,26 +11,63 @@ class TokoPackingController extends Controller
 {
     public function index(Request $request)
     {
-        $tab = $request->query('tab', 'inventaris');
+        $tab = $request->query('tab', 'inventaris') === 'pesanan' ? 'pesanan' : 'inventaris';
+        $q = trim((string) $request->query('q', ''));
+        $cat = (string) $request->query('cat', '');
+        $st = (string) $request->query('st', '');
 
-        // Ambil data produk toko packing utama, urutkan dari yang terbaru
-        $items = PackingProduct::latest()->get();
+        // Statistik dihitung dari seluruh data (bukan halaman aktif).
+        $allItems = PackingProduct::all();
+        $lowItems = $allItems->filter(fn ($item) => $item->stock <= $item->low_threshold);
 
-        // Data pesanan asli dari pelanggan (lewat checkout Tripay)
-        $orders = PackingOrder::with('user')->latest()->get();
-
-        // Hitung statistik untuk Scorecard
-        $lowItems = $items->filter(fn($item) => $item->stock <= $item->low_threshold);
-        $mostLow = $lowItems->sortBy('stock')->first();
-
-        // Pendapatan & Terjual dihitung dari pesanan yang sudah lunas
-        $paidOrders = $orders->where('payment_status', 'PAID');
+        $paidOrders = PackingOrder::where('payment_status', 'PAID')->get();
         $totalSold  = $paidOrders->sum(fn ($o) => collect($o->items)->sum('qty'));
         $revenue    = $paidOrders->sum('total');
 
-        return view('admin.toko-packing', compact(
-            'items', 'orders', 'tab', 'lowItems', 'mostLow', 'totalSold', 'revenue'
-        ));
+        $items = null;
+        $orders = null;
+        $orderCounts = [];
+
+        if ($tab === 'pesanan') {
+            $orderCounts = [
+                'semua' => PackingOrder::count(),
+                'pending' => PackingOrder::where(fn ($w) => $w->where('status', 'pending')->orWhereNull('status'))->count(),
+                'diproses' => PackingOrder::where('status', 'diproses')->count(),
+                'dikirim' => PackingOrder::where('status', 'dikirim')->count(),
+                'selesai' => PackingOrder::where('status', 'selesai')->count(),
+            ];
+            $query = PackingOrder::with('user')->latest();
+            if ($st === 'pending') {
+                $query->where(fn ($w) => $w->where('status', 'pending')->orWhereNull('status'));
+            } elseif (in_array($st, ['diproses', 'dikirim', 'selesai'], true)) {
+                $query->where('status', $st);
+            } else {
+                $st = '';
+            }
+            if ($q !== '') {
+                $query->where(function ($w) use ($q) {
+                    $w->where('order_code', 'like', "%{$q}%")
+                        ->orWhereHas('user', fn ($u) => $u->where('name', 'like', "%{$q}%"));
+                });
+            }
+            $orders = $query->paginate(15)->withQueryString();
+        } else {
+            $query = PackingProduct::latest();
+            if ($cat !== '') {
+                $query->where('category', $cat);
+            }
+            if ($q !== '') {
+                $query->where('name', 'like', "%{$q}%");
+            }
+            $items = $query->paginate(15)->withQueryString();
+        }
+
+        return view('admin.toko-packing', [
+            'tab' => $tab, 'q' => $q, 'cat' => $cat, 'st' => $st,
+            'items' => $items, 'orders' => $orders, 'orderCounts' => $orderCounts,
+            'lowItems' => $lowItems, 'totalSold' => $totalSold, 'revenue' => $revenue,
+            'totalProducts' => $allItems->count(),
+        ]);
     }
 
     public function store(Request $request)
