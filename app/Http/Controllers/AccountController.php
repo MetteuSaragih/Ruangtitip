@@ -13,6 +13,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -57,7 +58,9 @@ class AccountController extends Controller
 
         $stats = $this->stats($user);
         $mainAddress = UserAddress::where('user_id', $user->id)->orderByDesc('is_primary')->orderByDesc('id')->first();
-        $bankCount = UserBankAccount::where('user_id', $user->id)->count();
+        $bankCount = Schema::hasTable('user_bank_accounts')
+            ? UserBankAccount::where('user_id', $user->id)->count()
+            : 0;
 
         return view('akun.home', [
             'user' => $user,
@@ -427,7 +430,9 @@ class AccountController extends Controller
         return [
             'titip' => TitipanOrder::where('user_id', $user->id)->where('status', 'dalam_gudang')->count(),
             'beli' => Order::where('user_id', $user->id)->count(),
-            'jual' => PrelovedSubmission::where('user_id', $user->id)->count(),
+            'jual' => Schema::hasTable('preloved_submissions')
+                ? PrelovedSubmission::where('user_id', $user->id)->count()
+                : 0,
         ];
     }
 
