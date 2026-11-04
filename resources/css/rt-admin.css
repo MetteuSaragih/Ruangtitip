@@ -554,3 +554,7 @@ dialog.dlg::backdrop { background: color-mix(in srgb, var(--color-ink) 45%, tran
     .tbl { min-width: 680px; }
     .steps li { font-size: 10.5px; }
 }
+
+/* ----- Logo gambar (RuTip) ----- */
+.brand { padding-bottom: 14px; }
+.brand-img { height: 44px; width: auto; display: block; }

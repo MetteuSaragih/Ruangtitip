@@ -33,6 +33,9 @@
   .btn:hover{opacity:.9;transform:translateY(-1px);}
   footer{position:relative;z-index:10;margin-top:40px;font-size:11px;color:rgba(255,255,255,.2);}
 </style>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/logo/favicon-32.png') }}">
+  <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('assets/logo/favicon-48.png') }}">
+  <link rel="apple-touch-icon" href="{{ asset('assets/logo/apple-touch-icon.png') }}">
 </head>
 <body>
 <div class="bg-grid"></div>
@@ -40,7 +43,7 @@
 <div class="bg-orb-2"></div>
 <div class="card">
   <a href="/" style="display:inline-block;margin-bottom:32px;">
-    <img src="/assets/logo-ruangtitip-putih.svg" alt="RUTIP" style="height:46px;width:auto;filter:drop-shadow(0 4px 16px rgba(15,118,110,.3));">
+    <img src="{{ asset('assets/logo/logo-horizontal-light.png') }}" alt="RuTip" width="129" height="52" style="height:52px;width:auto">
   </a>
   <div class="wave-illus">
     <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>

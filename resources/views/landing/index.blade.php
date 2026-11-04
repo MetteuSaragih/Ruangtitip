@@ -7,7 +7,9 @@
     <meta name="color-scheme" content="dark">
     <title>RuangTitip | Titip barang mahasiswa di Malang</title>
     <meta name="description" content="Lepas kosmu selama libur, KKN, atau magang. Titip barangnya ke RuangTitip mulai Rp1.000 per kardus per hari.">
-    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/favicon.svg') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/logo/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('assets/logo/favicon-48.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('assets/logo/apple-touch-icon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">

@@ -220,3 +220,6 @@ body.p-login .foot a{font-weight:700;color:var(--text);text-decoration:underline
   body.p-login .stage{padding:8px 0 24px}
   body.p-login .foot{flex-direction:column;align-items:center;gap:4px;text-align:center}
 }
+
+/* logo-img */
+body.p-login .logo-img{height:46px;width:auto;display:block}
