@@ -289,3 +289,6 @@ body.p-landing .f-bottom a:hover{color:#fff}
 /* logo-img */
 body.p-landing .logo-img{height:42px;width:auto;display:block}
 body.p-landing .f-top .logo-img,body.p-landing footer .logo-img{height:46px}
+
+/* ikon garis: stiker memakai warna teal terang agar terbaca di latar gelap */
+body.p-landing .stk{color:var(--bright)}
