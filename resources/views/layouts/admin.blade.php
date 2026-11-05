@@ -83,6 +83,14 @@
             <img class="brand-img" src="{{ asset('assets/logo/logo-horizontal.png') }}" alt="RuTip" width="112" height="44">
             <span class="role">ADMIN</span>
         </a>
+        <button class="side-x" id="adminSideX" type="button" aria-label="Tutup menu"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+
+        @if (Route::has('admin.titip.index'))
+            <form class="side-search" method="GET" action="{{ route('admin.titip.index') }}" role="search">
+                <svg class="ic" aria-hidden="true"><use href="#n-search"/></svg>
+                <input name="q" type="search" placeholder="Cari pesanan atau pelanggan" aria-label="Cari pesanan titip">
+            </form>
+        @endif
 
         @foreach ($adminNav as $group => $items)
             @php $visible = array_filter($items, fn ($i) => Route::has($i[1])); @endphp
@@ -112,9 +120,11 @@
         <div class="side-foot"><div class="env">Panel khusus tim RuangTitip. Semua perubahan tersimpan di database.</div></div>
     </aside>
 
+    <div class="scrim" id="adminScrim" hidden></div>
+
     <div class="main">
         <header class="top">
-            <button class="menu-t" id="adminMenuT" type="button" aria-label="Buka menu" aria-controls="adminSide"><svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg></button>
+            <button class="menu-t" id="adminMenuT" type="button" aria-label="Buka menu" aria-controls="adminSide" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg></button>
             <nav class="crumb" aria-label="Breadcrumb">
                 <a href="{{ route('admin.dashboard') }}">Admin</a><span>/</span><b>@yield('title', 'Ringkasan')</b>
             </nav>

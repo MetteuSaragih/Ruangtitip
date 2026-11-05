@@ -63,6 +63,9 @@
                 <svg class="ic i-close" width="20" height="20" aria-hidden="true"><use href="#n-side-close"/></svg>
                 <svg class="ic i-open" width="20" height="20" aria-hidden="true"><use href="#n-side-open"/></svg>
             </button>
+            <button class="rt-drawer-close" id="rtDrawerClose" type="button" aria-label="Tutup menu">
+                <svg class="ic" width="22" height="22" aria-hidden="true"><use href="#n-x"/></svg>
+            </button>
         </div>
 
         @foreach ($rtMenu as $group => $links)
@@ -126,6 +129,8 @@
         </div>
     </aside>
 
+    <div class="rt-scrim" id="rtScrim" hidden></div>
+
     {{-- ===== Konten ===== --}}
     <div class="rt-main">
         <header class="rt-top">
@@ -145,6 +150,9 @@
                             @if ($rtUser->avatar)<img src="{{ $rtUser->avatar_url }}" alt="">@else{{ $rtUser->initials }}@endif
                         </a>
                     @endif
+                    <button class="rt-icon-btn rt-burger" id="rtBurger" type="button" aria-label="Buka menu" aria-controls="rtSide" aria-expanded="false">
+                        <svg class="ic" aria-hidden="true"><use href="#n-menu"/></svg>
+                    </button>
                 </div>
             </div>
         </header>

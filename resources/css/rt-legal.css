@@ -44,3 +44,16 @@ body.p-legal :focus-visible{outline:3px solid #FFC93C;outline-offset:3px;border-
 
 /* logo-img */
 .lg-logo .logo-img{height:40px;width:auto;display:block}
+
+/* responsif ponsel */
+@media (max-width:560px){
+.lg-top .lg-in{height:60px}
+.lg-logo .logo-img{height:34px}
+.lg-back{padding:0 12px;min-height:40px;font-size:14px}
+.lg-body{padding-top:20px;padding-bottom:56px}
+.lg-tabs{grid-template-columns:1fr}
+.lg-lead{font-size:16px}
+.lg-sec h2{font-size:19px;gap:8px}
+.lg-sec{padding:20px 0}
+.lg-end{padding:16px}
+}

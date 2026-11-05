@@ -8,13 +8,31 @@
     const $ = (s, c = document) => c.querySelector(s);
     const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 
-    // Menu mobile
+    // Menu mobile: laci dari kiri
     const menuT = $('#adminMenuT');
-    if (menuT) menuT.addEventListener('click', () => document.body.classList.toggle('nav-open'));
-    document.addEventListener('click', (e) => {
-        if (document.body.classList.contains('nav-open') && !e.target.closest('#adminSide') && !e.target.closest('#adminMenuT')) {
-            document.body.classList.remove('nav-open');
+    const sideEl = $('#adminSide');
+    const mq = window.matchMedia('(max-width: 860px)');
+    function setNav(open, focus) {
+        document.body.classList.toggle('nav-open', open);
+        if (menuT) {
+            menuT.setAttribute('aria-expanded', String(open));
+            menuT.setAttribute('aria-label', open ? 'Tutup menu' : 'Buka menu');
         }
+        const scrim = $('#adminScrim');
+        if (scrim) scrim.hidden = !open;
+        if (focus && menuT && !open) menuT.focus({ preventScroll: true });
+    }
+    if (menuT) menuT.addEventListener('click', () => setNav(!document.body.classList.contains('nav-open'), true));
+    const sideX = $('#adminSideX');
+    if (sideX) sideX.addEventListener('click', () => setNav(false, true));
+    const scrimEl = $('#adminScrim');
+    if (scrimEl) scrimEl.addEventListener('click', () => setNav(false, true));
+    if (sideEl) sideEl.addEventListener('click', (e) => { if (mq.matches && e.target.closest('a[href]')) setNav(false); });
+    if (mq.addEventListener) mq.addEventListener('change', () => setNav(false));
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.body.classList.contains('nav-open')) setNav(false, true);
+    });
+    document.addEventListener('click', (e) => {
         const who = $('.who[open]');
         if (who && !who.contains(e.target)) who.removeAttribute('open');
     });
