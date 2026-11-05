@@ -31,8 +31,41 @@
         if (tip) tip.classList.remove('show');
     }
 
+    // ----- Laci menu (tablet dan mobile) -----
+    const burger = $('#rtBurger');
+    const scrim = $('#rtScrim');
+    const drawerClose = $('#rtDrawerClose');
+    const mobileMq = window.matchMedia('(max-width: 960px)');
+
+    function setDrawer(open, focus) {
+        root.classList.toggle('nav-open', open);
+        if (scrim) scrim.hidden = !open;
+        if (burger) {
+            burger.setAttribute('aria-expanded', String(open));
+            burger.setAttribute('aria-label', open ? 'Tutup menu' : 'Buka menu');
+        }
+        if (side) {
+            if (mobileMq.matches) side.setAttribute('aria-hidden', String(!open));
+            else side.removeAttribute('aria-hidden');
+        }
+        if (focus && open && drawerClose) drawerClose.focus({ preventScroll: true });
+        if (focus && !open && burger && mobileMq.matches) burger.focus({ preventScroll: true });
+    }
+
+    if (side) {
+        setDrawer(false);
+        if (burger) burger.addEventListener('click', () => setDrawer(!root.classList.contains('nav-open'), true));
+        if (drawerClose) drawerClose.addEventListener('click', () => setDrawer(false, true));
+        if (scrim) scrim.addEventListener('click', () => setDrawer(false, true));
+        side.addEventListener('click', (e) => {
+            if (e.target.closest('a[href]') && mobileMq.matches) setDrawer(false);
+        });
+        const onMq = () => setDrawer(false);
+        if (mobileMq.addEventListener) mobileMq.addEventListener('change', onMq);
+    }
+
     function showTip(el) {
-        if (!tip) return;
+        if (!tip || mobileMq.matches) return;
         if (!root.classList.contains('side-collapsed') && !el.hasAttribute('data-tip-always')) return;
         tip.textContent = el.dataset.tip;
         if (el.dataset.kbd) {
@@ -69,6 +102,7 @@
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
+            if (root.classList.contains('nav-open')) setDrawer(false, true);
             if (tip) tip.classList.remove('show');
             $$('.rt-pop[open]').forEach((d) => d.removeAttribute('open'));
         }
