@@ -12,6 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->appendToGroup('web', \App\Http\Middleware\EnsureUserIsActive::class);
+        $middleware->appendToGroup('web', \App\Http\Middleware\TrackVisit::class);
         $middleware->alias([
             'admin' => \App\Http\Middleware\IsAdmin::class,
             'profile.complete' => \App\Http\Middleware\EnsureProfileComplete::class,

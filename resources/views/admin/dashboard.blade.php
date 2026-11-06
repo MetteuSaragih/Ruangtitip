@@ -28,7 +28,7 @@
 <div class="ph">
     <div>
         <h1>Halo, {{ $firstName }}</h1>
-        <p>{{ now()->locale('id')->translatedFormat('l, j F Y') }}</p>
+        <p>{{ now('Asia/Jakarta')->locale('id')->translatedFormat('l, j F Y') }}</p>
     </div>
 </div>
 
@@ -55,6 +55,92 @@
             <span>{{ $tagihanJumlah }} tagihan belum dibayar</span>
         </div>
     </div>
+
+    {{-- ===== Pengunjung website ===== --}}
+    <section class="card" id="visitors">
+        <div class="card-h">
+            <h3>Pengunjung website</h3>
+            <small>Dihitung per browser, tanpa identitas. Kunjungan admin dan mesin pencari tidak ikut.</small>
+        </div>
+
+        @if ($visits === null)
+            <div class="empty"><b>Statistik kunjungan belum aktif</b>Jalankan <span class="mono">php artisan migrate</span> di server, lalu data mulai terkumpul.</div>
+        @else
+            @php $t = $visits['periods']['today']; $w = $visits['periods']['week']; $m = $visits['periods']['month']; $a = $visits['active']; @endphp
+
+            <div class="g4" style="margin-bottom:16px">
+                <div class="kpi">
+                    <small>Pengunjung hari ini</small>
+                    <b class="num">{{ number_format($t['total'], 0, ',', '.') }}</b>
+                    <span>{{ $t['login'] }} login, {{ $t['landing_only'] }} hanya landing page</span>
+                </div>
+                <div class="kpi">
+                    <small>7 hari terakhir</small>
+                    <b class="num">{{ number_format($w['total'], 0, ',', '.') }}</b>
+                    <span>{{ $w['login'] }} login, {{ $w['landing_only'] }} hanya landing page</span>
+                </div>
+                <div class="kpi">
+                    <small>30 hari terakhir</small>
+                    <b class="num">{{ number_format($m['total'], 0, ',', '.') }}</b>
+                    <span>{{ $m['login'] }} login, {{ $m['landing_only'] }} hanya landing page</span>
+                </div>
+                <div class="kpi">
+                    <small>Sedang aktif ({{ $a['minutes'] }} menit terakhir)</small>
+                    <b class="num">{{ number_format($a['total'], 0, ',', '.') }}</b>
+                    <span>{{ $a['login'] }} sudah login, {{ $a['guest'] }} belum login</span>
+                </div>
+            </div>
+
+            <div class="tw" style="margin-bottom:16px">
+                <table class="tbl" style="min-width:560px">
+                    <thead>
+                        <tr>
+                            <th>Periode</th>
+                            <th class="r">Semua pengunjung</th>
+                            <th class="r">Sudah login</th>
+                            <th class="r">Hanya landing page</th>
+                            <th class="r">Buka halaman lain, belum login</th>
+                            <th class="r">Akun baru</th>
+                            <th class="r">Rasio login</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($visits['periods'] as $row)
+                            <tr>
+                                <td><b>{{ $row['label'] }}</b></td>
+                                <td class="r num">{{ number_format($row['total'], 0, ',', '.') }}</td>
+                                <td class="r num"><span class="st ok">{{ number_format($row['login'], 0, ',', '.') }}</span></td>
+                                <td class="r num">{{ number_format($row['landing_only'], 0, ',', '.') }}</td>
+                                <td class="r num">{{ number_format($row['other'], 0, ',', '.') }}</td>
+                                <td class="r num">{{ number_format($row['new_accounts'], 0, ',', '.') }}</td>
+                                <td class="r num"><b>{{ $row['login_pct'] }}%</b></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            @php $vMax = max(1, collect($visits['chart'])->max('total')); @endphp
+            <div class="card-h" style="margin-bottom:8px">
+                <h3 style="font-size:14px">Pengunjung 14 hari terakhir</h3>
+                <div class="legend"><span>Semua pengunjung</span><span class="t">Sudah login</span></div>
+            </div>
+            <div class="chart" role="img" aria-label="Grafik pengunjung per hari, semua dan yang sudah login">
+                @foreach ($visits['chart'] as $c)
+                    <div class="c" title="{{ $c['date'] }}: {{ $c['total'] }} pengunjung, {{ $c['login'] }} login, {{ $c['landing_only'] }} hanya landing page">
+                        <div class="pair">
+                            <i style="height: {{ round($c['total'] / $vMax * 100) }}%"></i>
+                            <i class="t" style="height: {{ round($c['login'] / $vMax * 100) }}%"></i>
+                        </div>
+                        <small>{{ $c['label'] }}</small>
+                    </div>
+                @endforeach
+            </div>
+            @if (! empty($visits['since']))
+                <p class="help" style="margin-top:12px">Data kunjungan dicatat sejak {{ \Illuminate\Support\Carbon::parse($visits['since'])->translatedFormat('j F Y') }}.</p>
+            @endif
+        @endif
+    </section>
 
     <div class="cols">
         <div class="stack">

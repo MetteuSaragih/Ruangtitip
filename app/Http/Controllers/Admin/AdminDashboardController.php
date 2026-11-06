@@ -10,6 +10,7 @@ use App\Models\PrelovedSubmission;
 use App\Models\StorageRoom;
 use App\Models\TitipanOrder;
 use App\Models\TitipanRequest;
+use App\Services\VisitStats;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -114,9 +115,11 @@ class AdminDashboardController extends Controller
         });
         $activity = $activity->sortByDesc('at')->take(8)->values();
 
+        $visits = VisitStats::summary();
+
         return view('admin.dashboard', compact(
             'barangDiGudang', 'okupansi', 'pendapatan', 'tagihanJumlah', 'tagihanNilai',
-            'tugas', 'chart', 'chartMax', 'rooms', 'activity'
+            'tugas', 'chart', 'chartMax', 'rooms', 'activity', 'visits'
         ));
     }
 
