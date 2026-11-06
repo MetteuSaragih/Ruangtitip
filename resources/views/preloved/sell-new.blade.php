@@ -29,13 +29,13 @@
         @csrf
         <div class="two">
             <div class="stack">
-                <section class="card stack" style="gap:12px">
+                <section class="card stack">
                     <h3>Asal barang</h3>
                     <div class="picks">
                         <label class="pick"><input type="radio" name="source" value="luar" {{ $source === 'luar' ? 'checked' : '' }}><span><b>Barang yang akan kuantar</b><small>Kalau lolos seleksi, kamu memilih jadwal antar ke gudang.</small></span></label>
                         <label class="pick"><input type="radio" name="source" value="titip" {{ $source === 'titip' ? 'checked' : '' }}><span><b>Barang yang sedang kutitipkan</b><small>Barang sudah di gudang. Kemasan perlu dibuka untuk diperiksa.</small></span></label>
                     </div>
-                    <div id="titipBox" class="stack" style="gap:12px" {{ $source === 'titip' ? '' : 'hidden' }}>
+                    <div id="titipBox" class="stack tight" {{ $source === 'titip' ? '' : 'hidden' }}>
                         <div class="field">
                             <label for="sTitip">Pilih barang titipan</label>
                             <select class="input" id="sTitip" name="titip_ref" @error('titip_ref') aria-invalid="true" @enderror>
@@ -53,7 +53,7 @@
                     @error('source')<p class="msg">{{ $message }}</p>@enderror
                 </section>
 
-                <section class="card stack" style="gap:12px">
+                <section class="card stack">
                     <h3>Detail barang</h3>
                     <div class="field">
                         <label for="sName">Nama barang</label>
@@ -108,7 +108,7 @@
                     </div>
                 </section>
 
-                <section class="card stack" style="gap:12px">
+                <section class="card stack">
                     <h3>Rekening penerimaan</h3>
                     <p class="help">Dipakai admin untuk membayar 100% harga beli setelah harga disepakati.</p>
                     <div class="grid3">

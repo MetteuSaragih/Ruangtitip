@@ -7,7 +7,7 @@
 @section('body')
 @php $blocked = $activeTitip > 0 || $unpaid > 0; @endphp
 
-<section class="card stack" style="gap:10px">
+<section class="card stack">
     <div><h3>Cara masuk</h3><p class="help">Akun ini masuk dengan kode OTP ke emailmu atau dengan akun Google, jadi tidak ada kata sandi yang perlu diingat atau diganti.</p></div>
     <p class="help">Email masuk: <b>{{ $user->email }}</b></p>
 </section>

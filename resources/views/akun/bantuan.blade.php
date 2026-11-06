@@ -5,7 +5,7 @@
 @section('sub', 'Jawaban cepat untuk pertanyaan yang paling sering muncul.')
 
 @section('body')
-<section class="card stack" style="gap:10px">
+<section class="card stack">
     <h3>Pertanyaan umum</h3>
     @foreach ($faq as [$q, $a])
         <details class="faq"><summary>{{ $q }}</summary><p>{{ $a }}</p></details>

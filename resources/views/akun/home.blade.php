@@ -5,7 +5,7 @@
 @php
     $menu = [
         ['akun.profil', 'Profil', 'i-user', 'Nama, foto, kontak, dan kampus'],
-        ['akun.alamat', 'Alamat', 'i-pin', $mainAddress ? $mainAddress->label . ', ' . ($mainAddress->area_name ?: 'alamat utama') : 'Alamat pengiriman Toko Preloved'],
+        ['akun.alamat', 'Alamat', 'i-pin', $mainAddress ? $mainAddress->label . ', ' . ($mainAddress->area_name ?: 'alamat utama') : 'Alamat tujuan pengiriman barang titipanmu'],
         ['akun.rekening', 'Rekening', 'i-bank', $bankCount ? $bankCount . ' rekening tersimpan' : 'Belum ada rekening'],
         ['akun.keamanan', 'Keamanan', 'i-lock', 'Cara masuk dan perangkat yang masuk'],
         ['akun.notifikasi', 'Notifikasi', 'i-bell', 'Kabar yang ingin kamu terima'],
@@ -61,7 +61,7 @@
                 <a class="card stat" href="{{ route('preloved.cara-jual') }}"><small>Pengajuan jual</small><b>{{ $stats['jual'] }}</b><span>Lihat pengajuan</span></a>
             </div>
 
-            <section class="stack" style="gap:12px">
+            <section class="stack tight">
                 <h3>Pengaturan</h3>
                 <div class="menu">
                     @foreach ($menu as [$route, $label, $icon, $desc])

@@ -19,7 +19,7 @@
         'acts' => '<a class="btn btn-sun" href="' . e(route('preloved.cara-jual')) . '">Jual barangmu</a>',
     ])
 
-    <section class="card stack" style="gap:14px">
+    <section class="card stack">
         <div class="field"><label for="q">Cari barang</label><input class="input" id="q" type="search" value="" placeholder="Contoh: kipas, rak, rice cooker"></div>
         <div class="chips" role="group" aria-label="Kategori">
             @foreach ($categories as $cat)

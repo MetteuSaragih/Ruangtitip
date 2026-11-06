@@ -36,7 +36,7 @@ class CartController extends Controller
             return response()->json([
                 'success' => true,
                 'buy_now' => true,
-                'redirect' => route('checkout.shipping'),
+                'redirect' => route('checkout.payment'),
             ]);
         }
 
@@ -114,7 +114,7 @@ class CartController extends Controller
 
         session(['checkout_cart' => $selectedItems]);
 
-        return redirect()->route('checkout.shipping');
+        return redirect()->route('checkout.payment');
     }
 
     /** Barang sedang dicadangkan pesanan belum dibayar milik pembeli lain (batas 24 jam). */

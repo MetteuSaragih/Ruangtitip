@@ -238,7 +238,7 @@
 
     @if ($inStorage)
         <dialog class="rt-dlg req-dlg" id="dlgPerpanjang" aria-labelledby="dlgPerpanjangT">
-            <form method="POST" action="{{ route('pesanan.request.perpanjang', $order) }}" class="stack" style="gap:14px">
+            <form method="POST" action="{{ route('pesanan.request.perpanjang', $order) }}" class="stack tight">
                 @csrf
                 <h3 id="dlgPerpanjangT">Tambah periode titip</h3>
                 <p>Periode sekarang berakhir {{ $order->date_end?->translatedFormat('j F Y') ?? '-' }}. Admin akan mengonfirmasi dan menerbitkan tagihan.</p>
@@ -260,7 +260,7 @@
         </dialog>
 
         <dialog class="rt-dlg req-dlg" id="dlgKirim" aria-labelledby="dlgKirimT">
-            <form method="POST" action="{{ route('pesanan.request.kirim', $order) }}" class="stack" style="gap:14px">
+            <form method="POST" action="{{ route('pesanan.request.kirim', $order) }}" class="stack tight">
                 @csrf
                 <h3 id="dlgKirimT">Kirim barang ke alamatku</h3>
                 <p>Admin akan menghitung ongkir dan menerbitkan tagihan sebelum barang dikirim.</p>
@@ -288,7 +288,7 @@
         </dialog>
 
         <dialog class="rt-dlg req-dlg" id="dlgAmbil" aria-labelledby="dlgAmbilT">
-            <form method="POST" action="{{ route('pesanan.request.ambil', $order) }}" class="stack" style="gap:14px">
+            <form method="POST" action="{{ route('pesanan.request.ambil', $order) }}" class="stack tight">
                 @csrf
                 <h3 id="dlgAmbilT">Ambil di gudang</h3>
                 <p>Admin akan mengonfirmasi jadwal dan pelunasan sebelum barang dikeluarkan.</p>

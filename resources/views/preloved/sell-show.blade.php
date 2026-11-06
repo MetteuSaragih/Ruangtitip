@@ -36,11 +36,11 @@
     @elseif ($s->status === 'tolak')
         <div class="alert a-err"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg><div><b>Pengajuan ditolak</b><p>{{ $s->reason }}</p></div></div>
     @elseif ($s->status === 'jadwal')
-        <section class="card stack" style="gap:12px">
+        <section class="card stack">
             <div class="alert a-ok"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><div><b>Pengajuan lolos seleksi awal</b><p>Persetujuan ini belum kepastian pembelian. Harga ditawarkan setelah barang diperiksa bersamamu.</p></div></div>
             <h3 id="sjT">{{ $titip ? 'Pilih jadwal datang untuk pemeriksaan' : 'Pilih jadwal antar barang' }}</h3>
             <p class="help">{{ $titip ? 'Barang sudah di gudang. Kamu datang untuk ikut memeriksa.' : 'Kamu mengatur pengantaran sendiri ke ' . $gudang . '.' }}</p>
-            <form method="POST" action="{{ route('sell.schedule', $s->code) }}" class="stack" style="gap:12px">
+            <form method="POST" action="{{ route('sell.schedule', $s->code) }}" class="stack tight">
                 @csrf
                 <div class="field">
                     <label for="sjDate">Tanggal</label>
@@ -69,7 +69,7 @@
             <p class="big-price">{{ rp($s->offer) }}</p>
             <p>Dihitung dari estimasi harga jual kembali, kondisi, dan biaya penanganan barang ini.</p>
             @if ($titip)<p>Sisa tagihan titipan {{ $s->titip_ref }} perlu dilunasi dulu sebelum barang menjadi stok preloved.</p>@endif
-            <form method="POST" action="{{ route('sell.offer', $s->code) }}" class="stack" style="gap:10px">
+            <form method="POST" action="{{ route('sell.offer', $s->code) }}" class="stack tight">
                 @csrf
                 <label class="pick"><input type="checkbox" name="agree" value="1" id="agree"><span>Saya paham setelah pembelian selesai, barang tidak bisa ditarik kembali. Kalau ingin memilikinya lagi, saya membelinya lewat katalog dengan harga Ruang Titip.</span></label>
                 @error('agree')<p class="msg">{{ $message }}</p>@enderror

@@ -1,0 +1,253 @@
+/* ==========================================================================
+   Ritme jarak seragam untuk halaman pengguna (Ruang Titip, Preloved, Akun).
+   Dimuat paling akhir di rt.css, jadi menyeragamkan aturan per halaman.
+
+   Skala jarak (kelipatan 4):
+     4  jarak sangat kecil (antar ikon dan teks)
+     8  jarak kecil (label ke kolom isian, antar chip)
+     12 jarak antar baris dalam satu kelompok (judul ke isi, antar baris rincian)
+     16 jarak antar komponen di dalam kartu
+     20 jarak antar kartu atau bagian halaman
+     24 padding kartu (20 di ponsel)
+   ========================================================================== */
+
+/* ----- Tumpukan: halaman, kartu, dan kelompok kecil ----- */
+:is(.ttp, .mp, .ma) .stack {
+    gap: 20px;
+}
+
+:is(.ttp, .mp, .ma) .card.stack {
+    gap: 16px;
+}
+
+:is(.ttp, .mp, .ma) .stack.tight {
+    gap: 12px;
+}
+
+/* Judul di dalam kartu bertumpuk: jaraknya sudah diatur gap, bukan margin. */
+:is(.ttp, .mp, .ma) .card.stack > h3,
+:is(.ttp, .mp, .ma) .card.stack > .card-h {
+    margin-bottom: 0;
+}
+
+:is(.ttp, .mp, .ma) .card > h3 {
+    margin-bottom: 12px;
+}
+
+:is(.ttp, .mp, .ma) .card-h {
+    margin-bottom: 16px;
+}
+
+/* ----- Isian ----- */
+:is(.ttp, .mp, .ma) .field {
+    gap: 8px;
+}
+
+:is(.ttp, .mp, .ma) .grid2 {
+    gap: 16px;
+}
+
+:is(.ttp, .mp, .ma) .help {
+    line-height: 1.5;
+}
+
+:is(.ttp, .mp, .ma) .mt {
+    margin-top: 12px;
+}
+
+/* ----- Baris rincian (Gudang / Periode / Total ...) ----- */
+:is(.ttp, .mp, .ma) .rows > div {
+    padding: 12px 0;
+    align-items: flex-start;
+}
+
+:is(.ttp, .mp, .ma) .rows .tot {
+    align-items: center;
+}
+
+/* ----- Tabel ----- */
+:is(.ttp, .mp) .tbl th {
+    padding: 10px 12px 10px 0;
+}
+
+:is(.ttp, .mp) .tbl td {
+    padding: 12px 12px 12px 0;
+}
+
+/* ----- Kartu pada ponsel ----- */
+@media (max-width: 640px) {
+    :is(.ttp, .mp, .ma) .card {
+        padding: 20px;
+    }
+
+    :is(.ttp, .mp, .ma) .stack {
+        gap: 16px;
+    }
+
+    :is(.ttp, .mp, .ma) .card.stack {
+        gap: 14px;
+    }
+
+    :is(.ttp, .mp, .ma) .grid2 {
+        gap: 14px;
+    }
+}
+
+/* ==========================================================================
+   Pilih ukuran dan jumlah barang (halaman Atur pesanan titipmu)
+   ========================================================================== */
+
+/* Pemilih jumlah: tombol kurang, angka, tombol tambah dalam satu kapsul rapi. */
+.ttp .qty-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+}
+
+.ttp .qty-step button {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 10px;
+    background: var(--alt);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    transition: background 0.15s, color 0.15s;
+}
+
+.ttp .qty-step button:hover {
+    background: var(--color-aqua);
+    color: var(--color-primary);
+}
+
+.ttp .qty-step button:active {
+    transform: scale(0.96);
+}
+
+.ttp .qty-step output {
+    min-width: 48px;
+    text-align: center;
+    font-size: 17px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Panel jumlah per ukuran */
+.ttp .ln {
+    gap: 16px;
+    padding: 20px;
+}
+
+.ttp .ln-top {
+    align-items: center;
+    gap: 16px;
+}
+
+.ttp .ln-top > div:first-child b {
+    display: block;
+    font-size: 15.5px;
+}
+
+.ttp .ln-top .help {
+    margin-top: 4px;
+}
+
+.ttp .sz-info {
+    gap: 14px;
+    padding: 16px 18px;
+}
+
+.ttp .sz-info > p {
+    line-height: 1.5;
+}
+
+.ttp .sz-spec {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 8px 16px;
+}
+
+.ttp .sz-sub {
+    padding-top: 14px;
+    line-height: 1.55;
+}
+
+/* Paket harga: enam kotak sama besar (3 kolom, atau 2 kolom di layar sempit) */
+.ttp .tier-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0;
+}
+
+.ttp .tier-grid > div {
+    gap: 4px;
+    padding: 12px 14px;
+}
+
+/* Kartu pilihan ukuran */
+.ttp .szs {
+    gap: 12px;
+}
+
+.ttp .sz label {
+    gap: 8px;
+    padding: 14px 16px;
+}
+
+.ttp .sz-top {
+    align-items: center;
+}
+
+/* Catatan WhatsApp */
+.ttp .wa-note {
+    gap: 16px;
+    padding: 16px 18px;
+}
+
+.ttp .wa-note p {
+    margin-top: 4px;
+    line-height: 1.5;
+}
+
+/* Hasil hitung di bawah panel */
+.ttp .sz-tally {
+    gap: 12px;
+    padding-top: 16px;
+}
+
+@media (max-width: 640px) {
+    .ttp .tier-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ttp .ln {
+        padding: 16px;
+    }
+
+    .ttp .ln-top {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ttp .ln-top .field {
+        justify-self: start;
+    }
+
+    .ttp .sz-info {
+        padding: 14px 16px;
+    }
+
+    .ttp .sz-spec {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
