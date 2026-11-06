@@ -223,3 +223,44 @@ body.p-login .foot a{font-weight:700;color:var(--text);text-decoration:underline
 
 /* logo-img */
 body.p-login .logo-img{height:46px;width:auto;display:block}
+
+/* ---- responsif: tablet dan ponsel ---- */
+html{-webkit-text-size-adjust:100%}
+body.p-login{overflow-x:hidden}
+body.p-login .main{padding-left:max(clamp(24px,5vw,72px),env(safe-area-inset-left));padding-right:max(clamp(24px,5vw,72px),env(safe-area-inset-right))}
+@media (max-width:900px){
+  html,body.p-login{height:auto;min-height:100%}
+  body.p-login .shell{min-height:0;display:flex;flex-direction:column}
+  body.p-login .side{flex:none;padding:14px max(20px,env(safe-area-inset-left)) 0 max(20px,env(safe-area-inset-right))}
+  body.p-login .logo-img{height:38px}
+  body.p-login .side .scene{height:120px;margin:8px calc(-1 * max(20px,env(safe-area-inset-left))) 0}
+  body.p-login .main{flex:1;display:flex;flex-direction:column;padding:16px max(20px,env(safe-area-inset-left)) calc(24px + env(safe-area-inset-bottom))}
+  body.p-login .stage{flex:1;align-items:flex-start;justify-content:center;padding:8px 0 24px}
+  /* Tablet: formulir tidak boleh melar selebar layar */
+  body.p-login .card{max-width:480px;margin:0 auto}
+  body.p-login .side h1{font-size:clamp(24px,5.4vw,32px)}
+}
+@media (max-width:560px){
+  body.p-login .side .scene{height:96px}
+  body.p-login .side h1{font-size:24px}
+  body.p-login .head svg{width:40px;height:40px}
+  body.p-login h2{font-size:24px}
+  body.p-login .btn{min-height:50px;font-size:15px}
+  body.p-login .otp{gap:6px}
+  body.p-login .otp .grp{gap:6px}
+  body.p-login .otp input{height:54px;font-size:22px}
+  body.p-login .resend{flex-wrap:wrap}
+  body.p-login .sent b{font-size:14px}
+  body.p-login .foot{font-size:12.5px}
+}
+@media (max-width:380px){
+  body.p-login .main{padding-left:16px;padding-right:16px}
+  body.p-login .side{padding-left:16px;padding-right:16px}
+  body.p-login .side .scene{margin-left:-16px;margin-right:-16px}
+  body.p-login .otp input{height:48px;font-size:20px}
+}
+/* Layar pendek (ponsel mendatar) */
+@media (max-width:900px) and (max-height:520px){
+  body.p-login .side .scene{display:none}
+  body.p-login .side h1{display:none}
+}
