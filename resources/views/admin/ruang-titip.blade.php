@@ -4,7 +4,7 @@
 
 @push('styles')
 <style>
-    .rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+    .rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 16px; }
     .room { display: flex; flex-direction: column; gap: 12px; }
     .room-top { display: flex; gap: 12px; align-items: flex-start; }
     .room-top .thumb { width: 64px; height: 64px; border-radius: 10px; flex: none; }
@@ -32,6 +32,7 @@
     .photo-tile input:checked ~ span { color: var(--color-danger-text); font-weight: 700; }
     .photo-tile:has(input:checked) img { opacity: 0.4; }
     @media (max-width: 860px) { .price-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 480px) { .price-grid { grid-template-columns: minmax(0, 1fr); } .room-top .thumb { width: 52px; height: 52px; } .room-foot .btn { flex: 1 1 auto; } }
 </style>
 @endpush
 

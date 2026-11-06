@@ -318,3 +318,46 @@ img {
         display: none;
     }
 }
+
+/* ----- Keranjang: kotak centang, foto, isi, dan tombol Hapus ----- */
+.mp .cart-item {
+    grid-template-columns: auto 64px minmax(0, 1fr) auto;
+    align-items: center;
+}
+
+@media (max-width: 640px) {
+    .mp .cart-item {
+        grid-template-columns: auto 56px minmax(0, 1fr);
+    }
+
+    .mp .cart-item .oc-acts {
+        grid-column: 2 / -1;
+        justify-content: flex-start;
+    }
+}
+
+/* ----- Stepper checkout: label panjang tidak boleh meluber ----- */
+.stepper {
+    min-width: 0;
+}
+
+.stepper li,
+.stepper button {
+    min-width: 0;
+}
+
+.stepper .lbl {
+    overflow: hidden;
+}
+
+.stepper .lbl > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Foto dan elemen bergambar di dalam kartu tidak melebihi kartu. */
+.rt-card img,
+.card img {
+    max-width: 100%;
+}

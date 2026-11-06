@@ -36,7 +36,7 @@
                         <div class="olist" id="cartItems">
                             @foreach ($cart as $key => $item)
                                 @php $type = $item['type'] ?? 'preloved'; @endphp
-                                <article class="oc cart-item" data-key="{{ $key }}" style="grid-template-columns:auto 64px minmax(0,1fr) auto">
+                                <article class="oc cart-item" data-key="{{ $key }}">
                                     <input type="checkbox" name="selected[]" value="{{ $key }}" class="item-checkbox" checked onchange="recalcSummary()" style="width:20px;height:20px;accent-color:var(--teal)" aria-label="Pilih {{ $item['name'] }}">
                                     <div class="pic" style="--tone:var(--alt)">
                                         @if (! empty($item['image']))
