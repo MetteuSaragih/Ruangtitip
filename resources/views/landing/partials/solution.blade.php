@@ -7,8 +7,8 @@
         <div class="bento">
             <article class="card c-a" id="cardA">
                 <svg class="stk" aria-hidden="true"><use href="#st-coin"/></svg>
-                <div class="price-tag"><small>mulai</small><strong>Rp1.000</strong><small>per kardus per hari</small></div>
-                <h3>Bayar per kardus, bukan per kamar.</h3>
+                <div class="price-tag"><small>mulai</small><strong>Rp5.000</strong><small>per barang per hari</small></div>
+                <h3>Bayar per barang, bukan per kamar.</h3>
                 <p>Kamu cuma bayar ruang yang benar-benar dipakai barangmu. Kamar kos bisa dilepas, dan biayanya ikut turun.</p>
                 <div class="bars" aria-hidden="true">
                     <div class="bar kos"><span>Tetap sewa kos</span><i><b>Satu kamar penuh</b></i></div>

@@ -6,8 +6,8 @@
         </div>
         <ol class="steps">
             @foreach ([
-                ['st-cal', 'Pesan online', 'Pilih ukuran, jumlah kardus, periode, dan jadwal antar. Bayar 50% dalam 24 jam.'],
-                ['st-moto', 'Antar ke gudang', 'Bawa kardus yang sudah dikemas sesuai jadwal, sendiri atau lewat teman.'],
+                ['st-cal', 'Pesan online', 'Pilih ukuran, jumlah barang, periode, dan jam antar. Bayar lewat QRIS, lalu unggah bukti pembayaran.'],
+                ['st-moto', 'Antar ke gudang', 'Antar sendiri barang yang sudah dikemas ke gudang, sesuai jam yang kamu pilih.'],
                 ['st-cam', 'Kami amankan', 'Dicek, dikode, disegel, difoto, lalu masuk rak yang tercatat.'],
                 ['st-hand', 'Ambil kapan saja', 'Lunasi sisanya, lalu ambil, wakilkan, atau minta dikirim. Mau lebih lama? Perpanjang dari HP.'],
             ] as $i => [$icon, $title, $body])

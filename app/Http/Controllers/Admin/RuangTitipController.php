@@ -9,6 +9,7 @@ use App\Services\ManualPayment;
 use App\Support\StorageSizes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 class RuangTitipController extends Controller
@@ -28,18 +29,30 @@ class RuangTitipController extends Controller
         $rules = [];
         $attributes = [];
         foreach (StorageSizes::codes() as $code) {
-            $rules["prices.$code"] = 'required|integer|min:1000|max:10000000';
-            $attributes["prices.$code"] = 'harga ' . StorageSizes::label($code);
+            $rules["prices.$code.daily"] = 'required|integer|min:1000|max:10000000';
+            $rules["prices.$code.monthly"] = 'required|integer|min:1000|max:100000000';
+            $attributes["prices.$code.daily"] = 'tarif harian ' . StorageSizes::label($code);
+            $attributes["prices.$code.monthly"] = 'tarif 1 bulan ' . StorageSizes::label($code);
         }
 
         $messages = [
-            'prices.*.required' => ':attribute wajib diisi.',
-            'prices.*.integer' => ':attribute harus berupa angka bulat tanpa titik atau koma.',
-            'prices.*.min' => ':attribute minimal Rp1.000.',
-            'prices.*.max' => ':attribute terlalu besar.',
+            'prices.*.*.required' => ':attribute wajib diisi.',
+            'prices.*.*.integer' => ':attribute harus berupa angka bulat tanpa titik atau koma.',
+            'prices.*.*.min' => ':attribute minimal Rp1.000.',
+            'prices.*.*.max' => ':attribute terlalu besar.',
         ];
 
-        $data = $request->validate($rules, $messages, $attributes);
+        $validator = Validator::make($request->all(), $rules, $messages, $attributes);
+        $validator->after(function ($validator) use ($request) {
+            foreach (StorageSizes::codes() as $code) {
+                $daily = (int) $request->input("prices.$code.daily");
+                $monthly = (int) $request->input("prices.$code.monthly");
+                if ($daily > 0 && $monthly > 0 && $monthly < $daily) {
+                    $validator->errors()->add("prices.$code.monthly", 'Tarif 1 bulan ' . StorageSizes::label($code) . ' tidak boleh lebih kecil dari tarif harian.');
+                }
+            }
+        });
+        $data = $validator->validate();
 
         StorageSizes::savePrices($data['prices']);
 
@@ -189,14 +202,26 @@ class RuangTitipController extends Controller
             'capacity_total'   => 'required|integer|min:1|max:100000',
             'active'           => 'boolean',
             'opening_hours'            => 'nullable|array',
-            'opening_hours.weekday'    => 'nullable|string|max:40',
-            'opening_hours.saturday'   => 'nullable|string|max:40',
-            'opening_hours.sunday'     => 'nullable|string|max:40',
+            'opening_hours.weekday'    => ['nullable', 'string', 'max:40', $this->hoursRule()],
+            'opening_hours.saturday'   => ['nullable', 'string', 'max:40', $this->hoursRule()],
+            'opening_hours.sunday'     => ['nullable', 'string', 'max:40', $this->hoursRule()],
             'remove_photos'    => 'nullable|array',
             'remove_photos.*'  => 'string',
             'images'           => 'nullable|array|max:10',
             'images.*'         => 'image|mimes:jpeg,jpg,png,webp|max:5120',
         ];
+    }
+
+    /** Jam operasional harus terbaca sistem (dipakai untuk pilihan jam antar pelanggan): "08.00–17.00" atau "Tutup". */
+    private function hoursRule(): \Closure
+    {
+        return function (string $attribute, $value, \Closure $fail) {
+            $text = trim((string) $value);
+            if ($text === '' || preg_match('/tutup|libur/iu', $text) || StorageRoom::parseHours($text)) {
+                return;
+            }
+            $fail('Format jam tidak terbaca. Tulis seperti 08.00–17.00, atau tulis Tutup.');
+        };
     }
 
     private function messages(): array

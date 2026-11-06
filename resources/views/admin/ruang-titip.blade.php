@@ -76,21 +76,50 @@
     </div>
 </div>
 
-<section class="card" style="margin-bottom:16px">
-    <div class="card-h"><h3>Harga per ukuran</h3><small>per barang per hari, berlaku di semua ruang</small></div>
-    <form method="POST" action="{{ route('admin.ruang-titip.sizes') }}">
+<section class="card" style="margin-bottom:16px" id="priceCard">
+    <div class="card-h"><h3>Harga per ukuran</h3><small>per barang, berlaku di semua ruang</small></div>
+    <form method="POST" action="{{ route('admin.ruang-titip.sizes') }}" id="priceForm">
         @csrf
-        <div class="price-grid">
-            @foreach ($sizes as $code => $spec)
-                <div class="field">
-                    <label for="price{{ $code }}">{{ $spec['label'] }} (Rp per hari)</label>
-                    <input class="input num" id="price{{ $code }}" name="prices[{{ $code }}]" type="number" min="1000" step="1" inputmode="numeric" required value="{{ old('prices.' . $code, $spec['price']) }}">
-                    <span>Kardus {{ $spec['box'] }}@if (! empty($spec['koper'])), koper {{ $spec['koper'] }}@endif, maks {{ $spec['kg'] }} kg</span>
-                    <span>Jatah ruang {{ $spec['unit'] }} setara ukuran S</span>
-                    @error('prices.' . $code)<span class="err-t">{{ $message }}</span>@enderror
-                </div>
-            @endforeach
+        <p class="help" style="margin-bottom:10px">Isi dua kolom kuning: tarif <b>harian</b> dan tarif <b>1 bulan</b> (30 hari). Paket lain dihitung otomatis: 7 hari = bayar 6 hari, lalu 3, 6, dan 12 bulan dengan diskon, dibulatkan ke atas ke kelipatan Rp{{ number_format((int) config('item_sizes.plans.rounding', 1000), 0, ',', '.') }}.</p>
+        <div class="tw">
+            <table class="tbl" id="priceTable">
+                <thead>
+                    <tr>
+                        <th>Ukuran</th>
+                        <th class="r">Harian (Rp)</th>
+                        <th class="r">1 bulan (Rp)</th>
+                        <th class="r">7 hari</th>
+                        @foreach ((array) config('item_sizes.plans.months', []) as $months => $plan)
+                            @if ($months > 1)<th class="r">{{ $months }} bulan @if ($plan['discount'] > 0)<small>hemat {{ $plan['discount'] }}%</small>@endif</th>@endif
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($sizes as $code => $spec)
+                        <tr data-code="{{ $code }}">
+                            <td>
+                                <b>{{ $spec['label'] }}</b>
+                                <small>Sisi maks. {{ $spec['side'] }} cm, P+L+T maks. {{ $spec['sum'] }} cm, maks. {{ $spec['kg'] }} kg</small>
+                                <small>Jatah ruang {{ $spec['unit'] }} setara ukuran S</small>
+                            </td>
+                            <td class="r">
+                                <input class="input num price-in" style="background:var(--color-pending-bg);min-width:110px;text-align:right" id="daily{{ $code }}" data-kind="daily" name="prices[{{ $code }}][daily]" type="number" min="1000" step="1" inputmode="numeric" required aria-label="Tarif harian {{ $spec['label'] }}" value="{{ old('prices.' . $code . '.daily', $spec['price']) }}">
+                                @error('prices.' . $code . '.daily')<span class="err-t">{{ $message }}</span>@enderror
+                            </td>
+                            <td class="r">
+                                <input class="input num price-in" style="background:var(--color-pending-bg);min-width:120px;text-align:right" id="monthly{{ $code }}" data-kind="monthly" name="prices[{{ $code }}][monthly]" type="number" min="1000" step="1" inputmode="numeric" required aria-label="Tarif 1 bulan {{ $spec['label'] }}" value="{{ old('prices.' . $code . '.monthly', $spec['monthly']) }}">
+                                @error('prices.' . $code . '.monthly')<span class="err-t">{{ $message }}</span>@enderror
+                            </td>
+                            <td class="r num" data-out="week">-</td>
+                            @foreach ((array) config('item_sizes.plans.months', []) as $months => $plan)
+                                @if ($months > 1)<td class="r num" data-out="m{{ $months }}">-</td>@endif
+                            @endforeach
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
+        <p class="err-t" id="priceWarn" style="display:none;margin-top:8px"></p>
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px">
             <button type="submit" class="btn btn-primary">Simpan harga</button>
             <span class="help">Perubahan harga hanya berlaku untuk pesanan baru. Pesanan yang sudah dibuat tetap memakai harga lamanya.</span>
@@ -215,7 +244,7 @@
                         <label class="check">
                             <input type="checkbox" name="sizes[]" value="{{ $code }}" @checked(in_array($code, $pickedSizes, true))>
                             <span><b>{{ $spec['label'] }}</b>
-                                <small>Kardus {{ $spec['box'] }}@if (! empty($spec['koper'])), koper {{ $spec['koper'] }}@endif, maks {{ $spec['kg'] }} kg, {{ $rp($spec['price']) }} per hari</small>
+                                <small>Sisi maks. {{ $spec['side'] }} cm, P+L+T maks. {{ $spec['sum'] }} cm, maks. {{ $spec['kg'] }} kg, mulai {{ $rp($spec['price']) }} per hari</small>
                             </span>
                         </label>
                     @endforeach
@@ -262,7 +291,7 @@
                         <input class="input" id="rHSun" name="opening_hours[sunday]" value="{{ old('opening_hours.sunday') }}" placeholder="Tutup">
                     </div>
                 </div>
-                <span class="help">Kosongkan untuk memakai jam bawaan (Senin sampai Jumat 08.00–17.00, Sabtu 08.00–12.00, Minggu tutup).</span>
+                <span class="help">Tulis seperti 08.00–17.00, atau Tutup. Jam ini juga menentukan pilihan jam antar barang untuk pelanggan (setiap 30 menit). Kosongkan untuk memakai jam bawaan (Senin sampai Jumat 08.00–17.00, Sabtu 08.00–12.00, Minggu tutup).</span>
             </div>
 
             <label class="sw">
@@ -399,6 +428,50 @@
         setMode(ROOMS[EDITING]);
         renderPhotos(ROOMS[EDITING]);
     }
+})();
+</script>
+@endpush
+
+@push('scripts')
+@php $planMonths = collect((array) config('item_sizes.plans.months', []))->map(fn ($p) => ['discount' => (int) $p['discount']])->all(); @endphp
+<script>
+(function () {
+    const table = document.getElementById('priceTable');
+    if (!table) { return; }
+    const MONTHS = @json($planMonths);
+    const ROUND = {{ (int) config('item_sizes.plans.rounding', 1000) }};
+    const PAID_DAYS = {{ (int) config('item_sizes.plans.week.paid_days', 6) }};
+    const warn = document.getElementById('priceWarn');
+    const rp = (n) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+
+    // Sama persis dengan StorageSizes::tiers() di server: bilangan bulat, dibulatkan ke atas.
+    function months(monthly, n) {
+        const disc = MONTHS[n] ? MONTHS[n].discount : 0;
+        const num = monthly * n * (100 - disc);
+        return Math.floor((num + ROUND * 100 - 1) / (ROUND * 100)) * ROUND;
+    }
+
+    function refresh() {
+        const notes = [];
+        table.querySelectorAll('tbody tr').forEach(function (tr) {
+            const daily = parseInt(tr.querySelector('[data-kind=daily]').value, 10) || 0;
+            const monthly = parseInt(tr.querySelector('[data-kind=monthly]').value, 10) || 0;
+            const set = (k, v) => { const el = tr.querySelector('[data-out=' + k + ']'); if (el) { el.textContent = v > 0 ? rp(v) : '-'; } };
+            set('week', daily * PAID_DAYS);
+            Object.keys(MONTHS).forEach(function (n) { if (parseInt(n, 10) > 1) { set('m' + n, monthly > 0 ? months(monthly, parseInt(n, 10)) : 0); } });
+            if (daily > 0 && monthly > 0 && monthly > daily * 30) {
+                notes.push(tr.dataset.code + ': tarif 1 bulan lebih mahal dari 30 hari harian, jadi paket bulanan tidak akan terpakai.');
+            }
+            if (daily > 0 && monthly > 0 && monthly < daily) {
+                notes.push(tr.dataset.code + ': tarif 1 bulan tidak boleh lebih kecil dari tarif harian.');
+            }
+        });
+        warn.style.display = notes.length ? '' : 'none';
+        warn.textContent = notes.join(' ');
+    }
+
+    table.addEventListener('input', refresh);
+    refresh();
 })();
 </script>
 @endpush

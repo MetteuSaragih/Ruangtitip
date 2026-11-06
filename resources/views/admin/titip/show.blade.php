@@ -139,7 +139,7 @@
                     <div><span>Berakhir</span><b>{{ optional($order->date_end)->format('d M Y') ?? '-' }}@if ($daysLeft !== null && $order->status !== 'selesai')<small>{{ $daysLeft >= 0 ? 'Sisa ' . $daysLeft . ' hari' : 'Lewat ' . abs($daysLeft) . ' hari' }}</small>@endif</b></div>
                     <div><span>Logistik</span><b>{{ $logisticLabel }}</b></div>
                     @if ($order->pickup_date)
-                        <div><span>Jadwal penjemputan</span><b>{{ $order->pickup_date->format('d M Y') }}<small>{{ $order->pickup_time }}{{ $order->pickup_time_end ? ' - ' . $order->pickup_time_end : '' }}</small></b></div>
+                        <div><span>{{ $order->logistic === 'self' ? 'Jadwal antar pelanggan' : 'Jadwal penjemputan' }}</span><b>{{ $order->pickup_date->format('d M Y') }}<small>Pukul {{ str_replace(':', '.', substr((string) $order->pickup_time, 0, 5)) }}{{ $order->pickup_time_end ? ' - ' . str_replace(':', '.', substr((string) $order->pickup_time_end, 0, 5)) : '' }} WIB</small></b></div>
                     @endif
                     @if ($order->courier_company)
                         <div><span>Kurir</span><b>{{ strtoupper($order->courier_company) }} {{ $order->courier_service_code }}</b></div>

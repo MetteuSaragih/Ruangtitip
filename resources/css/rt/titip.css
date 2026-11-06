@@ -337,3 +337,21 @@
 .ttp .sz-tally .msg{color:var(--color-danger-text);font-weight:600;font-size:13.5px}
 .ttp .chips{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
 .ttp .chips .chip.sm{padding:2px 10px;min-height:0;font-size:12.5px;font-weight:700;cursor:default}
+
+/* ----- Jadwal antar: pilihan tanggal dan jam sesuai jam operasional ----- */
+.dropoff{display:grid;gap:16px}
+.dropoff .drop-slots{display:flex;flex-wrap:wrap;gap:8px}
+.dropoff .chip{min-width:84px;justify-content:center}
+.dropoff .chip:disabled{opacity:.4;cursor:not-allowed;text-decoration:line-through}
+.dropoff .drop-hours{display:grid;gap:4px;padding:12px 14px;border-radius:12px;background:var(--color-bg);font-size:13.5px}
+.dropoff .drop-hours b{font-size:13px;margin-bottom:2px}
+.dropoff .drop-hours div{display:flex;justify-content:space-between;gap:12px}
+.dropoff .drop-hours div span:first-child{color:var(--muted)}
+.dropoff .msg{color:var(--err-ink);font-weight:600;font-size:13.5px;margin:0}
+
+/* ----- Paket harga per ukuran ----- */
+.ttp .tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:12px 0}
+.ttp .tier-grid > div{display:grid;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.ttp .tier-grid span{font-size:12.5px;font-weight:700;color:var(--muted)}
+.ttp .tier-grid b{font-size:15px;font-variant-numeric:tabular-nums}
+.ttp .tier-grid small{font-size:12px;color:var(--muted)}

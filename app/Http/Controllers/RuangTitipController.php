@@ -4,54 +4,37 @@ namespace App\Http\Controllers;
 
 use App\Models\StorageRoom;
 use App\Models\TitipanOrder;
-use App\Models\UserAddress;
-use App\Services\BiteshipService;
-use App\Services\DistanceService;
 use App\Support\StorageSizes;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 /*
 |--------------------------------------------------------------------------
-| RuangTitipController (REVISI)
+| RuangTitipController
 |--------------------------------------------------------------------------
-| Alur baru:
-|  1. index        — daftar gudang
-|  2. show         — detail gudang
-|  3. detailForm   — GABUNGAN item + rentang tanggal (Detail Penitipan)
-|  4. logistikForm — "Opsi Logistik" (dulu Screen 5)
-|     - self     -> langsung checkout
-|     - rutip    -> alamat -> checkout (kurir otomatis Kurir RuTip, tanpa pilih)
-|     - instant  -> alamat -> pilih kurir -> checkout
-|  5. alamat      — daftar alamat tersimpan + tambah baru
-|  6. kurir       — hanya untuk instant
-|  7. checkout    — rincian + bayar
+| Alur pemesanan titip (barang SELALU diantar sendiri ke gudang):
+|  1. index       daftar gudang
+|  2. show        detail gudang (ukuran dan paket harga)
+|  3. detailForm  periode titip + ukuran dan jumlah barang
+|  4. checkout    ringkasan, pilih tanggal dan jam antar (dari jam operasional gudang), setuju, buat pesanan
+|  5. success     halaman pembayaran QRIS (unggah bukti)
 |
-| Tahap "Packing" terpisah DIHAPUS (sudah include di logistik rutip).
-|
-| Jarak km untuk kurir RuTip dihitung otomatis dari koordinat alamat
-| customer (hasil geocoding saat alamat disimpan) ke koordinat gudang,
-| lihat DistanceService. DEFAULT_KM cuma fallback kalau geocoding gagal.
+| Biaya = harga paket termurah per barang untuk lama titip (lihat StorageSizes::cost) + biaya layanan.
+| Tidak ada ongkir, jasa packing, atau jemputan.
 */
 
 class RuangTitipController extends Controller
 {
-    private const PLATFORM_FEE          = 1000;   // biaya layanan jika logistik tidak pakai Biteship
-    private const PLATFORM_FEE_BITESHIP = 2000;   // biaya layanan jika logistik pakai Biteship
-    private const PICKUP_PER_KM  = 4000;   // biaya antar-jemput per km
-    private const PICKUP_PER_BOX = 2000;   // biaya antar-jemput per kardus
-    private const PACKING_PER_BOX = 3000;  // jasa packing per kardus
-    private const DEFAULT_KM       = 5;      // fallback kalau koordinat alamat/gudang tidak tersedia
-
-    public function __construct(private DistanceService $distance)
-    {
-    }
+    private const PLATFORM_FEE = 1000; // biaya layanan per pesanan (antar sendiri, tanpa Biteship)
 
     /* ─── Helper session ─── */
     private function state(Request $r): array
     {
         return $r->session()->get('titip', []);
     }
+
     private function setState(Request $r, array $data): void
     {
         $r->session()->put('titip', array_merge($this->state($r), $data));
@@ -62,90 +45,55 @@ class RuangTitipController extends Controller
     {
         $items = $s['items'] ?? [];
 
-        // durasi dalam hari: tanggal selesai - tanggal mulai + 1 (hari mulai dan hari selesai ikut dihitung), minimal 1
+        // Lama titip dalam hari: hari mulai dan hari selesai ikut dihitung, minimal 1.
         $days = 1;
-        if (!empty($s['date_start']) && !empty($s['date_end'])) {
+        if (! empty($s['date_start']) && ! empty($s['date_end'])) {
             $diff = (strtotime($s['date_end']) - strtotime($s['date_start'])) / 86400;
             $days = max(1, (int) round($diff) + 1);
         }
 
         $storage = StorageRoom::find($s['storage_id'] ?? null);
         $sizes = $this->itemSizesFromStorage($storage)->keyBy('code');
-        $perDay = 0;
+
+        $valid = [];
         $totalItems = 0;
         $units = 0;
         foreach ($items as $code => $qty) {
             $qty = (int) $qty;
             if ($qty > 0 && isset($sizes[$code])) {
+                $valid[$code] = $qty;
                 $totalItems += $qty;
                 $units += $qty * StorageSizes::unit($code);
-                $perDay += $qty * StorageSizes::price($code);
             }
         }
-        $itemSubtotal = $perDay * $days;
 
-        $logistic     = $s['logistic'] ?? 'self';
-        $courierCost  = 0;
-        $packingCost  = 0;
-        $kmCost       = 0;
-        $pickupBoxCost = 0;
-        $km           = self::DEFAULT_KM;
-
-        if ($logistic === 'rutip') {
-            $km = $this->resolveKm($s);
-
-            // Total Anjem = (harga/km × jarak) + (harga/kardus × jumlah item) + (jasa packing/kardus × jumlah item)
-            $kmCost        = self::PICKUP_PER_KM * $km;
-            $pickupBoxCost = self::PICKUP_PER_BOX * $totalItems;
-            $packingCost   = self::PACKING_PER_BOX * $totalItems;
-            $courierCost   = $kmCost + $pickupBoxCost + $packingCost;
-        } elseif ($logistic === 'instant' && !empty($s['courier_code'])) {
-            $courierCost = (int) ($s['courier_cost'] ?? 0);
-        }
-
-        $platformFee = $logistic === 'instant' ? self::PLATFORM_FEE_BITESHIP : self::PLATFORM_FEE;
-        $total = $itemSubtotal + $courierCost + $platformFee;
+        $quote = StorageSizes::quote($valid, $days);
+        $itemSubtotal = $quote['total'];
+        $platformFee = self::PLATFORM_FEE;
 
         return [
-            'days'          => $days,
-            'perDay'        => $perDay,
-            'units'         => $units,
-            'totalItems'    => $totalItems,
-            'itemSubtotal'  => $itemSubtotal,
-            'courierCost'   => $courierCost,
-            'packingCost'   => $packingCost,
-            'kmCost'        => $kmCost,
-            'pickupBoxCost' => $pickupBoxCost,
-            'km'            => $km,
-            'platform_fee'  => $platformFee,
-            'total'         => $total,
+            'days'         => $days,
+            'perDay'       => $quote['per_day'],
+            'units'        => $units,
+            'totalItems'   => $totalItems,
+            'quote'        => $quote['items'],
+            'itemSubtotal' => $itemSubtotal,
+            'courierCost'  => 0,
+            'packingCost'  => 0,
+            'platform_fee' => $platformFee,
+            'total'        => $itemSubtotal + $platformFee,
         ];
     }
 
-    /** Jarak (km, dibulatkan ke atas, minimal 1) dari alamat customer ke gudang RuTip. */
-    private function resolveKm(array $s): int
-    {
-        $lat = $s['address_lat'] ?? null;
-        $lng = $s['address_lng'] ?? null;
-        $warehouse = $this->distance->warehouseCoords();
-
-        if (! $lat || ! $lng || ! $warehouse) {
-            return self::DEFAULT_KM;
-        }
-
-        $km = $this->distance->distanceKm((float) $lat, (float) $lng, $warehouse['lat'], $warehouse['lng']);
-
-        return max(1, (int) ceil($km));
-    }
-
-    /* ═══ SCREEN 1 — Daftar gudang ═══ */
+    /* ═══ Daftar gudang ═══ */
     public function index()
     {
         $storages = StorageRoom::active()->latest()->get();
+
         return view('dashboard.ruang-titip.index', compact('storages'));
     }
 
-    /* ═══ SCREEN 2 — Detail gudang ═══ */
+    /* ═══ Detail gudang ═══ */
     public function show(Request $r, StorageRoom $storage)
     {
         abort_unless($storage->active, 404);
@@ -155,10 +103,11 @@ class RuangTitipController extends Controller
             $r->session()->forget('titip');
         }
         $this->setState($r, ['storage_id' => $storage->id]);
+
         return view('dashboard.ruang-titip.detail', compact('storage'));
     }
 
-    /* ═══ SCREEN 3 — GABUNGAN: item + rentang tanggal (GET) ═══ */
+    /* ═══ Periode + barang (GET) ═══ */
     public function detailForm(Request $r)
     {
         $storage = $this->bookableStorage($this->state($r));
@@ -170,10 +119,11 @@ class RuangTitipController extends Controller
         $selectedItems = $s['items'] ?? [];
         $remainingUnits = $this->remainingUnits($storage);
         $calc = $this->calc($s);
+
         return view('dashboard.ruang-titip.detail-item', compact('sizes', 's', 'selectedItems', 'storage', 'calc', 'remainingUnits'));
     }
 
-    /* SCREEN 3 (POST) — simpan item + tanggal sekaligus */
+    /* Periode + barang (POST) */
     public function detailStore(Request $r)
     {
         $data = $r->validate([
@@ -188,6 +138,12 @@ class RuangTitipController extends Controller
             'date_end.after' => 'Tanggal selesai harus setelah tanggal mulai.',
         ]);
 
+        $maxDays = (int) config('item_sizes.plans.max_days', 730);
+        $days = (int) round((strtotime($data['date_end']) - strtotime($data['date_start'])) / 86400) + 1;
+        if ($days > $maxDays) {
+            return back()->withErrors(['date_end' => "Lama titip maksimal {$maxDays} hari. Untuk waktu lebih lama, hubungi admin."])->withInput();
+        }
+
         $items = array_map('intval', $data['items']);
         $items = array_filter($items, fn ($q) => $q > 0);
         if (empty($items)) {
@@ -199,13 +155,13 @@ class RuangTitipController extends Controller
             return redirect()->route('ruang-titip.index')->with('error', 'Ruang titip ini tidak tersedia. Pilih ruang lain.');
         }
 
-        // Hanya ukuran yang diterima ruang ini (S/M/L/XL); kode lain (termasuk kode lama) ditolak.
+        // Hanya ukuran yang diterima ruang ini; kode lain (termasuk kode lama) ditolak.
         $accepted = $storage->accepted_sizes;
         $rejected = array_values(array_diff(array_map('strval', array_keys($items)), $accepted));
         if ($rejected) {
             return back()->withErrors(['items' => 'Ukuran ' . implode(', ', $rejected) . ' tidak diterima di ruang ini. Pilih ukuran ' . implode(', ', $accepted) . '.'])->withInput();
         }
-        // Urutkan sesuai urutan ukuran (S, M, L, XL).
+        // Urutkan sesuai urutan ukuran (S, M, L, XL, XXL).
         $ordered = [];
         foreach ($accepted as $code) {
             if (isset($items[$code])) {
@@ -222,248 +178,18 @@ class RuangTitipController extends Controller
                 : 'Ruang ini sudah penuh. Pilih ruang lain.'])->withInput();
         }
 
-        // Isi barang berubah, jadi tarif kurir instan yang lama tidak berlaku lagi.
-        if (($this->state($r)['logistic'] ?? null) === 'instant') {
-            $this->setState($r, ['courier_code' => null, 'courier_service_code' => null, 'courier_name' => null, 'courier_cost' => 0]);
-        }
-
         $this->setState($r, [
             'item_type'  => 'ukuran',
             'items'      => $items,
             'date_start' => $data['date_start'],
             'date_end'   => $data['date_end'],
-        ]);
-
-        return redirect()->route('ruang-titip.logistik');
-    }
-
-    /* ═══ SCREEN 4 — Opsi Logistik (GET) ═══ */
-    public function logistikForm(Request $r)
-    {
-        $s = $this->state($r);
-        if (empty($s['items'])) return redirect()->route('ruang-titip.detail-item');
-        $storage = StorageRoom::find($s['storage_id'] ?? null);
-        $calc = $this->calc($s);
-        return view('dashboard.ruang-titip.logistik', compact('s', 'storage', 'calc'));
-    }
-
-    /* SCREEN 4 (POST) */
-    public function logistikStore(Request $r)
-    {
-        $data = $r->validate(['logistic' => 'required|in:self,rutip,instant']);
-        $logistic = $data['logistic'];
-
-        // Reset pilihan kurir lama
-        $this->setState($r, [
-            'logistic' => $logistic,
-            'courier_code' => null,
-            'courier_service_code' => null,
-            'courier_name' => null,
-            'courier_cost' => 0,
-        ]);
-
-        if ($logistic === 'self') {
-            return redirect()->route('ruang-titip.checkout');
-        }
-        if ($logistic === 'rutip') {
-            // Kurir otomatis Kurir RuTip, tanpa pilih kurir
-            $this->setState($r, ['courier_code' => 'rutip_fleet']);
-        }
-        return redirect()->route('ruang-titip.alamat');
-    }
-
-    /* ═══ SCREEN 5 — Alamat (GET) ═══ */
-    public function alamatForm(Request $r)
-    {
-        if (empty($this->state($r)['logistic'])) return redirect()->route('ruang-titip.logistik');
-
-        $addresses = UserAddress::where('user_id', Auth::id())
-            ->orderByDesc('is_primary')->orderByDesc('id')->get();
-
-        $s = $this->state($r);
-        $storage = StorageRoom::find($s['storage_id'] ?? null);
-        $calc = $this->calc($s);
-        return view('dashboard.ruang-titip.alamat', compact('addresses', 's', 'storage', 'calc'));
-    }
-
-    /* SCREEN 5 (POST) — pilih alamat tersimpan ATAU tambah baru */
-    public function alamatStore(Request $r)
-    {
-        $mode = $r->input('mode', 'select');
-
-        if ($mode === 'new') {
-            $data = $r->validate([
-                'label'      => 'nullable|string|max:50',
-                'address'    => 'required|string',
-                'note'       => 'nullable|string',
-                'area_id'    => 'required|string',
-                'area_name'  => 'nullable|string',
-                'postal_code' => 'nullable|string',
-                'is_primary' => 'nullable|boolean',
-            ]);
-            // jika dijadikan utama, reset utama lama
-            if (!empty($data['is_primary'])) {
-                UserAddress::where('user_id', Auth::id())->update(['is_primary' => false]);
-            }
-            $addr = UserAddress::create([
-                'user_id'    => Auth::id(),
-                'label'      => $data['label'] ?? 'Alamat',
-                'address'    => $data['address'],
-                'note'       => $data['note'] ?? null,
-                'is_primary' => (bool) ($data['is_primary'] ?? false),
-                'area_id'    => $data['area_id'],
-                'area_name'  => $data['area_name'] ?? null,
-                'postal_code' => $data['postal_code'] ?? null,
-            ]);
-            $addressId = $addr->id;
-        } else {
-            $data = $r->validate(['address_id' => 'required|exists:user_addresses,id']);
-            $addressId = (int) $data['address_id'];
-        }
-
-        // pastikan alamat milik user
-        $addr = UserAddress::where('user_id', Auth::id())->findOrFail($addressId);
-        if (! $addr->area_id) {
-            return back()->withErrors(['address' => 'Alamat ini belum punya kecamatan tersimpan, pilih/tambah alamat baru dengan kecamatan.']);
-        }
-
-        $addr = $this->distance->ensureAddressCoords($addr);
-
-        $this->setState($r, [
-            'address_id' => $addr->id,
-            'address' => $addr->address,
-            'note' => $addr->note,
-            'address_area_id' => $addr->area_id,
-            'address_postal_code' => $addr->postal_code,
-            'address_lat' => $addr->latitude,
-            'address_lng' => $addr->longitude,
-        ]);
-
-        // instant -> pilih kurir; rutip -> langsung checkout
-        return ($this->state($r)['logistic'] ?? '') === 'instant'
-            ? redirect()->route('ruang-titip.kurir')
-            : redirect()->route('ruang-titip.checkout');
-    }
-
-    /* ═══ SCREEN 6 — Pilih kurir (GET) — HANYA instant ═══ */
-    public function kurirForm(Request $r)
-    {
-        $s = $this->state($r);
-        if (($s['logistic'] ?? '') !== 'instant' || empty($s['address'])) {
-            return redirect()->route('ruang-titip.logistik');
-        }
-
-        $storage = StorageRoom::find($s['storage_id'] ?? null);
-        $calc = $this->calc($s);
-        return view('dashboard.ruang-titip.kurir', compact('s', 'storage', 'calc'));
-    }
-
-    /* AJAX — hitung ongkir live Biteship dari alamat pelanggan ke gudang RUTIP */
-    public function kurirRates(Request $r, BiteshipService $biteship)
-    {
-        $s = $this->state($r);
-        if (empty($s['address_area_id'])) {
-            return response()->json(['success' => false, 'message' => 'Alamat belum dipilih.'], 422);
-        }
-
-        $result = $biteship->getRates(
-            $this->originFromAddress($s),
-            $this->destinationWarehouse(),
-            $this->itemsToBiteship($s),
-            config('biteship.checkout_couriers')
-        );
-
-        return response()->json($result);
-    }
-
-    /* SCREEN 6 (POST) */
-    public function kurirStore(Request $r, BiteshipService $biteship)
-    {
-        $data = $r->validate([
-            'courier_code' => 'required|string',
-            'service_code' => 'required|string',
-        ]);
-
-        $s = $this->state($r);
-        $rates = $biteship->getRates(
-            $this->originFromAddress($s),
-            $this->destinationWarehouse(),
-            $this->itemsToBiteship($s),
-            config('biteship.checkout_couriers')
-        );
-
-        $picked = collect($rates['pricing'] ?? [])->first(fn ($p) => $p['courier_code'] === $data['courier_code']
-            && ($p['courier_service_code'] ?? null) === $data['service_code']);
-
-        if (! $picked) {
-            return back()->withErrors(['courier_code' => 'Tarif kurir tidak valid atau sudah berubah, silakan pilih ulang.']);
-        }
-
-        $this->setState($r, [
-            'courier_code' => $picked['courier_code'],
-            'courier_service_code' => $picked['courier_service_code'] ?? null,
-            'courier_name' => $picked['courier_name'] ?? $picked['courier_code'],
-            'courier_cost' => (int) $picked['price'],
+            'logistic'   => 'self',
         ]);
 
         return redirect()->route('ruang-titip.checkout');
     }
 
-    /**
-     * Item asli yang dipilih pelanggan (ukuran + jumlah), dengan berat dan
-     * dimensi per ukuran dari StorageSizes::shipping() — dipakai untuk
-     * menghitung ongkir Biteship secara akurat (bukan nilai pukul rata).
-     */
-    private function itemsToBiteship(array $s): array
-    {
-        $result = [];
-        foreach (($s['items'] ?? []) as $code => $qty) {
-            $qty = (int) $qty;
-            if ($qty <= 0) {
-                continue;
-            }
-
-            $size = StorageSizes::shipping((string) $code);
-
-            $result[] = [
-                'name' => StorageSizes::label((string) $code),
-                'value' => 50000,
-                'quantity' => $qty,
-                'weight' => $size['weight'],
-                'length' => $size['length'],
-                'width' => $size['width'],
-                'height' => $size['height'],
-            ];
-        }
-
-        return $result ?: [['name' => 'Barang titipan', 'value' => 50000, 'quantity' => 1] + config('item_sizes.fallback')];
-    }
-
-    /** Titik asal Biteship: alamat pelanggan, lengkap dengan koordinat kalau sudah ter-geocode. */
-    private function originFromAddress(array $s): array
-    {
-        return array_filter([
-            'area_id' => $s['address_area_id'] ?? null,
-            'postal_code' => $s['address_postal_code'] ?? null,
-            'latitude' => $s['address_lat'] ?? null,
-            'longitude' => $s['address_lng'] ?? null,
-        ]);
-    }
-
-    /** Titik tujuan Biteship: gudang pusat RuTip, lengkap dengan koordinat. */
-    private function destinationWarehouse(): array
-    {
-        $warehouse = $this->distance->warehouseCoords();
-
-        return array_filter([
-            'area_id' => config('biteship.warehouse.area_id'),
-            'postal_code' => config('biteship.warehouse.postal_code'),
-            'latitude' => $warehouse['lat'] ?? null,
-            'longitude' => $warehouse['lng'] ?? null,
-        ]);
-    }
-
-    /* ═══ SCREEN 7 — Checkout (GET) ═══ */
+    /* ═══ Checkout (GET) ═══ */
     public function checkout(Request $r)
     {
         $s = $this->state($r);
@@ -471,16 +197,14 @@ class RuangTitipController extends Controller
             return $redirect;
         }
 
-        $calc    = $this->calc($s);
+        $calc = $this->calc($s);
         $storage = StorageRoom::find($s['storage_id'] ?? null);
-        $courier = ($s['logistic'] ?? null) === 'instant' && !empty($s['courier_code'])
-            ? (object) ['name' => $s['courier_name'] ?? $s['courier_code'], 'service' => $s['courier_service_code'] ?? '']
-            : null;
+        $drop = $this->dropoffInfo($s, $storage);
 
-        return view('dashboard.ruang-titip.checkout', compact('s', 'calc', 'storage', 'courier'));
+        return view('dashboard.ruang-titip.checkout', compact('s', 'calc', 'storage', 'drop'));
     }
 
-    /* SCREEN 7 (POST) — simpan pesanan; pembayaran lewat QRIS dengan bukti yang diperiksa admin */
+    /* Checkout (POST) — simpan pesanan; pembayaran lewat QRIS dengan bukti yang diperiksa admin */
     public function place(Request $r)
     {
         $s = $this->state($r);
@@ -493,7 +217,7 @@ class RuangTitipController extends Controller
             return redirect()->route('ruang-titip.index')->with('error', 'Ruang titip ini tidak tersedia. Pilih ruang lain.');
         }
 
-        // Buang barang yang tidak ada lagi di daftar harga ruang (harga bisa diubah admin).
+        // Buang barang yang tidak ada lagi di daftar harga ruang (harga atau ukuran bisa diubah admin).
         $validSizes = $this->itemSizesFromStorage($storage)->keyBy('code');
         $s['items'] = array_filter($s['items'], fn ($qty, $code) => isset($validSizes[$code]) && (int) $qty > 0, ARRAY_FILTER_USE_BOTH);
         if (empty($s['items'])) {
@@ -505,46 +229,52 @@ class RuangTitipController extends Controller
         }
         $s['item_type'] = 'ukuran';
 
-        $requiresSchedule = ($s['logistic'] ?? null) !== 'self';
-        $minHours = (float) config('pickup_slots.min_hours_ahead');
-        $maxDays = (int) config('pickup_slots.max_days_ahead');
-        $slotMap = collect(config('pickup_slots.slots'))->keyBy('start');
+        $drop = $this->dropoffInfo($s, $storage);
 
-        $validator = \Illuminate\Support\Facades\Validator::make($r->all(), [
-            'agree'          => 'accepted',
-            'pickup_date'    => [
-                $requiresSchedule ? 'required' : 'nullable', 'date', 'after_or_equal:today',
-                'before_or_equal:' . now('Asia/Jakarta')->addDays($maxDays)->toDateString(),
-            ],
-            'pickup_time'    => [$requiresSchedule ? 'required' : 'nullable', \Illuminate\Validation\Rule::in($slotMap->keys())],
+        $validator = Validator::make($r->all(), [
+            'agree'       => 'accepted',
+            'pickup_date' => ['required', 'date_format:Y-m-d'],
+            'pickup_time' => ['required', 'date_format:H:i'],
         ], [
             'agree.accepted' => 'Kamu harus menyetujui Syarat & Ketentuan.',
-            'pickup_date.required' => 'Pilih tanggal penjemputan.',
-            'pickup_time.required' => 'Pilih jam penjemputan.',
-            'pickup_time.in' => 'Jam penjemputan tidak valid, pilih salah satu slot yang tersedia.',
+            'pickup_date.required' => 'Pilih tanggal antar barang.',
+            'pickup_date.date_format' => 'Tanggal antar tidak valid.',
+            'pickup_time.required' => 'Pilih jam antar barang.',
+            'pickup_time.date_format' => 'Jam antar tidak valid.',
         ]);
 
-        $validator->after(function ($validator) use ($r, $requiresSchedule, $minHours) {
-            if (! $requiresSchedule || $validator->errors()->has('pickup_date') || $validator->errors()->has('pickup_time')) {
+        $validator->after(function ($validator) use ($r, $storage, $drop) {
+            if ($validator->errors()->has('pickup_date') || $validator->errors()->has('pickup_time')) {
                 return;
             }
 
-            try {
-                $dt = \Carbon\Carbon::parse($r->input('pickup_date') . ' ' . $r->input('pickup_time'), 'Asia/Jakarta');
-            } catch (\Throwable) {
-                $validator->errors()->add('pickup_time', 'Jam penjemputan tidak valid.');
+            $date = Carbon::createFromFormat('Y-m-d', $r->input('pickup_date'), 'Asia/Jakarta')->startOfDay();
+            if ($date->lt($drop['min']) || $date->gt($drop['max'])) {
+                $validator->errors()->add('pickup_date', 'Tanggal antar harus antara ' . $drop['min']->translatedFormat('j M Y') . ' dan ' . $drop['max']->translatedFormat('j M Y') . '.');
 
                 return;
             }
 
-            if ($dt->lt(now('Asia/Jakarta')->addMinutes((int) round($minHours * 60)))) {
-                $validator->errors()->add('pickup_time', "Slot jam minimal {$minHours} jam dari sekarang, pilih slot lain.");
+            $slots = $storage->dropoffSlots(StorageRoom::dayTypeOf($date));
+            if (! $slots) {
+                $validator->errors()->add('pickup_date', 'Gudang tutup pada tanggal itu. Pilih tanggal lain.');
+
+                return;
+            }
+            if (! in_array($r->input('pickup_time'), $slots, true)) {
+                $validator->errors()->add('pickup_time', 'Jam antar harus dalam jam operasional gudang. Pilih salah satu jam yang tersedia.');
+
+                return;
+            }
+
+            $arrive = Carbon::parse($r->input('pickup_date') . ' ' . $r->input('pickup_time'), 'Asia/Jakarta');
+            $minAhead = (int) config('pickup_slots.dropoff_min_minutes_ahead', 60);
+            if ($arrive->lt(now('Asia/Jakarta')->addMinutes($minAhead))) {
+                $validator->errors()->add('pickup_time', "Jam antar minimal {$minAhead} menit dari sekarang. Pilih jam yang lebih lambat atau tanggal lain.");
             }
         });
 
         $validator->validate();
-
-        $pickupTimeEnd = $requiresSchedule ? ($slotMap[$r->input('pickup_time')]['end'] ?? null) : null;
 
         $calc = $this->calc($s);
 
@@ -557,20 +287,20 @@ class RuangTitipController extends Controller
             'date_end'       => $s['date_end'] ?? null,
             'pickup_date'    => $r->input('pickup_date'),
             'pickup_time'    => $r->input('pickup_time'),
-            'pickup_time_end' => $pickupTimeEnd,
-            'logistic'       => $s['logistic'],
-            'address'        => $s['logistic'] === 'self' ? null : ($s['address'] ?? null),
-            'note'           => $s['logistic'] === 'self' ? null : ($s['note'] ?? null),
-            'courier_code'   => $s['courier_code'] ?? null,
-            'courier_service_code' => $s['courier_service_code'] ?? null,
-            'courier_company' => $s['courier_code'] ?? null,
-            'address_area_id' => $s['logistic'] === 'self' ? null : ($s['address_area_id'] ?? null),
-            'address_postal_code' => $s['logistic'] === 'self' ? null : ($s['address_postal_code'] ?? null),
-            'packing'        => $s['logistic'] === 'rutip' ? 'buy' : null,
+            'pickup_time_end' => null,
+            'logistic'       => 'self',
+            'address'        => null,
+            'note'           => null,
+            'courier_code'   => null,
+            'courier_service_code' => null,
+            'courier_company' => null,
+            'address_area_id' => null,
+            'address_postal_code' => null,
+            'packing'        => null,
             'payment_method' => 'qris',
             'item_subtotal'  => $calc['itemSubtotal'],
-            'courier_cost'   => $calc['courierCost'],
-            'packing_cost'   => $calc['packingCost'],
+            'courier_cost'   => 0,
+            'packing_cost'   => 0,
             'platform_fee'   => $calc['platform_fee'],
             'total'          => $calc['total'],
             'status'         => 'menunggu_pembayaran',
@@ -578,13 +308,39 @@ class RuangTitipController extends Controller
         ]);
 
         $r->session()->forget('titip');
+
         return redirect()->route('ruang-titip.success', $order);
     }
 
     public function success(TitipanOrder $order)
     {
         abort_unless($order->user_id === Auth::id(), 403);
+
         return view('dashboard.ruang-titip.success', compact('order'));
+    }
+
+    /**
+     * Batas tanggal antar dan data jam operasional untuk halaman checkout.
+     * Tanggal antar: paling cepat hari ini (atau 14 hari sebelum tanggal mulai), paling lambat tanggal mulai.
+     */
+    private function dropoffInfo(array $s, ?StorageRoom $storage): array
+    {
+        $today = now('Asia/Jakarta')->startOfDay();
+        $start = Carbon::parse($s['date_start'], 'Asia/Jakarta')->startOfDay();
+        $min = $start->copy()->subDays((int) config('pickup_slots.dropoff_days_before_start', 14));
+        if ($min->lt($today)) {
+            $min = $today->copy();
+        }
+        $max = $start->lt($min) ? $min->copy() : $start->copy();
+
+        return [
+            'min' => $min,
+            'max' => $max,
+            'hours' => $storage ? $storage->hours : StorageRoom::DEFAULT_HOURS,
+            'slots' => $storage ? $storage->dropoffSlotsByDay() : ['weekday' => [], 'saturday' => [], 'sunday' => []],
+            'now' => now('Asia/Jakarta')->format('Y-m-d H:i'),
+            'min_ahead' => (int) config('pickup_slots.dropoff_min_minutes_ahead', 60),
+        ];
     }
 
     /** Ruang yang dipilih di sesi, hanya bila masih aktif dan masih punya sisa kapasitas. */
@@ -607,14 +363,9 @@ class RuangTitipController extends Controller
         if (empty($s['items']) || empty($s['date_start']) || empty($s['date_end'])) {
             return redirect()->route('ruang-titip.detail-item');
         }
-        if (empty($s['logistic'])) {
-            return redirect()->route('ruang-titip.logistik');
-        }
-        if ($s['logistic'] !== 'self' && empty($s['address'])) {
-            return redirect()->route('ruang-titip.alamat');
-        }
-        if ($s['logistic'] === 'instant' && empty($s['courier_service_code'])) {
-            return redirect()->route('ruang-titip.kurir');
+        // Sesi lama: tanggal mulai sudah lewat, minta atur periode lagi.
+        if (Carbon::parse($s['date_start'], 'Asia/Jakarta')->startOfDay()->lt(now('Asia/Jakarta')->startOfDay())) {
+            return redirect()->route('ruang-titip.detail-item')->with('error', 'Tanggal mulai titip sudah lewat. Atur periode titipmu lagi.');
         }
 
         return null;
@@ -638,8 +389,8 @@ class RuangTitipController extends Controller
     }
 
     /**
-     * Ukuran yang diterima ruang beserta spesifikasi dan harga terkini per hari
-     * (kode, label, price, unit, side, kg, dims, box, vol, koper, fits).
+     * Ukuran yang diterima ruang beserta spesifikasi dan harga terkini
+     * (kode, label, price harian, monthly, tiers, unit, side, sum, kg, dims, fits).
      */
     private function itemSizesFromStorage(?StorageRoom $storage)
     {

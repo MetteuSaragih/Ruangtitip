@@ -136,11 +136,11 @@
                 <h3>Barang</h3>
                 <div class="tbl-wrap">
                     <table class="tbl">
-                        <thead><tr><th>Ukuran</th><th>Maks. kardus</th><th>Jumlah</th></tr></thead>
+                        <thead><tr><th>Ukuran</th><th>Batas ukuran</th><th>Jumlah</th></tr></thead>
                         <tbody>
                             @forelse (($order->items ?? []) as $name => $qty)
                                 @if ((int) $qty > 0)
-                                    <tr><td><b>{{ $itemLabel($name) }}</b></td><td>{{ $itemSpec($name)['box'] ?? '-' }}</td><td>{{ (int) $qty }}</td></tr>
+                                    <tr><td><b>{{ $itemLabel($name) }}</b></td><td>@if ($sp = $itemSpec($name))sisi maks. {{ $sp['side'] }} cm, P+L+T maks. {{ $sp['sum'] }} cm, maks. {{ $sp['kg'] }} kg @else - @endif</td><td>{{ (int) $qty }}</td></tr>
                                 @endif
                             @empty
                                 <tr><td colspan="3">Belum ada data barang.</td></tr>
@@ -186,7 +186,7 @@
                         <div><span>Periode</span><b>{{ $order->date_start->translatedFormat('j M Y') }} sampai {{ $order->date_end->translatedFormat('j M Y') }}<small>{{ $days }} hari</small></b></div>
                     @endif
                     @if ($order->pickup_date)
-                        <div><span>Jadwal antar</span><b>{{ $order->pickup_date->translatedFormat('j M Y') }}@if ($order->pickup_time)<small>{{ $order->pickup_time }}{{ $order->pickup_time_end ? '–' . $order->pickup_time_end : '' }}</small>@endif</b></div>
+                        <div><span>Jadwal antar</span><b>{{ $order->pickup_date->translatedFormat('j M Y') }}@if ($order->pickup_time)<small>Pukul {{ str_replace(':', '.', substr((string) $order->pickup_time, 0, 5)) }}{{ $order->pickup_time_end ? '–' . str_replace(':', '.', substr((string) $order->pickup_time_end, 0, 5)) : '' }} WIB</small>@endif</b></div>
                     @endif
                     <div><span>Lokasi</span><b>{{ $storageName }}@if ($order->storage?->address)<small>{{ $order->storage->address }}</small>@endif</b></div>
                 </div>
@@ -245,7 +245,7 @@
                 <div class="field">
                     <label for="rqDays">Tambah berapa hari</label>
                     <select class="input" id="rqDays" name="days" required>
-                        @foreach ([7, 14, 30, 60, 90] as $d)<option value="{{ $d }}" @selected($d === 30)>{{ $d }} hari</option>@endforeach
+                        @foreach ([[7, '7 hari'], [14, '14 hari'], [30, '1 bulan (30 hari)'], [90, '3 bulan (90 hari)'], [180, '6 bulan (180 hari)'], [360, '12 bulan (360 hari)']] as [$d, $l])<option value="{{ $d }}" @selected($d === 30)>{{ $l }}</option>@endforeach
                     </select>
                 </div>
                 <div class="field">

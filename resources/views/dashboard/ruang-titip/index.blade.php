@@ -32,7 +32,7 @@
         <div class="field">
             <label for="pDur">Lama titip</label>
             <select class="input" id="pDur">
-                @foreach ([[14, '2 minggu'], [30, '1 bulan'], [60, '2 bulan'], [90, '3 bulan'], [180, '6 bulan']] as [$d, $l])
+                @foreach ([[7, '7 hari'], [30, '1 bulan'], [90, '3 bulan'], [180, '6 bulan'], [360, '12 bulan']] as [$d, $l])
                     <option value="{{ $d }}" @selected($d === 30)>{{ $l }} ({{ $d }} hari)</option>
                 @endforeach
             </select>

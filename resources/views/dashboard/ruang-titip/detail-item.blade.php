@@ -21,7 +21,7 @@
     <div class="ph">
         <div>
             <h2 class="pt" tabindex="-1">Atur pesanan titipmu</h2>
-            <p class="ps">Tentukan periode, lalu pilih ukuran barang. Harga per hari dan keterangan ukuran langsung muncul.</p>
+            <p class="ps">Tentukan periode, lalu pilih ukuran barang. Harga mengikuti paket termurah untuk lama titipmu.</p>
         </div>
     </div>
 
@@ -44,7 +44,7 @@
                 <div class="field">
                     <span class="lab">Atau pilih durasi</span>
                     <div class="presets">
-                        @foreach ([[14, '2 minggu'], [30, '1 bulan'], [60, '2 bulan'], [90, '3 bulan'], [180, '6 bulan']] as [$d, $l])
+                        @foreach ([[7, '7 hari'], [30, '1 bulan'], [90, '3 bulan'], [180, '6 bulan'], [360, '12 bulan']] as [$d, $l])
                             <button type="button" class="chip" data-preset="{{ $d }}" aria-pressed="false">{{ $l }}</button>
                         @endforeach
                     </div>
@@ -52,7 +52,7 @@
                 <p id="dur-info" aria-live="polite">Pilih tanggal mulai dan akhir dulu.</p>
                 <div class="alert a-info">
                     <svg class="ic" aria-hidden="true"><use href="#i-info"/></svg>
-                    <div><b>Harga dihitung per barang per hari, dari tanggal mulai sampai tanggal selesai</b><p>Hari mulai dan hari selesai ikut dihitung. Masa titip dihitung dari tanggal mulai; kalau barang datang terlambat, periode tidak bertambah otomatis.</p></div>
+                    <div><b>Makin lama titip, makin hemat</b><p>Ada paket harian, 7 hari (bayar 6 hari), 1 bulan, 3, 6, dan 12 bulan. Untuk lama titip bebas, sistem memilih gabungan paket yang paling murah. Hari mulai dan hari selesai ikut dihitung, dan masa titip dihitung dari tanggal mulai walau barang datang terlambat.</p></div>
                 </div>
             </section>
 
@@ -69,8 +69,9 @@
                             <input type="radio" name="sz_view" id="sz-{{ $sz->code }}" value="{{ $sz->code }}" @checked($sz->code === $activeCode)>
                             <label for="sz-{{ $sz->code }}">
                                 <span class="sz-top"><b>{{ $sz->code }}</b><span class="sz-price">{{ rp($sz->price) }}<small>/hari</small></span></span>
-                                <span class="sz-row"><svg class="ic" aria-hidden="true"><use href="#n-box"/></svg>Kardus maks. {{ $sz->box }}</span>
-                                <span class="sz-row"><svg class="ic" aria-hidden="true"><use href="#n-bag"/></svg>{{ $sz->koper ? 'Koper ' . $sz->koper : 'Belum muat koper' }}</span>
+                                <span class="sz-row"><svg class="ic" aria-hidden="true"><use href="#n-box"/></svg>Sisi terpanjang maks. {{ $sz->side }} cm</span>
+                                <span class="sz-row"><svg class="ic" aria-hidden="true"><use href="#n-box"/></svg>P+L+T maks. {{ $sz->sum }} cm</span>
+                                <span class="sz-row"><svg class="ic" aria-hidden="true"><use href="#n-bag"/></svg>Berat maks. {{ $sz->kg }} kg</span>
                                 <span class="sz-qty" data-badge @if ($qty <= 0) hidden @endif>{{ $qty }} dipilih</span>
                             </label>
                         </div>
@@ -79,7 +80,8 @@
 
                 @foreach ($sizes as $sz)
                     @php $qty = (int) ($selectedItems[$sz->code] ?? 0); @endphp
-                    <div class="ln size-panel" data-code="{{ $sz->code }}" data-label="{{ $sz->label }}" data-price="{{ $sz->price }}" data-unit="{{ $sz->unit }}" @if ($sz->code !== $activeCode) hidden @endif>
+                    @php $tierData = collect($sz->tiers)->map(fn ($t) => ['days' => $t['days'], 'price' => $t['price'], 'label' => $t['label']])->values(); @endphp
+                    <div class="ln size-panel" data-code="{{ $sz->code }}" data-label="{{ $sz->label }}" data-price="{{ $sz->price }}" data-unit="{{ $sz->unit }}" data-tiers="{{ json_encode($tierData) }}" @if ($sz->code !== $activeCode) hidden @endif>
                         <div class="ln-top">
                             <div>
                                 <b>Jumlah barang {{ $sz->label }}</b>
@@ -97,12 +99,16 @@
                         <div class="sz-info">
                             <p><b>{{ $sz->label }} cocok untuk:</b> {{ $sz->fits }}.</p>
                             <ul class="sz-spec">
-                                <li>Kardus maks. <b>{{ $sz->box }}</b> ({{ $sz->vol }})</li>
-                                <li>{!! $sz->koper ? 'Koper <b>' . e($sz->koper) . '</b>' : 'Koper belum muat di ukuran ini' !!}</li>
                                 <li>Sisi terpanjang <b>maks. {{ $sz->side }} cm</b></li>
+                                <li>Panjang + lebar + tinggi <b>maks. {{ $sz->sum }} cm</b></li>
                                 <li>Berat <b>maks. {{ $sz->kg }} kg</b></li>
                             </ul>
-                            <p class="sz-sub" data-line aria-live="polite">{{ $qty }} &times; {{ rp($sz->price) }} = <b>{{ rp($qty * $sz->price) }}</b> per hari</p>
+                            <div class="tier-grid" aria-label="Paket harga {{ $sz->label }}">
+                                @foreach ($sz->tiers as $t)
+                                    <div><span>{{ $t['label'] }}</span><b>{{ rp($t['price']) }}</b><small>{{ $t['note'] }}</small></div>
+                                @endforeach
+                            </div>
+                            <p class="sz-sub" data-line aria-live="polite"></p>
                         </div>
                     </div>
                 @endforeach
@@ -111,8 +117,8 @@
 
                 <div class="wa-note">
                     <svg class="ic" aria-hidden="true"><use href="#n-chat"/></svg>
-                    <div><b>Ukuran barangmu tidak ada di pilihan?</b><p>Misalnya sisi terpanjangnya lebih dari {{ $largest->side ?? 0 }} cm, beratnya lebih dari {{ $largest->kg ?? 0 }} kg, atau tidak bisa dikemas dalam kardus atau koper. Chat admin dulu, nanti kami bantu cek.</p></div>
-                    <a class="btn btn-primary sm" href="{{ $wa }}" target="_blank" rel="noopener">Chat WhatsApp</a>
+                    <div><b>Ukuran barangmu tidak ada di pilihan?</b><p>Misalnya sisi terpanjangnya lebih dari {{ $largest->side ?? 0 }} cm, panjang + lebar + tinggi lebih dari {{ $largest->sum ?? 0 }} cm, atau beratnya lebih dari {{ $largest->kg ?? 0 }} kg. Hubungi admin lewat WhatsApp, nanti kami bantu cek dan tawarkan solusinya.</p></div>
+                    <a class="btn btn-primary sm" href="{{ $wa }}" target="_blank" rel="noopener">Hubungi admin via WhatsApp</a>
                 </div>
 
                 <details class="rules-mini">
@@ -139,7 +145,7 @@
 
             <div class="nav-btns">
                 <a href="{{ $storage ? route('ruang-titip.detail', $storage) : route('ruang-titip.index') }}" class="btn btn-ghost">Kembali</a>
-                <button type="submit" class="btn btn-sun">Lanjut ke logistik</button>
+                <button type="submit" class="btn btn-sun">Lanjut ke jadwal antar</button>
             </div>
         </form>
 
@@ -180,28 +186,52 @@
 
     function fmt(d) { return new Date(d).toLocaleDateString('id-ID', {day:'numeric',month:'short',year:'numeric'}); }
 
+    // Biaya termurah satu barang untuk 'days' hari: gabungan paket (boleh melebihi lama titip bila lebih murah).
+    // Aturannya sama persis dengan StorageSizes::cost() di server.
+    function bestCost(tiers, days) {
+        const t = tiers.filter(x => x.price > 0 && x.days > 0).slice().sort((a, b) => b.days - a.days);
+        if (!t.length) return { total: 0, lines: [] };
+        const best = [0], pick = [];
+        for (let d = 1; d <= days; d++) {
+            best[d] = Infinity;
+            for (let i = 0; i < t.length; i++) {
+                const c = t[i].price + best[Math.max(0, d - t[i].days)];
+                if (c < best[d]) { best[d] = c; pick[d] = i; }
+            }
+        }
+        const counts = {};
+        for (let d = days; d > 0; d = Math.max(0, d - t[pick[d]].days)) { counts[pick[d]] = (counts[pick[d]] || 0) + 1; }
+        const lines = Object.keys(counts).map(Number).sort((a, b) => b - a).map(i => ({ label: t[i].label, price: t[i].price, qty: counts[i] }));
+        return { total: best[days], lines: lines };
+    }
+
     function recalc() {
-        let totalItems = 0, perDay = 0, units = 0;
-        const selected = [], rows = [];
+        const days = Math.max(daysBetween(), 1);
+        let totalItems = 0, itemSubtotal = 0, units = 0;
+        const selected = [], rows = [], sumRows = [];
 
         document.querySelectorAll('.size-panel').forEach(panel => {
             const code = panel.dataset.code;
-            const price = parseInt(panel.dataset.price, 10);
+            const tiers = JSON.parse(panel.dataset.tiers || '[]');
             const v = parseInt(panel.querySelector('.qty-val').textContent, 10) || 0;
+            const one = bestCost(tiers, days);
+            const planText = one.lines.map(l => l.qty + ' × paket ' + l.label).join(', ');
             const line = panel.querySelector('[data-line]');
-            if (line) line.innerHTML = v + ' &times; ' + rpf(price) + ' = <b>' + rpf(v * price) + '</b> per hari';
+            if (line) {
+                line.innerHTML = 'Untuk ' + days + ' hari: <b>' + rpf(one.total) + '</b> per barang (' + planText + ')' +
+                    (v > 0 ? '. ' + v + ' barang = <b>' + rpf(one.total * v) + '</b>' : '');
+            }
             const badge = document.querySelector('label[for="sz-' + code + '"] [data-badge]');
             if (badge) { badge.textContent = v + ' dipilih'; badge.hidden = v <= 0; }
             if (v <= 0) return;
             totalItems += v;
-            perDay += v * price;
+            itemSubtotal += one.total * v;
             units += v * parseInt(panel.dataset.unit, 10);
             selected.push(v + ' × ' + panel.dataset.label);
-            rows.push('<div><span>' + v + ' &times; ' + panel.dataset.label + '</span><b>' + rpf(v * price) + '</b></div>');
+            rows.push('<div><span>' + v + ' &times; ' + panel.dataset.label + '<small>' + planText + ' per barang</small></span><b>' + rpf(one.total * v) + '</b></div>');
+            sumRows.push('<div><span>' + v + ' &times; ' + panel.dataset.label + '<small>' + planText + '</small></span><b>' + rpf(one.total * v) + '</b></div>');
         });
 
-        const days = daysBetween();
-        const itemSubtotal = perDay * Math.max(days, 1);
         const total = totalItems > 0 ? itemSubtotal + PLATFORM_FEE : 0;
 
         const tally = document.getElementById('tally');
@@ -209,9 +239,8 @@
             if (totalItems > 0) {
                 const over = units > REMAINING_UNITS;
                 tally.innerHTML = '<div class="rows">' + rows.join('') +
-                    '<div class="tot"><span>Total per hari</span><b>' + rpf(perDay) + '</b></div></div>' +
-                    '<p class="help">Kebutuhan ruang ' + units + ' setara ukuran S, sisa kapasitas ' + REMAINING_UNITS + ' setara ukuran S.' +
-                    (days > 0 ? ' Untuk ' + days + ' hari: <b>' + rpf(perDay * days) + '</b>.' : '') + '</p>' +
+                    '<div class="tot"><span>Subtotal barang (' + days + ' hari)</span><b>' + rpf(itemSubtotal) + '</b></div></div>' +
+                    '<p class="help">Kebutuhan ruang ' + units + ' setara ukuran S, sisa kapasitas ' + REMAINING_UNITS + ' setara ukuran S.</p>' +
                     (over ? '<p class="msg" role="alert">Barangmu melebihi sisa kapasitas ruang ini. Kurangi jumlah barang atau pilih ruang lain.</p>' : '');
             } else {
                 tally.innerHTML = '<p class="help">Belum ada barang. Pilih ukuran, lalu tambah jumlahnya.</p>';
@@ -219,10 +248,10 @@
         }
 
         const sItems = document.getElementById('s-items');
-        if (sItems) sItems.innerHTML = totalItems ? selected.join('<br>') + (days > 0 ? '<small>' + days + ' hari</small>' : '') : 'Belum ada barang';
+        if (sItems) sItems.innerHTML = totalItems ? selected.join('<br>') + '<small>' + days + ' hari</small>' : 'Belum ada barang';
         const sLines = document.getElementById('s-lines');
         if (sLines) {
-            sLines.innerHTML = itemSubtotal && totalItems ? '<div><span>Subtotal barang</span><b>' + rpf(itemSubtotal) + '</b></div>' : '';
+            sLines.innerHTML = totalItems ? sumRows.join('') + '<div><span>Biaya layanan</span><b>' + rpf(PLATFORM_FEE) + '</b></div>' : '';
         }
         const sTotal = document.getElementById('s-total');
         if (sTotal) sTotal.textContent = rpf(total);

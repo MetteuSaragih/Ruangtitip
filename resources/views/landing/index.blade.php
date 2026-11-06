@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="color-scheme" content="dark">
     <title>RuangTitip | Titip barang mahasiswa di Malang</title>
-    <meta name="description" content="Lepas kosmu selama libur, KKN, atau magang. Titip barangnya ke RuangTitip mulai Rp1.000 per kardus per hari.">
+    <meta name="description" content="Lepas kosmu selama libur, KKN, atau magang. Titip barangnya ke RuangTitip mulai Rp5.000 per barang per hari.">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/logo/favicon-32.png') }}">
     <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('assets/logo/favicon-48.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('assets/logo/apple-touch-icon.png') }}">
