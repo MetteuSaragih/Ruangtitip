@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AdminNotifier;
 use App\Models\TitipanOrder;
 use App\Models\TitipanRequest;
 use App\Models\UserAddress;
@@ -85,7 +86,7 @@ class PesananRequestController extends Controller
             return back()->with('error', 'Permintaan ini masih menunggu. Tunggu konfirmasi admin dulu.');
         }
 
-        TitipanRequest::create([
+        $created = TitipanRequest::create([
             'titipan_order_id' => $order->id,
             'user_id' => Auth::id(),
             'type' => $type,
@@ -93,6 +94,8 @@ class PesananRequestController extends Controller
             'status' => 'menunggu',
             'catatan' => $catatan,
         ]);
+
+        AdminNotifier::newRequest($created);
 
         return back()->with('success', $msg);
     }

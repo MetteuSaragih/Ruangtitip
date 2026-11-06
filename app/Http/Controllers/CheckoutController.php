@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AdminNotifier;
 use App\Models\Order;
 use App\Models\PrelovedItem;
 use Illuminate\Http\Request;
@@ -79,6 +80,8 @@ class CheckoutController extends Controller
             'payment_status' => 'UNPAID',
             'status' => Order::STATUS_PENDING,
         ]);
+
+        AdminNotifier::newPreloved($order);
 
         // Hanya hapus item yang benar-benar di-checkout; sisanya tetap di keranjang.
         $cartSession = session('cart', []);

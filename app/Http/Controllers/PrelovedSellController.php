@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AdminNotifier;
 use App\Models\PrelovedSubmission;
 use App\Models\TitipanOrder;
 use App\Models\UserBankAccount;
@@ -126,6 +127,8 @@ class PrelovedSellController extends Controller
         $submission->addLog('Kamu', 'Pengajuan dikirim dan menunggu seleksi admin.');
         $submission->save();
 
+        AdminNotifier::sellSubmitted($submission);
+
         return redirect()->route('sell.show', $submission->code);
     }
 
@@ -169,6 +172,8 @@ class PrelovedSellController extends Controller
         $submission->addLog('Kamu', 'Memilih jadwal ' . $day->locale('id')->translatedFormat('j F Y') . ', ' . self::SLOTS[$data['slot']] . '.');
         $submission->save();
 
+        AdminNotifier::sellScheduled($submission);
+
         return redirect()->route('sell.show', $submission->code);
     }
 
@@ -192,6 +197,8 @@ class PrelovedSellController extends Controller
             $submission->addLog('Kamu', 'Menolak penawaran harga beli.');
         }
         $submission->save();
+
+        AdminNotifier::sellOfferAnswered($submission, $data['decision'] === 'accept');
 
         return redirect()->route('sell.show', $submission->code);
     }
