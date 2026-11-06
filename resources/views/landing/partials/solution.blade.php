@@ -24,7 +24,7 @@
             <article class="card c-c">
                 <svg class="stk" aria-hidden="true"><use href="#st-phone"/></svg>
                 <h3>Pantau dari HP.</h3>
-                <p>Status, foto, lokasi rak, dan sisa tagihan, kapan saja.</p>
+                <p>Status, foto, lokasi rak, dan pembayaran, kapan saja.</p>
                 <ul class="status" aria-hidden="true">
                     <li>Barang diterima<em>1 Jul</em></li>
                     <li class="now">Dalam Penyimpanan<em>Rak B-03</em></li>

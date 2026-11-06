@@ -68,7 +68,7 @@
             <b>Penawaran harga beli</b>
             <p class="big-price">{{ rp($s->offer) }}</p>
             <p>Dihitung dari estimasi harga jual kembali, kondisi, dan biaya penanganan barang ini.</p>
-            @if ($titip)<p>Sisa tagihan titipan {{ $s->titip_ref }} perlu dilunasi dulu sebelum barang menjadi stok preloved.</p>@endif
+            @if ($titip)<p>Pembayaran titipan {{ $s->titip_ref }} harus sudah dikonfirmasi dulu sebelum barang menjadi stok preloved.</p>@endif
             <form method="POST" action="{{ route('sell.offer', $s->code) }}" class="stack tight">
                 @csrf
                 <label class="pick"><input type="checkbox" name="agree" value="1" id="agree"><span>Saya paham setelah pembelian selesai, barang tidak bisa ditarik kembali. Kalau ingin memilikinya lagi, saya membelinya lewat katalog dengan harga Ruang Titip.</span></label>

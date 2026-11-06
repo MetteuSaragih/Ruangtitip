@@ -48,7 +48,7 @@
                         </div>
                         <label class="pick"><input type="checkbox" name="allow_open" value="1" {{ old('allow_open') ? 'checked' : '' }}><span>Saya mengizinkan petugas membuka kemasan barang titipan ini untuk pemeriksaan. Kalau pembelian tidak terjadi, status titipan tetap berlaku.</span></label>
                         @error('allow_open')<p class="msg">{{ $message }}</p>@enderror
-                        <div class="alert a-info"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><div><b>Tagihan titipan diselesaikan dulu</b><p>Kalau harga disepakati, sisa tagihan penitipan barang ini diselesaikan sebelum barang menjadi stok preloved.</p></div></div>
+                        <div class="alert a-info"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><div><b>Pembayaran titipan harus sudah lunas</b><p>Kalau harga disepakati, penitipan barang ini harus sudah dibayar penuh sebelum barang menjadi stok preloved.</p></div></div>
                     </div>
                     @error('source')<p class="msg">{{ $message }}</p>@enderror
                 </section>

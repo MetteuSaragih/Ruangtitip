@@ -28,7 +28,7 @@
             <h1>Satu akun untuk<span>semua titipanmu.</span></h1>
             <p class="lede">Pesan ruang, bayar tagihan, pantau barang di rak, sampai jual barang preloved. Semuanya dari sini.</p>
             <ul class="perks">
-                @foreach (['Disegel, difoto, dan dikode saat masuk gudang', 'Status dan sisa tagihan bisa dicek kapan saja', 'Tanpa kata sandi, cukup kode dari email'] as $perk)
+                @foreach (['Disegel, difoto, dan dikode saat masuk gudang', 'Status dan pembayaran bisa dicek kapan saja', 'Tanpa kata sandi, cukup kode dari email'] as $perk)
                     <li><span><svg aria-hidden="true"><use href="#i-check"/></svg></span>{{ $perk }}</li>
                 @endforeach
             </ul>
