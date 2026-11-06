@@ -116,10 +116,10 @@
 
 .pay-qris {
     width: 100%;
-    max-width: 560px;
+    max-width: 680px;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 20px;
+    grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+    gap: 24px;
     align-items: center;
     text-align: left;
     padding: 16px;
@@ -130,13 +130,16 @@
 
 .pay-qris figure {
     margin: 0;
+    min-width: 0;
     display: grid;
     gap: 8px;
     justify-items: center;
 }
 
 .pay-qris img {
-    width: min(300px, 100%);
+    display: block;
+    width: 100%;
+    max-width: 300px;
     height: auto;
     border-radius: 12px;
     border: 1px solid var(--color-border);
@@ -148,6 +151,10 @@
     font-size: 13.5px;
 }
 
+.pay-amt {
+    min-width: 0;
+}
+
 .pay-amt small {
     display: block;
     color: var(--color-text-secondary);
@@ -157,7 +164,9 @@
 .pay-amt b {
     display: block;
     font-family: var(--display);
-    font-size: clamp(26px, 5vw, 34px);
+    font-size: clamp(24px, 4vw, 32px);
+    overflow-wrap: normal;
+    word-break: keep-all;
     line-height: 1.1;
     letter-spacing: -0.02em;
     margin: 4px 0 8px;
@@ -249,7 +258,7 @@
     text-align: left;
 }
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
     .pay-qris {
         grid-template-columns: minmax(0, 1fr);
         justify-items: center;
