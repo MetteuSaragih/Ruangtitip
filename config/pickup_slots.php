@@ -17,6 +17,14 @@ return [
         ['start' => '16:00', 'end' => '18:00'],
     ],
 
+    // Antar sendiri ke gudang: pilihan jam kedatangan tiap sekian menit dalam jam operasional,
+    // dan minimal sekian menit dari sekarang bila memilih hari ini.
+    'dropoff_step_minutes' => 30,
+    'dropoff_min_minutes_ahead' => 60,
+
+    // Antar sendiri: tanggal antar boleh dipilih paling cepat sekian hari sebelum tanggal mulai titip.
+    'dropoff_days_before_start' => 14,
+
     // Slot paling cepat yang boleh dipilih: minimal sekian jam dari sekarang.
     'min_hours_ahead' => 2,
 

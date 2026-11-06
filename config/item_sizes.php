@@ -2,41 +2,70 @@
 
 /*
 |--------------------------------------------------------------------------
-| Ukuran barang Ruang Titip (S, M, L, XL)
+| Ukuran barang Ruang Titip (S, M, L, XL, XXL)
 |--------------------------------------------------------------------------
 | Satu sumber kebenaran untuk halaman pengguna, form admin, hitungan biaya,
 | kapasitas, dan ongkir Biteship. Harga di sini adalah HARGA AWAL; admin bisa
 | mengubahnya di halaman "Ruang & kapasitas" (disimpan di tabel app_settings).
-| Harga per barang per HARI, sama di semua ruang.
+| Harga sama di semua ruang.
 |
-|  unit  : jatah kapasitas ruang (setara ukuran S)
-|  dims  : dimensi kardus maksimal [panjang, lebar, tinggi] cm, dipakai ongkir
-|  kg    : berat maksimal per barang, dipakai ongkir (gram = kg * 1000)
-|  side  : sisi terpanjang maksimal (cm)
+|  price   : tarif harian per barang (input admin)
+|  monthly : tarif 1 bulan (30 hari) per barang (input admin)
+|            Tarif 7 hari, 3, 6, dan 12 bulan DIHITUNG dari dua angka ini, lihat 'plans'.
+|  unit    : jatah kapasitas ruang (setara ukuran S)
+|  side    : sisi terpanjang maksimal (cm)
+|  sum     : jumlah panjang + lebar + tinggi maksimal (cm)
+|  kg      : berat maksimal per barang
+|  dims    : dimensi kardus [panjang, lebar, tinggi] cm untuk ongkir (cadangan), kg * 1000 = gram
 */
 
 return [
     'sizes' => [
         'S' => [
-            'label' => 'Ukuran S', 'price' => 5000, 'unit' => 1, 'side' => 30, 'kg' => 5,
-            'dims' => [30, 25, 25], 'box' => '30 × 25 × 25 cm', 'vol' => '±19 L',
-            'koper' => '', 'fits' => 'Helm, totebag, kotak sepatu, tumpukan buku kecil',
+            'label' => 'Ukuran S', 'price' => 5000, 'monthly' => 80000, 'unit' => 1,
+            'side' => 40, 'sum' => 100, 'kg' => 5, 'dims' => [40, 30, 30],
+            'fits' => 'Helm, totebag, kotak sepatu, tumpukan buku kecil',
         ],
         'M' => [
-            'label' => 'Ukuran M', 'price' => 7000, 'unit' => 2, 'side' => 45, 'kg' => 10,
-            'dims' => [45, 35, 30], 'box' => '45 × 35 × 30 cm', 'vol' => '±47 L',
-            'koper' => '16–18 inci (mini)', 'fits' => 'Backpack, pakaian setengah rak, alat mandi, peralatan dapur kecil',
+            'label' => 'Ukuran M', 'price' => 7000, 'monthly' => 110000, 'unit' => 2,
+            'side' => 50, 'sum' => 120, 'kg' => 10, 'dims' => [50, 35, 35],
+            'fits' => 'Backpack, pakaian setengah rak, alat mandi, peralatan dapur kecil',
         ],
         'L' => [
-            'label' => 'Ukuran L', 'price' => 9000, 'unit' => 3, 'side' => 60, 'kg' => 15,
-            'dims' => [60, 40, 40], 'box' => '60 × 40 × 40 cm', 'vol' => '±96 L',
-            'koper' => '20–22 inci (kabin)', 'fits' => 'Tas travel, bantal dan selimut, rice cooker dan panci',
+            'label' => 'Ukuran L', 'price' => 9000, 'monthly' => 150000, 'unit' => 3,
+            'side' => 60, 'sum' => 140, 'kg' => 15, 'dims' => [60, 40, 40],
+            'fits' => 'Tas travel, bantal dan selimut, rice cooker dan panci',
         ],
         'XL' => [
-            'label' => 'Ukuran XL', 'price' => 11000, 'unit' => 5, 'side' => 76, 'kg' => 20,
-            'dims' => [75, 50, 45], 'box' => '75 × 50 × 45 cm', 'vol' => '±170 L',
-            'koper' => '24–28 inci', 'fits' => 'Kardus besar, kontainer plastik ±100 L, bedcover tebal',
+            'label' => 'Ukuran XL', 'price' => 11000, 'monthly' => 200000, 'unit' => 5,
+            'side' => 80, 'sum' => 180, 'kg' => 20, 'dims' => [80, 50, 50],
+            'fits' => 'Kardus besar, kontainer plastik ±100 L, bedcover tebal',
         ],
+        'XXL' => [
+            'label' => 'Ukuran XXL', 'price' => 15000, 'monthly' => 300000, 'unit' => 8,
+            'side' => 100, 'sum' => 220, 'kg' => 30, 'dims' => [100, 60, 60],
+            'fits' => 'Kardus sangat besar, kontainer plastik ±150 L, kasur lipat, kipas dan dispenser',
+        ],
+    ],
+
+    /*
+    | Paket harga (dihitung dari tarif harian dan tarif 1 bulan tiap ukuran):
+    |  - 7 hari   : bayar 6 hari (hari ke-7 gratis)
+    |  - 1 bulan  : tarif bulanan, 30 hari
+    |  - N bulan  : tarif bulanan x N, dipotong diskon (persen), 30 hari per bulan
+    |  Hasil dibulatkan ke atas ke kelipatan 'rounding' rupiah.
+    | Untuk lama titip bebas (mis. 40 hari), sistem memilih gabungan paket yang paling murah.
+    */
+    'plans' => [
+        'rounding' => 1000,
+        'week' => ['days' => 7, 'paid_days' => 6],
+        'months' => [
+            1 => ['days' => 30, 'discount' => 0],
+            3 => ['days' => 90, 'discount' => 5],
+            6 => ['days' => 180, 'discount' => 8],
+            12 => ['days' => 360, 'discount' => 12],
+        ],
+        'max_days' => 730,
     ],
 
     // Kode ukuran lama (sebelum S/M/L/XL) yang mungkin masih ada di pesanan lama: dipetakan agar tetap terbaca.

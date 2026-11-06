@@ -1,6 +1,6 @@
 {{-- Stepper wizard titip. Pakai: @include('dashboard.ruang-titip._progress', ['step' => 1]) --}}
 @php
-    $labels = ['Periode & barang', 'Logistik', 'Alamat', 'Ringkasan & bayar'];
+    $labels = ['Periode & barang', 'Jadwal antar & bayar'];
 @endphp
 <ol class="wiz" aria-label="Langkah pemesanan">
     @foreach ($labels as $i => $label)

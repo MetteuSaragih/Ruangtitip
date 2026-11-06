@@ -46,7 +46,7 @@ class StorageRoom extends Model
     }
 
     /**
-     * Kapasitas terpakai dalam satuan "setara ukuran S" (S=1, M=2, L=3, XL=5), dihitung langsung
+     * Kapasitas terpakai dalam satuan "setara ukuran S" (S=1, M=2, L=3, XL=5, XXL=8), dihitung langsung
      * dari pesanan yang sudah dibayar, jadi selalu sama di halaman admin dan pengguna.
      */
     public function getCapacityUsedAttribute($value): int
@@ -86,7 +86,7 @@ class StorageRoom extends Model
     }
 
     /**
-     * Kode ukuran yang diterima ruang ini (urut S, M, L, XL). Ruang lama tanpa pilihan ukuran
+     * Kode ukuran yang diterima ruang ini (urut S, M, L, XL, XXL). Ruang lama tanpa pilihan ukuran
      * memakai ukuran dari harga lamanya, dan bila tidak ada, semua ukuran.
      */
     public function getAcceptedSizesAttribute(): array
@@ -136,6 +136,73 @@ class StorageRoom extends Model
     public function getPrimaryPhotoAttribute(): ?string
     {
         return collect($this->photos ?? [])->first() ?: $this->photo;
+    }
+
+    /** Jenis hari untuk jam operasional: weekday (Senin-Jumat), saturday, sunday. */
+    public static function dayTypeOf(\Carbon\CarbonInterface $date): string
+    {
+        return match ($date->dayOfWeek) {
+            \Carbon\CarbonInterface::SUNDAY => 'sunday',
+            \Carbon\CarbonInterface::SATURDAY => 'saturday',
+            default => 'weekday',
+        };
+    }
+
+    /**
+     * Baca teks jam operasional ("08.00–17.00", "08:00 - 17:00 WIB", ...) menjadi
+     * [menit buka, menit tutup], atau null bila tutup/tidak terbaca.
+     */
+    public static function parseHours(?string $text): ?array
+    {
+        $text = trim((string) $text);
+        if ($text === '' || preg_match('/tutup|libur/iu', $text)) {
+            return null;
+        }
+        if (! preg_match('/(\d{1,2})[.:](\d{2})\s*(?:–|—|-|s\/d|sd|sampai)\s*(\d{1,2})[.:](\d{2})/u', $text, $m)) {
+            return null;
+        }
+
+        $open = ((int) $m[1]) * 60 + (int) $m[2];
+        $close = ((int) $m[3]) * 60 + (int) $m[4];
+
+        return ($open >= 0 && $close > $open && $close <= 24 * 60) ? [$open, $close] : null;
+    }
+
+    /**
+     * Pilihan jam antar barang pada satu jenis hari: setiap 30 menit dari jam buka sampai
+     * 30 menit sebelum tutup, format "HH:MM". Kosong bila gudang tutup di hari itu.
+     */
+    public function dropoffSlots(string $dayType): array
+    {
+        $dayType = in_array($dayType, ['weekday', 'saturday', 'sunday'], true) ? $dayType : 'weekday';
+        $text = $this->hours[$dayType];
+        $range = self::parseHours($text);
+
+        // Teks aneh yang bukan "tutup": pakai jam bawaan hari itu supaya pelanggan tetap bisa memilih.
+        if (! $range && ! preg_match('/tutup|libur/iu', $text)) {
+            $range = self::parseHours(self::DEFAULT_HOURS[$dayType]);
+        }
+        if (! $range) {
+            return [];
+        }
+
+        $step = max(15, (int) config('pickup_slots.dropoff_step_minutes', 30));
+        $slots = [];
+        for ($t = $range[0]; $t + $step <= $range[1]; $t += $step) {
+            $slots[] = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
+        }
+
+        return $slots;
+    }
+
+    /** Pilihan jam antar untuk ketiga jenis hari: ['weekday' => [...], 'saturday' => [...], 'sunday' => [...]]. */
+    public function dropoffSlotsByDay(): array
+    {
+        return [
+            'weekday' => $this->dropoffSlots('weekday'),
+            'saturday' => $this->dropoffSlots('saturday'),
+            'sunday' => $this->dropoffSlots('sunday'),
+        ];
     }
 
     /** Jam operasional lengkap (nilai kosong diganti bawaan). */

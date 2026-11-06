@@ -148,14 +148,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/{storage}/detail', [UserRuangTitipController::class, 'show'])->name('detail');
         Route::get('/detail-item', [UserRuangTitipController::class, 'detailForm'])->name('detail-item');
         Route::post('/detail-item', [UserRuangTitipController::class, 'detailStore'])->name('detail-item.store');
-        Route::get('/logistik', [UserRuangTitipController::class, 'logistikForm'])->name('logistik')->middleware('profile.complete');
-        Route::post('/logistik', [UserRuangTitipController::class, 'logistikStore'])->name('logistik.store');
-        Route::get('/alamat', [UserRuangTitipController::class, 'alamatForm'])->name('alamat');
-        Route::post('/alamat', [UserRuangTitipController::class, 'alamatStore'])->name('alamat.store');
-        Route::get('/kurir', [UserRuangTitipController::class, 'kurirForm'])->name('kurir');
-        Route::post('/kurir/ongkir', [UserRuangTitipController::class, 'kurirRates'])->name('kurir.rates');
-        Route::post('/kurir', [UserRuangTitipController::class, 'kurirStore'])->name('kurir.store');
-        Route::get('/checkout', [UserRuangTitipController::class, 'checkout'])->name('checkout');
+        Route::get('/checkout', [UserRuangTitipController::class, 'checkout'])->name('checkout')->middleware('profile.complete');
         Route::post('/checkout', [UserRuangTitipController::class, 'place'])->name('place');
         Route::get('/sukses/{order}', [UserRuangTitipController::class, 'success'])->name('success');
     });

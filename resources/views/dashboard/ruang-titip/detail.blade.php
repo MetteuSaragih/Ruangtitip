@@ -16,7 +16,7 @@
     $rules = array_values(array_filter((array) ($storage->rules ?? []), fn ($x) => is_string($x) && trim($x) !== ''));
     $aboutText = trim((string) $storage->long_description) !== '' ? $storage->long_description : $storage->description;
     $aturan = [
-        'Barang diantar sudah dikemas (kardus, koper, atau plastik wrap).',
+        'Barang diantar sendiri ke gudang dalam keadaan sudah dikemas (kardus, koper, atau plastik wrap).',
         'Isi kemasan tidak dibuka (blind box). Petugas hanya memeriksa jumlah, kategori, ukuran, kemasan, dan kondisi luar.',
         'Setiap barang diberi kode, segel, dan foto kondisi awal.',
         'Masa titip dihitung dari tanggal mulai di pesanan, walau barang datang terlambat.',
@@ -68,23 +68,46 @@
             </section>
 
             <section class="card">
-                <h3>Ukuran dan harga</h3>
+                <h3>Ukuran barang</h3>
                 <div class="tbl-wrap">
                     <table class="tbl">
-                        <thead><tr><th>Ukuran</th><th>Kardus maks.</th><th>Koper</th><th>Harga</th></tr></thead>
+                        <thead><tr><th>Ukuran</th><th>Sisi terpanjang</th><th>P + L + T</th><th>Berat</th></tr></thead>
                         <tbody>
                             @foreach ($sizeRows as $row)
                                 <tr>
                                     <td><b>{{ $row['code'] }}</b><small>{{ $row['unit'] }} setara ukuran S</small></td>
-                                    <td>{{ $row['box'] }}<small>{{ $row['vol'] }}</small></td>
-                                    <td>{{ $row['koper'] ?: 'Belum muat' }}</td>
-                                    <td><b>{{ rp($row['price']) }}</b><small>per barang per hari</small></td>
+                                    <td>maks. {{ $row['side'] }} cm</td>
+                                    <td>maks. {{ $row['sum'] }} cm</td>
+                                    <td>maks. {{ $row['kg'] }} kg</td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
-                <p class="help mt">Harga dihitung per barang per hari, dari tanggal mulai sampai tanggal selesai. Harga sama di semua ruang.</p>
+                <p class="help mt">P + L + T = panjang + lebar + tinggi barang yang sudah dikemas.</p>
+            </section>
+
+            <section class="card">
+                <h3>Paket harga per barang</h3>
+                <div class="tbl-wrap">
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Ukuran</th>
+                                @foreach (($sizeRows[0]['tiers'] ?? []) as $t)<th>{{ $t['label'] }}</th>@endforeach
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($sizeRows as $row)
+                                <tr>
+                                    <td><b>{{ $row['code'] }}</b></td>
+                                    @foreach ($row['tiers'] as $t)<td>{{ rp($t['price']) }}</td>@endforeach
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <p class="help mt">Harga per barang. Paket 7 hari bayar 6 hari. Paket 3, 6, dan 12 bulan sudah hemat dan dihitung total untuk seluruh periode. Untuk lama titip bebas, sistem memilih gabungan paket yang paling murah. Harga sama di semua ruang.</p>
             </section>
 
             @if (count($rules))

@@ -5,14 +5,6 @@
     if (! function_exists('rp')) {
         function rp($n) { return 'Rp' . number_format($n, 0, ',', '.'); }
     }
-    $back = $s['logistic'] === 'instant' ? route('ruang-titip.kurir')
-          : ($s['logistic'] === 'rutip' ? route('ruang-titip.alamat') : route('ruang-titip.logistik'));
-    $logLabel = match ($s['logistic']) {
-        'self' => 'Antar sendiri',
-        'rutip' => 'Packing + Anjem RuTip',
-        'instant' => $courier ? trim($courier->name . ' ' . ($courier->service ?? '')) : 'Kurir instan',
-        default => '-',
-    };
     $dStart = \Illuminate\Support\Carbon::parse($s['date_start']);
     $dEnd = \Illuminate\Support\Carbon::parse($s['date_end']);
 @endphp
@@ -25,25 +17,25 @@
     <div class="ph">
         <div>
             <h2 class="pt" tabindex="-1">Ringkasan pesanan</h2>
-            <p class="ps">Periksa semua data sebelum pesanan dibuat.</p>
+            <p class="ps">Pilih kapan kamu mengantar barang ke gudang, lalu periksa data sebelum pesanan dibuat.</p>
         </div>
     </div>
 
-    @include('dashboard.ruang-titip._progress', ['step' => 4])
+    @include('dashboard.ruang-titip._progress', ['step' => 2])
 
     <div class="two">
-        <form method="POST" action="{{ route('ruang-titip.place') }}" class="stack">
+        <form method="POST" action="{{ route('ruang-titip.place') }}" class="stack" id="placeForm">
             @csrf
             @if ($errors->any())
-                <div class="alert a-err"><svg class="ic" aria-hidden="true"><use href="#i-warn"/></svg><div><b>{{ $errors->first() }}</b></div></div>
+                <div class="alert a-err" role="alert"><svg class="ic" aria-hidden="true"><use href="#i-warn"/></svg><div><b>{{ $errors->first() }}</b></div></div>
             @endif
 
             <section class="card">
-                <div class="card-h"><h3>Gudang, periode, dan pengiriman</h3><a class="more-link" href="{{ route('ruang-titip.detail-item') }}">Ubah</a></div>
+                <div class="card-h"><h3>Gudang dan periode</h3><a class="more-link" href="{{ route('ruang-titip.detail-item') }}">Ubah</a></div>
                 <div class="rows">
                     <div><span>Gudang</span><b>{{ $storage->name ?? '-' }}<small>{{ $storage->location ?? '' }}</small></b></div>
                     <div><span>Periode</span><b>{{ $dStart->translatedFormat('l, j F Y') }} sampai {{ $dEnd->translatedFormat('l, j F Y') }}<small>{{ $calc['days'] }} hari</small></b></div>
-                    <div><span>Pengiriman</span><b>{{ $logLabel }}</b></div>
+                    <div><span>Pengantaran</span><b>Antar sendiri ke gudang</b></div>
                 </div>
             </section>
 
@@ -53,35 +45,32 @@
                     <table class="tbl">
                         <thead><tr><th>Rincian</th><th>Subtotal</th></tr></thead>
                         <tbody>
-                            @foreach (($s['items'] ?? []) as $code => $qty)
-                                @if ((int) $qty > 0)
-                                    @php $unitPrice = \App\Support\StorageSizes::price((string) $code); @endphp
-                                    <tr><td><b>{{ (int) $qty }} &times; {{ \App\Support\StorageSizes::label((string) $code) }}</b><small>{{ (int) $qty }} &times; {{ rp($unitPrice) }} &times; {{ $calc['days'] }} hari</small></td><td><b>{{ rp((int) $qty * $unitPrice * $calc['days']) }}</b></td></tr>
-                                @endif
+                            @foreach ($calc['quote'] as $row)
+                                <tr>
+                                    <td>
+                                        <b>{{ $row['qty'] }} &times; {{ $row['label'] }}</b>
+                                        <small>
+                                            @foreach ($row['lines'] as $ln){{ $ln['qty'] }} &times; paket {{ $ln['label'] }} ({{ rp($ln['price']) }})@if (! $loop->last), @endif @endforeach
+                                            per barang, {{ $calc['days'] }} hari
+                                        </small>
+                                    </td>
+                                    <td><b>{{ rp($row['subtotal']) }}</b></td>
+                                </tr>
                             @endforeach
-                            @if ($s['logistic'] === 'rutip')
-                                <tr><td><b>Antar-jemput RuTip</b><small>{{ $calc['km'] }} km dari alamatmu ke gudang</small></td><td><b>{{ rp($calc['kmCost']) }}</b></td></tr>
-                                <tr><td><b>Jemput per barang</b><small>{{ $calc['totalItems'] }} &times; {{ rp($calc['totalItems'] > 0 ? $calc['pickupBoxCost'] / $calc['totalItems'] : 0) }}</small></td><td><b>{{ rp($calc['pickupBoxCost']) }}</b></td></tr>
-                                <tr><td><b>Jasa packing</b><small>{{ $calc['totalItems'] }} &times; {{ rp($calc['totalItems'] > 0 ? $calc['packingCost'] / $calc['totalItems'] : 0) }}</small></td><td><b>{{ rp($calc['packingCost']) }}</b></td></tr>
-                            @elseif ($s['logistic'] === 'instant' && $courier)
-                                <tr><td><b>Pengiriman</b><small>{{ $courier->name }} {{ $courier->service }}</small></td><td><b>{{ rp($calc['courierCost']) }}</b></td></tr>
-                            @endif
                             <tr><td><b>Biaya layanan platform</b></td><td><b>{{ rp($calc['platform_fee']) }}</b></td></tr>
                             <tr class="tot"><td>Total bayar</td><td>{{ rp($calc['total']) }}</td></tr>
                         </tbody>
                     </table>
                 </div>
+                <p class="help mt">Harga memakai gabungan paket termurah untuk lama titipmu.</p>
             </section>
 
-            @if ($s['logistic'] !== 'self')
-                <section class="card">
-                    <h3>Waktu penjemputan</h3>
-                    <x-pickup-slot-picker
-                        :old-date="old('pickup_date')"
-                        :old-start="old('pickup_time')"
-                        :old-end="old('pickup_time_end')" />
-                </section>
-            @endif
+            <section class="card">
+                <h3>Jadwal antar barang</h3>
+                <p class="help" style="margin-bottom:12px">Pilih kapan kamu datang mengantar barang ke {{ $storage->name ?? 'gudang' }}. Jam yang bisa dipilih mengikuti jam operasional gudang.</p>
+                <x-dropoff-picker :drop="$drop" :default-date="$dStart->toDateString()" :old-date="old('pickup_date')" :old-time="old('pickup_time')" />
+                <p class="help mt">Masa titip dihitung dari tanggal mulai di pesananmu, walau barang datang terlambat.</p>
+            </section>
 
             <section class="card">
                 <h3>Persetujuan</h3>
@@ -97,7 +86,7 @@
             </section>
 
             <div class="nav-btns">
-                <a href="{{ $back }}" class="btn btn-ghost">Kembali</a>
+                <a href="{{ route('ruang-titip.detail-item') }}" class="btn btn-ghost">Kembali</a>
                 <button type="submit" id="placeBtn" class="btn btn-sun">Buat pesanan dan bayar {{ rp($calc['total']) }}</button>
             </div>
         </form>
