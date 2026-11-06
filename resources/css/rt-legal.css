@@ -38,7 +38,7 @@ body.p-legal a:hover { color: var(--lg-teal-dark); }
 body.p-legal :focus-visible { outline: 3px solid var(--lg-teal); outline-offset: 3px; border-radius: 8px; }
 body.p-legal mark { background: #FFF4D6; color: #7A5400; border-radius: 4px; padding: 0 4px; font-weight: 600; }
 
-.lg-in { max-width: 1140px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 36px); }
+.lg-in { max-width: 1440px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
 
 /* ----- Header ----- */
 .lg-top {
@@ -77,8 +77,8 @@ body.p-legal mark { background: #FFF4D6; color: #7A5400; border-radius: 4px; pad
 /* ----- Tata letak ----- */
 .lg-body {
     display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
-    gap: clamp(24px, 4vw, 48px);
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: clamp(24px, 4vw, 56px);
     align-items: start;
     padding-top: 32px;
     padding-bottom: 80px;
@@ -145,8 +145,8 @@ body.p-legal mark { background: #FFF4D6; color: #7A5400; border-radius: 4px; pad
 
 /* ----- Dokumen ----- */
 .lg-doc {
-    max-width: 780px;
-    padding: clamp(24px, 4vw, 44px);
+    max-width: none;
+    padding: clamp(24px, 4vw, 52px);
     background: var(--lg-surface);
     border: 1px solid var(--lg-line);
     border-radius: 24px;
@@ -174,6 +174,7 @@ body.p-legal mark { background: #FFF4D6; color: #7A5400; border-radius: 4px; pad
 }
 
 .lg-lead {
+    max-width: 100ch;
     margin: 0 0 32px;
     color: var(--lg-muted);
     font-size: 17px;
@@ -225,11 +226,11 @@ body.p-legal mark { background: #FFF4D6; color: #7A5400; border-radius: 4px; pad
     line-height: 1.4;
 }
 
-.lg-sec p { margin: 0 0 12px; color: var(--lg-text); }
+.lg-sec p { margin: 0 0 12px; color: var(--lg-text); max-width: 100ch; }
 .lg-sec p:last-child { margin-bottom: 0; }
 
 .lg-sec ul,
-.lg-sec ol { margin: 0 0 12px; padding-left: 22px; color: var(--lg-text); }
+.lg-sec ol { margin: 0 0 12px; padding-left: 22px; color: var(--lg-text); max-width: 100ch; }
 .lg-sec ul:last-child,
 .lg-sec ol:last-child { margin-bottom: 0; }
 
@@ -257,6 +258,11 @@ body.p-legal mark { background: #FFF4D6; color: #7A5400; border-radius: 4px; pad
 .lg-end a:hover { text-decoration: underline; }
 
 /* ----- Tablet dan ponsel ----- */
+@media (min-width: 1500px) {
+    body.p-legal { font-size: 17px; }
+    .lg-sec h2 { font-size: 23px; }
+}
+
 @media (max-width: 860px) {
     .lg-body { grid-template-columns: minmax(0, 1fr); padding-top: 20px; padding-bottom: 56px; }
     .lg-side { position: static; max-height: none; }
