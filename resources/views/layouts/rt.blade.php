@@ -163,15 +163,6 @@
     </div>
 </div>
 
-{{-- ===== Tab bar mobile ===== --}}
-<nav class="rt-tabbar" aria-label="Navigasi">
-    <a href="{{ route('dashboard') }}" @if ($rtActive('dashboard')) aria-current="page" @endif><svg class="ic" aria-hidden="true"><use href="#n-home"/></svg>Beranda</a>
-    <a href="{{ route('ruang-titip.index') }}" @if ($rtActive('ruang-titip.*')) aria-current="page" @endif><svg class="ic" aria-hidden="true"><use href="#n-ware"/></svg>Titip</a>
-    <a href="{{ route('pesanan.index') }}" @if ($rtActive('pesanan.*')) aria-current="page" @endif><svg class="ic" aria-hidden="true"><use href="#n-receipt"/></svg>Pesanan @if ($rtActionCount)<span class="rt-cnt">{{ $rtActionCount }}</span>@endif</a>
-    <a href="{{ route('preloved.index') }}" @if ($rtActive('preloved.*', 'packing.*', 'checkout.*')) aria-current="page" @endif><svg class="ic" aria-hidden="true"><use href="#n-tag"/></svg>Preloved @if ($rtCart)<span class="rt-cnt">{{ $rtCart }}</span>@endif</a>
-    <a href="{{ route('profile.index') }}" @if ($rtOnProfile) aria-current="page" @endif><svg class="ic" aria-hidden="true"><use href="#n-user"/></svg>Akun</a>
-</nav>
-
 <div class="rt-tip" id="rtTip" role="tooltip" aria-hidden="true"></div>
 {{-- ===== Konfirmasi login berhasil (dari flash OTP atau Google) ===== --}}
 @if (session('welcome_name'))
