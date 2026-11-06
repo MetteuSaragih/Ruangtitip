@@ -3,14 +3,14 @@
 return [
     /*
     | Pembayaran manual lewat QRIS: pelanggan membayar, mengunggah bukti, lalu admin memeriksa.
-    | Gambar QRIS dibaca dari public/assets/payment/qris.(png|jpg|jpeg|webp|svg), urut seperti itu.
+    | Gambar QRIS dibaca dari public/assets/payment/qris.(png|jpg|jpeg|webp), urut seperti itu.
     | Untuk memakai QRIS asli, cukup simpan gambarnya sebagai public/assets/payment/qris.png.
     */
     'qris' => [
-        'merchant' => env('QRIS_MERCHANT_NAME', 'RuangTitip'),
+        'merchant' => env('QRIS_MERCHANT_NAME', 'RUANGTITIP, LOGISTIK'),
         'directory' => 'assets/payment',
         'basename' => 'qris',
-        'extensions' => ['png', 'jpg', 'jpeg', 'webp', 'svg'],
+        'extensions' => ['png', 'jpg', 'jpeg', 'webp'],
     ],
 
     'proof' => [

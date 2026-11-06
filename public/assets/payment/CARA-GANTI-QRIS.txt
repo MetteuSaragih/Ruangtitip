@@ -3,8 +3,7 @@ Cara mengganti gambar QRIS
 1. Simpan gambar QRIS asli dengan nama: qris.png
    (boleh juga qris.jpg, qris.jpeg, atau qris.webp)
 2. Taruh di folder ini: public/assets/payment/
-3. Selesai. Gambar qris.svg (contoh) otomatis tidak dipakai lagi
-   selama ada file qris.png/jpg/jpeg/webp.
+3. Jika tidak ada file gambar, halaman pembayaran menampilkan pesan agar pelanggan menghubungi admin.
 
-Nama merchant yang tampil di bawah gambar diatur lewat .env:
+Nama merchant di bawah gambar diatur lewat .env:
 QRIS_MERCHANT_NAME="Nama Usaha"

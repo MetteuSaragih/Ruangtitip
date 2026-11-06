@@ -27,6 +27,7 @@
         default => ['warn', 'i-clock', 'Selesaikan pembayaran', 'Scan QRIS di bawah, bayar sesuai nominal, lalu unggah foto bukti pembayarannya.'],
     };
     $canUpload = ManualPayment::canUpload($order);
+    $qrisUrl = ManualPayment::qrisUrl();
 @endphp
 
 <section class="card state pay-panel" aria-live="polite">
@@ -57,8 +58,12 @@
     @if ($canUpload)
         <div class="pay-qris">
             <figure>
-                <img src="{{ ManualPayment::qrisUrl() }}" alt="Kode QRIS {{ ManualPayment::merchant() }}" width="260" height="344" loading="lazy">
-                <figcaption>{{ ManualPayment::merchant() }}</figcaption>
+                @if ($qrisUrl)
+                    <img src="{{ $qrisUrl }}" alt="Kode QRIS {{ ManualPayment::merchant() }}" width="300" height="425" loading="lazy">
+                    <figcaption>{{ ManualPayment::merchant() }}</figcaption>
+                @else
+                    <p class="pay-note err" role="alert"><b>Kode QRIS belum tersedia</b>Hubungi admin lewat WhatsApp untuk mendapatkan kode pembayaran.</p>
+                @endif
             </figure>
             <div class="pay-amt">
                 <small>Nominal yang harus dibayar</small>
@@ -66,7 +71,7 @@
                 <p>Bayar tepat sesuai nominal supaya mudah dicocokkan admin.</p>
                 <div class="pay-qacts">
                     <button type="button" class="btn btn-ghost sm" id="payCopy">Salin nominal</button>
-                    <a class="btn btn-ghost sm" href="{{ ManualPayment::qrisUrl() }}" download="qris-ruangtitip">Simpan QRIS</a>
+                    @if ($qrisUrl)<a class="btn btn-ghost sm" href="{{ $qrisUrl }}" download="qris-ruangtitip">Simpan QRIS</a>@endif
                 </div>
             </div>
         </div>
