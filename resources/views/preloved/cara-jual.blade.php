@@ -31,7 +31,7 @@
         <p class="help mt">Persetujuan awal belum berarti barang pasti dibeli. Setelah pembelian selesai, barang tidak bisa ditarik kembali.</p>
     </section>
 
-    <section class="stack" style="gap:12px">
+    <section class="stack tight">
         <h3>Pengajuanmu</h3>
         @if ($submissions->isEmpty())
             <section class="card state"><svg viewBox="0 0 44 40" width="90" height="82" aria-hidden="true"><use href="#box"/></svg><h3>Belum ada pengajuan</h3><p>Barang yang kamu ajukan akan muncul di sini beserta statusnya.</p></section>

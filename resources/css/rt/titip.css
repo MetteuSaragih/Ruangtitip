@@ -316,9 +316,6 @@
 .ttp .wa-note{flex-wrap:wrap}
 .ttp .wa-note .btn{width:100%}
 }
-.ttp .stepper{display:flex;align-items:center;height:46px;border:1px solid var(--line);border-radius:12px}
-.ttp .stepper button{width:40px;height:44px;border:0;background:none;font-size:19px;font-weight:700}
-.ttp .stepper output{min-width:28px;text-align:center;font-weight:800}
 .ttp .rm{width:42px;height:46px;border:0;background:none;border-radius:12px;color:var(--muted);display:grid;place-items:center}
 .ttp .rm:disabled{opacity:0.35}
 

@@ -12,9 +12,9 @@
 
 @if ($adding)
     @php $isEdit = (bool) $editing; @endphp
-    <section class="card stack" style="gap:14px">
+    <section class="card stack">
         <h3>{{ $isEdit ? 'Ubah rekening' : 'Tambah rekening' }}</h3>
-        <form method="POST" action="{{ $isEdit ? route('akun.rekening.update', $editing->id) : route('akun.rekening.store') }}" class="stack" style="gap:14px" novalidate>
+        <form method="POST" action="{{ $isEdit ? route('akun.rekening.update', $editing->id) : route('akun.rekening.store') }}" class="stack tight" novalidate>
             @csrf
             @if ($isEdit) @method('PUT') @endif
 

@@ -2,7 +2,7 @@
 
 @section('title', 'Alamat')
 @section('key', 'alamat')
-@section('sub', 'Dipakai saat checkout Toko Preloved dengan pengiriman. Alamat utama terisi otomatis.')
+@section('sub', 'Dipakai saat kamu meminta barang titipanmu dikirim kembali. Alamat utama terisi otomatis.')
 
 @section('body')
 @if ($adding)
@@ -12,9 +12,9 @@
         $oldAreaName = old('area_name', $editing?->area_name);
         $oldPostal = old('postal_code', $editing?->postal_code);
     @endphp
-    <section class="card stack" style="gap:14px">
+    <section class="card stack">
         <h3>{{ $isEdit ? 'Ubah alamat' : 'Tambah alamat' }}</h3>
-        <form method="POST" action="{{ $isEdit ? route('akun.alamat.update', $editing->id) : route('akun.alamat.store') }}" class="stack" style="gap:14px" novalidate>
+        <form method="POST" action="{{ $isEdit ? route('akun.alamat.update', $editing->id) : route('akun.alamat.store') }}" class="stack tight" novalidate>
             @csrf
             @if ($isEdit) @method('PUT') @endif
 

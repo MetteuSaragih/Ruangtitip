@@ -4,248 +4,58 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\PrelovedItem;
-use App\Models\UserAddress;
-use App\Services\BiteshipService;
-use App\Services\DistanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/*
+|--------------------------------------------------------------------------
+| CheckoutController (Toko Preloved)
+|--------------------------------------------------------------------------
+| Barang selalu diambil sendiri di gudang (tanpa kurir, alamat, atau ongkir):
+|  1. payment  ringkasan pesanan dan pilih metode (QRIS)
+|  2. process  buat pesanan (UNPAID), pelanggan lanjut mengunggah bukti bayar
+|  3. success  halaman pembayaran dan status pesanan
+*/
 class CheckoutController extends Controller
 {
-    public function __construct(private DistanceService $distance)
-    {
-    }
-
-    public function shipping()
-    {
-        $gone = $this->pruneUnavailable();
-        $cart = $this->checkoutCart();
-        if (empty($cart)) {
-            return redirect()->route('preloved.cart.index')->withErrors(['selected' => $gone ?: 'Pilih produk dulu sebelum checkout.']);
-        }
-        $cartCount = count($cart);
-        $shipping = session('checkout_shipping', []);
-
-        $view = view('checkout.shipping', compact('cart', 'cartCount', 'shipping'));
-
-        return $gone ? $view->withErrors(['selected' => $gone]) : $view;
-    }
-
-    public function chooseShipping(Request $request)
-    {
-        $request->validate([
-            'shipping_method' => 'required|in:pickup,biteship',
-        ]);
-
-        if ($request->input('shipping_method') === 'pickup') {
-            session(['checkout_shipping' => [
-                'method' => 'pickup',
-                'address' => [
-                    'id' => null,
-                    'full' => null,
-                    'note' => null,
-                ],
-                'cost' => 0,
-                'courier' => null,
-                'service' => null,
-            ]]);
-
-            return redirect()->route('checkout.payment');
-        }
-
-        session()->forget('checkout_shipping');
-        session(['checkout_shipping_method' => 'biteship']);
-
-        return redirect()->route('checkout.address');
-    }
-
-    public function address()
-    {
-        $cart = $this->checkoutCart();
-        if (empty($cart)) {
-            return redirect()->route('preloved.cart.index');
-        }
-
-        $shipping = session('checkout_shipping', []);
-        if (session('checkout_shipping_method') !== 'biteship' && ($shipping['method'] ?? null) !== 'biteship') {
-            return redirect()->route('checkout.shipping');
-        }
-
-        $addresses = UserAddress::where('user_id', Auth::id())
-            ->orderByDesc('is_primary')
-            ->orderByDesc('id')
-            ->get();
-
-        return view('checkout.address', compact('addresses', 'cart', 'shipping'));
-    }
-
-    public function saveAddress(Request $request)
-    {
-        $request->validate([
-            'mode' => 'required|in:select,new',
-            'address_id' => 'nullable|required_if:mode,select|exists:user_addresses,id',
-            'address.full' => 'nullable|required_if:mode,new|string|max:500',
-            'address.note' => 'nullable|string|max:500',
-            'address.area_id' => 'nullable|required_if:mode,new|string',
-            'address.area_name' => 'nullable|string',
-            'address.postal_code' => 'nullable|string',
-            'label' => 'nullable|string|max:50',
-            'is_primary' => 'nullable|boolean',
-        ]);
-
-        $address = null;
-
-        if ($request->input('mode') === 'new') {
-            if ($request->boolean('is_primary')) {
-                UserAddress::where('user_id', Auth::id())->update(['is_primary' => false]);
-            }
-
-            $address = UserAddress::create([
-                'user_id' => Auth::id(),
-                'label' => $request->input('label', 'Alamat'),
-                'address' => $request->input('address.full'),
-                'note' => $request->input('address.note'),
-                'is_primary' => $request->boolean('is_primary'),
-                'area_id' => $request->input('address.area_id'),
-                'area_name' => $request->input('address.area_name'),
-                'postal_code' => $request->input('address.postal_code'),
-            ]);
-        } elseif ($request->filled('address_id')) {
-            $address = UserAddress::where('user_id', Auth::id())->findOrFail($request->input('address_id'));
-        }
-
-        if (! $address || ! $address->area_id) {
-            return back()->withErrors(['address' => 'Pilih kecamatan/kota tujuan terlebih dahulu.'])->withInput();
-        }
-        $address = $this->distance->ensureAddressCoords($address);
-
-        session(['checkout_shipping' => [
-            'method' => 'biteship',
-            'address' => [
-                'id' => $address->id,
-                'full' => $address->address,
-                'note' => $address->note,
-                'area_id' => $address->area_id,
-                'area_name' => $address->area_name,
-                'postal_code' => $address->postal_code,
-                'latitude' => $address->latitude,
-                'longitude' => $address->longitude,
-            ],
-        ]]);
-        session()->forget('checkout_shipping_method');
-
-        return redirect()->route('checkout.courier');
-    }
-
-    public function courier()
-    {
-        $cart = $this->checkoutCart();
-        $shipping = session('checkout_shipping', []);
-        if (empty($shipping['address']['area_id'])) {
-            return redirect()->route('checkout.address');
-        }
-
-        return view('checkout.courier', ['address' => $shipping['address']['full'] ?? '', 'cart' => $cart, 'shipping' => $shipping]);
-    }
-
-    public function courierRates(BiteshipService $biteship)
-    {
-        $cart = $this->checkoutCart();
-        $shipping = session('checkout_shipping', []);
-        if (empty($cart) || empty($shipping['address']['area_id'])) {
-            return response()->json(['success' => false, 'message' => 'Alamat belum dipilih.'], 422);
-        }
-
-        $result = $biteship->getRates(
-            $this->originWarehouse(),
-            $this->destinationFromShipping($shipping),
-            $this->cartToItems($cart),
-            config('biteship.checkout_couriers')
-        );
-
-        return response()->json($result);
-    }
-
-    public function chooseCourier(Request $request, BiteshipService $biteship)
-    {
-        $data = $request->validate([
-            'courier_code' => 'required|string',
-            'service_code' => 'required|string',
-        ]);
-
-        $cart = $this->checkoutCart();
-        $shipping = session('checkout_shipping', []);
-
-        $rates = $biteship->getRates(
-            $this->originWarehouse(),
-            $this->destinationFromShipping($shipping),
-            $this->cartToItems($cart),
-            config('biteship.checkout_couriers')
-        );
-
-        $picked = collect($rates['pricing'] ?? [])->first(fn ($p) => $p['courier_code'] === $data['courier_code']
-            && ($p['courier_service_code'] ?? null) === $data['service_code']);
-
-        if (! $picked) {
-            return back()->withErrors(['courier_code' => 'Tarif kurir tidak valid atau sudah berubah, silakan pilih ulang.']);
-        }
-
-        $shipping['cost'] = (int) $picked['price'];
-        $shipping['courier'] = $picked['courier_code'];
-        $shipping['courier_name'] = $picked['courier_name'] ?? $picked['courier_code'];
-        $shipping['service'] = $picked['courier_service_code'] ?? null;
-        $shipping['company'] = $picked['courier_code'];
-        session(['checkout_shipping' => $shipping]);
-
-        return redirect()->route('checkout.payment');
-    }
+    private const SERVICE_FEE = 1000; // biaya layanan per pesanan (jemput sendiri)
 
     public function payment()
     {
         $gone = $this->pruneUnavailable();
         $cart = $this->checkoutCart();
-        $shipping = session('checkout_shipping', []);
 
         if ($gone) {
             return redirect()->route('preloved.cart.index')->withErrors(['selected' => $gone]);
         }
 
-        if (empty($cart) || empty($shipping)) {
-            return redirect()->route('checkout.shipping');
+        if (empty($cart)) {
+            return redirect()->route('preloved.cart.index')->withErrors(['selected' => 'Pilih produk dulu sebelum checkout.']);
         }
 
         $subtotal = array_sum(array_column($cart, 'subtotal'));
-        $serviceFee = $this->serviceFeeFor($shipping['method'] ?? 'pickup');
-        $shippingCost = $shipping['cost'] ?? 0;
-        $total = $subtotal + $serviceFee + $shippingCost;
-
+        $serviceFee = self::SERVICE_FEE;
+        $total = $subtotal + $serviceFee;
         $cartCount = count($cart);
 
-        return view('checkout.payment', compact('cart', 'shipping', 'subtotal', 'serviceFee', 'shippingCost', 'total', 'cartCount'));
+        return view('checkout.payment', compact('cart', 'subtotal', 'serviceFee', 'total', 'cartCount'));
     }
 
     public function process(Request $request)
     {
-        $data = $request->validate([
-            'pickup_date' => 'nullable|date|after_or_equal:today',
-            'pickup_time' => 'nullable|string',
-        ]);
-
         if ($gone = $this->pruneUnavailable()) {
             return response()->json(['success' => false, 'message' => $gone], 409);
         }
 
         $cart = $this->checkoutCart();
-        $shipping = session('checkout_shipping', []);
 
-        if (empty($cart) || empty($shipping)) {
+        if (empty($cart)) {
             return response()->json(['success' => false, 'message' => 'Sesi checkout tidak valid.'], 422);
         }
 
         $subtotal = array_sum(array_column($cart, 'subtotal'));
-        $serviceFee = $this->serviceFeeFor($shipping['method'] ?? 'pickup');
-        $shippingCost = $shipping['cost'] ?? 0;
-        $total = $subtotal + $serviceFee + $shippingCost;
+        $serviceFee = self::SERVICE_FEE;
+        $total = $subtotal + $serviceFee;
 
         $order = Order::create([
             'order_number' => $this->newOrderNumber(),
@@ -256,15 +66,15 @@ class CheckoutController extends Controller
             'items' => array_values($cart),
             'subtotal' => $subtotal,
             'service_fee' => $serviceFee,
-            'shipping_cost' => $shippingCost,
+            'shipping_cost' => 0,
             'total' => $total,
-            'shipping_method' => $shipping['method'],
-            'shipping_address' => $shipping['address'] ?? null,
-            'courier_code' => $shipping['courier'] ?? null,
-            'courier_name' => $shipping['courier_name'] ?? null,
-            'courier_service_code' => $shipping['service'] ?? null,
-            'pickup_date' => $data['pickup_date'] ?? null,
-            'pickup_time' => $data['pickup_time'] ?? null,
+            'shipping_method' => 'pickup',
+            'shipping_address' => null,
+            'courier_code' => null,
+            'courier_name' => null,
+            'courier_service_code' => null,
+            'pickup_date' => null,
+            'pickup_time' => null,
             'payment_method' => 'qris',
             'payment_status' => 'UNPAID',
             'status' => Order::STATUS_PENDING,
@@ -276,7 +86,7 @@ class CheckoutController extends Controller
             unset($cartSession[$key]);
         }
         session(['cart' => $cartSession]);
-        session()->forget(['checkout_cart', 'checkout_shipping']);
+        session()->forget(['checkout_cart', 'checkout_shipping', 'checkout_shipping_method']);
 
         return response()->json([
             'success' => true,
@@ -338,7 +148,6 @@ class CheckoutController extends Controller
         return implode(', ', $removed) . ' sudah tidak tersedia dan dikeluarkan dari pesananmu.';
     }
 
-    /** Biaya layanan platform: Rp 2.000 jika pengiriman pakai Biteship, Rp 1.000 jika tidak. */
     /** Nomor pesanan unik: coba beberapa kali, lalu perpanjang agar tidak pernah bentrok. */
     private function newOrderNumber(): string
     {
@@ -351,49 +160,5 @@ class CheckoutController extends Controller
         }
 
         return $prefix . random_int(10000, 99999) . random_int(100, 999);
-    }
-
-    private function serviceFeeFor(string $shippingMethod): int
-    {
-        return $shippingMethod === 'biteship' ? 2000 : 1000;
-    }
-
-    private function cartToItems(array $cart): array
-    {
-        return collect($cart)->map(fn ($item) => [
-            'name' => $item['name'],
-            'value' => (int) $item['price'],
-            'quantity' => (int) $item['qty'],
-            'weight' => (int) ($item['weight'] ?? 1000),
-            'length' => (int) ($item['length'] ?? 30),
-            'width' => (int) ($item['width'] ?? 20),
-            'height' => (int) ($item['height'] ?? 15),
-        ])->values()->all();
-    }
-
-    /** Titik asal Biteship: gudang pusat RuTip, lengkap dengan koordinat. */
-    private function originWarehouse(): array
-    {
-        $warehouse = $this->distance->warehouseCoords();
-
-        return array_filter([
-            'area_id' => config('biteship.warehouse.area_id'),
-            'postal_code' => config('biteship.warehouse.postal_code'),
-            'latitude' => $warehouse['lat'] ?? null,
-            'longitude' => $warehouse['lng'] ?? null,
-        ]);
-    }
-
-    /** Titik tujuan Biteship: alamat pelanggan, lengkap dengan koordinat kalau sudah ter-geocode. */
-    private function destinationFromShipping(array $shipping): array
-    {
-        $address = $shipping['address'] ?? [];
-
-        return array_filter([
-            'area_id' => $address['area_id'] ?? null,
-            'postal_code' => $address['postal_code'] ?? null,
-            'latitude' => $address['latitude'] ?? null,
-            'longitude' => $address['longitude'] ?? null,
-        ]);
     }
 }

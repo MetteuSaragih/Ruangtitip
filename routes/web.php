@@ -213,14 +213,9 @@ Route::prefix('toko-preloved')->name('preloved.')->group(function () {
 });
 
 Route::middleware('auth')->prefix('checkout')->name('checkout.')->group(function () {
-    Route::get('/pengiriman', [CheckoutController::class, 'shipping'])->name('shipping')->middleware('profile.complete');
-    Route::post('/pengiriman/pilih', [CheckoutController::class, 'chooseShipping'])->name('shipping.choose');
-    Route::get('/alamat', [CheckoutController::class, 'address'])->name('address');
-    Route::post('/alamat/simpan', [CheckoutController::class, 'saveAddress'])->name('address.save');
-    Route::get('/kurir', [CheckoutController::class, 'courier'])->name('courier');
-    Route::post('/kurir/ongkir', [CheckoutController::class, 'courierRates'])->name('courier.rates');
-    Route::post('/kurir/pilih', [CheckoutController::class, 'chooseCourier'])->name('courier.choose');
-    Route::get('/pembayaran', [CheckoutController::class, 'payment'])->name('payment');
+    // Barang preloved selalu jemput sendiri di gudang: langsung ke pembayaran. Tautan lama /pengiriman dialihkan.
+    Route::get('/pengiriman', fn () => redirect()->route('checkout.payment'))->name('shipping');
+    Route::get('/pembayaran', [CheckoutController::class, 'payment'])->name('payment')->middleware('profile.complete');
     Route::post('/proses', [CheckoutController::class, 'process'])->name('process');
     Route::get('/berhasil/{orderId}', [CheckoutController::class, 'success'])->name('success');
 });

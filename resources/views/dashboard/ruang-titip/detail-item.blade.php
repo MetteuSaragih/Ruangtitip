@@ -35,7 +35,7 @@
                 <div class="alert a-err"><svg class="ic" aria-hidden="true"><use href="#i-warn"/></svg><div><b>{{ $errors->first() }}</b></div></div>
             @endif
 
-            <section class="card stack" style="gap:16px">
+            <section class="card stack">
                 <h3>Periode penitipan</h3>
                 <div class="grid2">
                     <div class="field"><label for="dateStart">Tanggal mulai</label><input class="input" type="date" id="dateStart" name="date_start" required min="{{ date('Y-m-d') }}" value="{{ $dateStart }}"></div>
@@ -56,7 +56,7 @@
                 </div>
             </section>
 
-            <section class="card stack" style="gap:14px" id="barang">
+            <section class="card stack" id="barang">
                 <div>
                     <h3>Barang yang dititip</h3>
                     <p class="help">{{ $storage ? $storage->name : 'Ruang ini' }} menerima ukuran {{ $sizes->pluck('code')->implode(', ') }}. Pilih ukuran, lalu atur jumlahnya. Boleh campur ukuran, misalnya 2 barang ukuran S dan 1 barang ukuran M.</p>
@@ -88,7 +88,7 @@
                                 <p class="help">Satu barang ukuran {{ $sz->code }} memakai {{ $sz->unit }} setara ukuran S di ruang.</p>
                             </div>
                             <div class="field">
-                                <div class="stepper">
+                                <div class="qty-step" role="group" aria-label="Jumlah {{ $sz->label }}">
                                     <button type="button" onclick="changeQty(this,-1)" aria-label="Kurangi {{ $sz->label }}">&minus;</button>
                                     <output class="qty-val" aria-live="polite">{{ $qty }}</output>
                                     <input type="hidden" name="items[{{ $sz->code }}]" value="{{ $qty }}" class="qty-input">

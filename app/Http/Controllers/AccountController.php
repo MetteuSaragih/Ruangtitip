@@ -34,7 +34,7 @@ class AccountController extends Controller
 
     public const FAQ = [
         ['Bagaimana cara menitipkan barang?', 'Buka Ruang Titip, pilih ruang, isi periode dan barang, lalu bayar tagihan dalam 24 jam. Setelah itu antar barang sesuai jadwal.'],
-        ['Kapan sisa tagihan dibayar?', 'Sisa tagihan dilunasi dalam 24 jam sebelum jadwal ambil. Barang tidak bisa dikeluarkan sebelum lunas.'],
+        ['Kapan saya membayar?', 'Pembayaran dilakukan penuh (100%) lewat QRIS saat memesan, lalu kamu mengunggah bukti pembayaran. Tidak ada pelunasan lagi, kecuali ada biaya tambahan seperti perpanjangan.'],
         ['Apakah isi kardus diperiksa?', 'Tidak. Ruang Titip memakai skema blind box. Petugas hanya mencatat jumlah, ukuran, kemasan, dan kondisi luar.'],
         ['Bagaimana menjual barang ke Ruang Titip?', 'Ajukan barang di Toko Preloved. Setelah lolos seleksi dan pemeriksaan, kamu menerima penawaran harga dan dibayar penuh kalau setuju.'],
         ['Bisakah orang lain mengambil barangku?', 'Bisa. Pilih pengambilan diwakilkan, isi data perwakilan, dan konfirmasi lewat website.'],

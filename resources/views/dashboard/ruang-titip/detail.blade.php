@@ -142,7 +142,7 @@
         </div>
 
         <aside class="aside">
-            <section class="card stack" style="gap:14px">
+            <section class="card stack">
                 <p class="price"><small>Mulai</small><b>{{ rp($storage->min_price) }}</b><small>per barang per hari</small></p>
                 <div class="cap">
                     <div class="cap-top"><span>Sisa kapasitas</span><b>{{ $rem > 0 ? '±' . $rem . ' setara ukuran S' : 'Habis' }}</b></div>

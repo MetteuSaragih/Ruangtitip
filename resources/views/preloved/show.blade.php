@@ -54,7 +54,7 @@
         </div>
 
         <aside class="aside">
-            <section class="card stack" style="gap:12px">
+            <section class="card stack">
                 <p class="help">Harga</p>
                 <p class="big-price">{{ rp($product['price']) }}</p>
                 <p class="help">Lokasi barang: Gudang Ruru, Lowokwaru, Malang</p>

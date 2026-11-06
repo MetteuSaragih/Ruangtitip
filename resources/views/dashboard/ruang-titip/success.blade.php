@@ -19,7 +19,7 @@
         'order' => $order,
         'paidText' => $paidText,
         'rows' => [
-            ['Tagihan', 'Tagihan pertama'],
+            ['Tagihan', 'Pembayaran penuh (100%)'],
             ['Ruang', $order->storage->name ?? 'Gudang RuangTitip'],
             ['Metode', 'QRIS'],
         ],

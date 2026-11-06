@@ -135,6 +135,9 @@
     <div class="rt-main">
         <header class="rt-top">
             <div class="rt-top-in">
+                <button class="rt-icon-btn rt-burger" id="rtBurger" type="button" aria-label="Buka menu" aria-controls="rtSide" aria-expanded="false">
+                    <svg class="ic" aria-hidden="true"><use href="#n-menu"/></svg>
+                </button>
                 <a class="rt-logo" href="{{ route('dashboard') }}" aria-label="RuTip, ke beranda"><img class="rt-logo-full" src="{{ asset('assets/logo/logo-horizontal.png') }}" alt="RuTip" width="104" height="40"></a>
                 <div class="rt-crumb">
                     <small>{{ now()->locale('id')->translatedFormat('l, j F Y') }}</small>
@@ -150,9 +153,6 @@
                             @if ($rtUser->avatar)<img src="{{ $rtUser->avatar_url }}" alt="">@else{{ $rtUser->initials }}@endif
                         </a>
                     @endif
-                    <button class="rt-icon-btn rt-burger" id="rtBurger" type="button" aria-label="Buka menu" aria-controls="rtSide" aria-expanded="false">
-                        <svg class="ic" aria-hidden="true"><use href="#n-menu"/></svg>
-                    </button>
                 </div>
             </div>
         </header>

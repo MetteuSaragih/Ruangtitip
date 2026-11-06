@@ -69,7 +69,7 @@ class PesananRequestController extends Controller
             'date' => $data['date'],
             'method' => $data['method'],
             'rep_name' => $data['method'] === 'diwakilkan' ? ($data['rep_name'] ?? null) : null,
-        ], $data['catatan'] ?? null, 'Permintaan pengambilan sudah dikirim. Admin akan mengonfirmasi jadwal dan pelunasan.');
+        ], $data['catatan'] ?? null, 'Permintaan pengambilan sudah dikirim. Admin akan mengonfirmasi jadwalnya.');
     }
 
     private function guard(TitipanOrder $order, string $type): void

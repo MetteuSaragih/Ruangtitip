@@ -14,7 +14,7 @@
     @include('partials.mp-head', [
         'crumbs' => [['Pembelian Saya', null]],
         'title' => 'Pembelian Saya',
-        'sub' => 'Pantau pembayaran, penyerahan, pengiriman, dan masa komplain.',
+        'sub' => 'Pantau pembayaran, penyerahan, dan masa komplain.',
         'acts' => '<a class="btn btn-ghost" href="' . e(route('preloved.index')) . '">Belanja lagi</a>',
     ])
 

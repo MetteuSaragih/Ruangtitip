@@ -80,7 +80,7 @@
             <div class="alert a-warn">
                 <svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>
                 <div>
-                    <b>Bayar tagihan pertama {{ rp($order->total) }}</b>
+                    <b>Bayar pesananmu {{ rp($order->total) }}</b>
                     <p>Bayar lewat QRIS, lalu unggah foto bukti pembayaran. Admin akan memeriksanya.</p>
                     <div class="acts"><a class="btn btn-primary sm" href="{{ $payUrl }}">Bayar sekarang</a></div>
                 </div>
@@ -221,13 +221,13 @@
                     <div><span>Sudah dibayar</span><b>{{ rp($isPaid ? $order->total : 0) }}</b></div>
                     <div class="tot"><span>Sisa tagihan</span><b>{{ rp($isPaid ? 0 : $order->total) }}</b></div>
                 </div>
-                <p class="help mt">Sisa tagihan tiap barang dilunasi dalam 24 jam sebelum barang itu diambil.</p>
+                <p class="help mt">Pembayaran dilakukan penuh di awal. Tidak ada pelunasan lagi, kecuali ada biaya tambahan seperti perpanjangan.</p>
             </section>
 
             <section class="card">
                 <h3>Pembayaran tercatat</h3>
                 @if ($isPaid)
-                    <div class="rows"><div><span>Tagihan pertama<small>{{ ($order->paid_at ?: $order->updated_at)->translatedFormat('j M Y') }}, {{ ($order->paid_at ?: $order->updated_at)->format('H.i') }}</small></span><b>{{ rp($order->total) }}@if ($payMethod)<small>{{ $payMethod }}</small>@endif</b></div></div>
+                    <div class="rows"><div><span>Pembayaran penuh<small>{{ ($order->paid_at ?: $order->updated_at)->translatedFormat('j M Y') }}, {{ ($order->paid_at ?: $order->updated_at)->format('H.i') }}</small></span><b>{{ rp($order->total) }}@if ($payMethod)<small>{{ $payMethod }}</small>@endif</b></div></div>
                 @else
                     <p class="help">{{ $payState === 'review' ? 'Bukti pembayaran sedang diperiksa admin.' : 'Belum ada pembayaran yang dikonfirmasi.' }}</p>
                 @endif
@@ -238,7 +238,7 @@
 
     @if ($inStorage)
         <dialog class="rt-dlg req-dlg" id="dlgPerpanjang" aria-labelledby="dlgPerpanjangT">
-            <form method="POST" action="{{ route('pesanan.request.perpanjang', $order) }}" class="stack" style="gap:14px">
+            <form method="POST" action="{{ route('pesanan.request.perpanjang', $order) }}" class="stack tight">
                 @csrf
                 <h3 id="dlgPerpanjangT">Tambah periode titip</h3>
                 <p>Periode sekarang berakhir {{ $order->date_end?->translatedFormat('j F Y') ?? '-' }}. Admin akan mengonfirmasi dan menerbitkan tagihan.</p>
@@ -260,7 +260,7 @@
         </dialog>
 
         <dialog class="rt-dlg req-dlg" id="dlgKirim" aria-labelledby="dlgKirimT">
-            <form method="POST" action="{{ route('pesanan.request.kirim', $order) }}" class="stack" style="gap:14px">
+            <form method="POST" action="{{ route('pesanan.request.kirim', $order) }}" class="stack tight">
                 @csrf
                 <h3 id="dlgKirimT">Kirim barang ke alamatku</h3>
                 <p>Admin akan menghitung ongkir dan menerbitkan tagihan sebelum barang dikirim.</p>
@@ -288,10 +288,10 @@
         </dialog>
 
         <dialog class="rt-dlg req-dlg" id="dlgAmbil" aria-labelledby="dlgAmbilT">
-            <form method="POST" action="{{ route('pesanan.request.ambil', $order) }}" class="stack" style="gap:14px">
+            <form method="POST" action="{{ route('pesanan.request.ambil', $order) }}" class="stack tight">
                 @csrf
                 <h3 id="dlgAmbilT">Ambil di gudang</h3>
-                <p>Admin akan mengonfirmasi jadwal dan pelunasan sebelum barang dikeluarkan.</p>
+                <p>Admin akan mengonfirmasi jadwal sebelum barang dikeluarkan.</p>
                 <div class="field">
                     <label for="rqDate">Tanggal ambil</label>
                     <input class="input" type="date" id="rqDate" name="date" required min="{{ now()->toDateString() }}">

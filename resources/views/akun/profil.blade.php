@@ -21,7 +21,7 @@
         @error('avatar')<p class="msg mt">{{ $message }}</p>@enderror
     </section>
 
-    <section class="card stack" style="gap:16px">
+    <section class="card stack">
         <div><h3>Data diri</h3><p class="help">Nama sesuai identitas memudahkan petugas memverifikasimu saat mengambil barang.</p></div>
 
         <div class="field">
