@@ -19,16 +19,33 @@
         'acts' => '<a class="btn btn-sun" href="' . e(route('sell.create')) . '">Ajukan barang</a>',
     ])
 
-    <section class="card">
-        <h3>Cara kerjanya</h3>
-        <ol class="steps4">
-            <li>Ajukan barang dengan foto dan kondisinya</li>
-            <li>Admin menyeleksi kelayakan dan kapasitas</li>
-            <li>Antar barang, lalu diperiksa bersamamu</li>
-            <li>Terima atau tolak penawaran harga</li>
-            <li>Kamu dibayar penuh, barang jadi milik Ruang Titip</li>
+    <section class="card how-card">
+        <div class="how-head">
+            <h3>Cara kerjanya</h3>
+            <p class="help">Dari mengajukan sampai dibayar, semuanya lewat website.</p>
+        </div>
+
+        <ol class="how">
+            @foreach ([
+                ['i-cam', 'Ajukan barang', 'Isi data dan unggah foto serta kondisi barangnya.'],
+                ['i-check', 'Seleksi admin', 'Admin menyeleksi kelayakan barang dan kapasitas gudang.'],
+                ['i-pin', 'Antar dan periksa', 'Antar barang ke gudang, lalu diperiksa bersamamu.'],
+                ['i-bell', 'Penawaran harga', 'Terima atau tolak harga beli yang kami tawarkan.'],
+                ['i-bank', 'Dibayar penuh', 'Kamu dibayar penuh, dan barang jadi milik Ruang Titip.'],
+            ] as $i => [$icon, $title, $text])
+                <li>
+                    <span class="how-n" aria-hidden="true">{{ $i + 1 }}</span>
+                    <span class="how-ic" aria-hidden="true"><svg class="ic"><use href="#{{ $icon }}"/></svg></span>
+                    <b>{{ $title }}</b>
+                    <p>{{ $text }}</p>
+                </li>
+            @endforeach
         </ol>
-        <p class="help mt">Persetujuan awal belum berarti barang pasti dibeli. Setelah pembelian selesai, barang tidak bisa ditarik kembali.</p>
+
+        <div class="alert a-info">
+            <svg class="ic" aria-hidden="true"><use href="#i-info"/></svg>
+            <div><b>Perlu diketahui</b><p>Persetujuan awal belum berarti barang pasti dibeli. Setelah pembelian selesai, barang tidak bisa ditarik kembali.</p></div>
+        </div>
     </section>
 
     <section class="stack tight">
