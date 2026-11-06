@@ -1,70 +1,128 @@
 /* ==========================================================================
-   Pembayaran QRIS manual: panel status, kode QRIS, unggah bukti.
+   Pembayaran QRIS manual: kepala status, langkah, QRIS, unggah bukti, rincian.
    Dipakai oleh resources/views/partials/payment-panel.blade.php
+   Skala jarak: 8, 12, 16, 20, 24.
    ========================================================================== */
-.pay-panel {
+.pay {
     display: grid;
-    justify-items: center;
+    gap: 20px;
+    padding: 24px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    min-width: 0;
+}
+
+/* ----- Kepala ----- */
+.pay-head {
+    display: flex;
+    align-items: center;
     gap: 16px;
-    text-align: center;
 }
 
-.pay-panel > h3,
-.pay-panel > p {
+.pay-head-t {
+    flex: 1;
+    min-width: 0;
+}
+
+.pay-head-t h3 {
     margin: 0;
+    font-size: 20px;
+    line-height: 1.25;
 }
 
-.pay-panel > p {
-    max-width: 52ch;
+.pay-head-t p {
+    margin: 4px 0 0;
     color: var(--color-text-secondary);
+    font-size: 14.5px;
+    line-height: 1.5;
 }
 
+.pay-ic {
+    width: 48px;
+    height: 48px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+}
+
+.pay-ic .ic {
+    width: 26px;
+    height: 26px;
+}
+
+.pay-ic-warn { background: var(--color-pending-bg); color: var(--color-pending-text); }
+.pay-ic-info { background: var(--color-aqua); color: var(--color-primary); }
+.pay-ic-ok { background: var(--color-success-bg); color: var(--color-success-text); }
+.pay-ic-err { background: var(--color-danger-bg); color: var(--color-danger-text); }
+
+.pay-st {
+    flex: none;
+    align-self: flex-start;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.pay-st-warn { background: var(--color-pending-bg); color: var(--color-pending-text); }
+.pay-st-info { background: var(--color-aqua); color: var(--color-primary); }
+.pay-st-ok { background: var(--color-success-bg); color: var(--color-success-text); }
+.pay-st-err { background: var(--color-danger-bg); color: var(--color-danger-text); }
+
+/* ----- Langkah ----- */
 .pay-steps {
     list-style: none;
-    margin: 4px 0 0;
-    padding: 0;
-    width: 100%;
-    max-width: 520px;
+    margin: 0;
+    padding: 14px 16px;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 6px;
+    gap: 8px;
+    background: var(--color-bg);
+    border-radius: 14px;
 }
 
 .pay-steps li {
     position: relative;
-    display: grid;
-    justify-items: center;
-    gap: 6px;
-    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    font-size: 13px;
     font-weight: 700;
     color: var(--color-text-tertiary);
 }
 
-.pay-steps li::before {
+.pay-steps li:not(:last-child)::after {
     content: '';
-    position: absolute;
-    top: 13px;
-    left: calc(-50% + 16px);
-    right: calc(50% + 16px);
+    flex: 1;
+    min-width: 8px;
     height: 2px;
     background: var(--color-border);
 }
 
-.pay-steps li:first-child::before {
-    display: none;
-}
-
 .pay-steps .n {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    flex: none;
     display: grid;
     place-items: center;
+    border-radius: 50%;
     background: var(--color-surface);
     border: 2px solid var(--color-border);
-    font-size: 12.5px;
+    font-size: 12px;
     font-variant-numeric: tabular-nums;
-    position: relative;
+}
+
+.pay-steps .n .ic {
+    width: 14px;
+    height: 14px;
+}
+
+.pay-steps .t {
+    white-space: nowrap;
 }
 
 .pay-steps li.done,
@@ -78,8 +136,7 @@
     color: #fff;
 }
 
-.pay-steps li.done::before,
-.pay-steps li.now::before {
+.pay-steps li.done::after {
     background: var(--color-primary);
 }
 
@@ -89,133 +146,227 @@
     box-shadow: 0 0 0 4px var(--color-aqua);
 }
 
+/* ----- Catatan (alasan penolakan, QRIS tidak ada) ----- */
 .pay-note {
-    width: 100%;
-    max-width: 520px;
-    text-align: left;
-    padding: 12px 14px;
-    border-radius: 12px;
-    background: var(--color-bg);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
+}
+
+.pay-note .ic {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    margin-top: 2px;
 }
 
 .pay-note b {
     display: block;
-    font-size: 13.5px;
+    font-size: 14px;
 }
 
 .pay-note p {
     margin: 4px 0 0;
+    font-size: 14px;
+    line-height: 1.5;
     overflow-wrap: anywhere;
     white-space: pre-line;
 }
 
-.pay-note.err {
-    background: var(--color-danger-bg, #fdecea);
-    color: var(--color-danger-text, #8a1f17);
+/* ----- Dua kolom ----- */
+.pay-grid {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
 }
 
-.pay-qris {
-    width: 100%;
-    max-width: 680px;
+.pay-grid-one {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.pay-qr {
     display: grid;
-    grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
-    gap: 24px;
-    align-items: center;
-    text-align: left;
-    padding: 16px;
+    gap: 12px;
+    padding: 12px;
     border: 1px solid var(--color-border);
-    border-radius: 16px;
+    border-radius: 18px;
     background: var(--color-surface);
 }
 
-.pay-qris figure {
-    margin: 0;
-    min-width: 0;
-    display: grid;
-    gap: 8px;
-    justify-items: center;
-}
-
-.pay-qris img {
+.pay-qr img {
     display: block;
     width: 100%;
-    max-width: 300px;
     height: auto;
     border-radius: 12px;
-    border: 1px solid var(--color-border);
-    background: #fff;
 }
 
-.pay-qris figcaption {
-    font-weight: 800;
+.pay-qr-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 4px 2px;
     font-size: 13.5px;
 }
 
-.pay-amt {
+.pay-link {
+    color: var(--color-primary);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    white-space: nowrap;
+}
+
+.pay-main {
+    display: grid;
+    gap: 16px;
     min-width: 0;
 }
 
-.pay-amt small {
-    display: block;
-    color: var(--color-text-secondary);
-    font-weight: 600;
+/* ----- Total ----- */
+.pay-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: 16px;
+    background: var(--color-aqua);
 }
 
-.pay-amt b {
+.pay-total small {
     display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.pay-total b {
+    display: block;
+    margin-top: 2px;
     font-family: var(--display);
-    font-size: clamp(24px, 4vw, 32px);
-    overflow-wrap: normal;
-    word-break: keep-all;
+    font-size: clamp(28px, 4vw, 36px);
     line-height: 1.1;
     letter-spacing: -0.02em;
-    margin: 4px 0 8px;
     font-variant-numeric: tabular-nums;
+    word-break: keep-all;
 }
 
-.pay-amt p {
-    margin: 0;
+.pay-code {
+    display: block;
+    margin-top: 6px;
+    font-size: 12.5px;
+    color: var(--color-text-secondary);
+}
+
+.pay-hint {
+    margin: -4px 0 0;
     font-size: 13.5px;
     color: var(--color-text-secondary);
 }
 
-.pay-qacts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-}
-
+/* ----- Unggah bukti ----- */
 .pay-form {
-    width: 100%;
-    max-width: 560px;
     display: grid;
     gap: 12px;
-    text-align: left;
 }
 
-.pay-form > label {
+.pay-lab {
+    font-size: 14px;
     font-weight: 700;
-    font-size: 14px;
 }
 
-.pay-form input[type='file'] {
-    width: 100%;
-    padding: 10px;
-    border: 1.5px dashed var(--color-border);
-    border-radius: 12px;
+/* Input asli disembunyikan secara visual tapi tetap bisa difokus lewat papan ketik. */
+.pay-file {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    opacity: 0;
+}
+
+.pay-drop {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1.5px dashed var(--color-border-aqua, var(--color-border));
+    border-radius: 16px;
     background: var(--color-bg);
-    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
 }
 
-.pay-form .help {
-    margin: 0;
+.pay-drop:hover {
+    border-color: var(--color-primary);
+    background: var(--color-aqua);
+}
+
+.pay-file:focus-visible + .pay-drop {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.pay-drop.has-file {
+    border-style: solid;
+    border-color: var(--color-primary);
+    background: var(--color-aqua);
+}
+
+.pay-drop-ic {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: var(--color-surface);
+    color: var(--color-primary);
+}
+
+.pay-drop-ic .ic {
+    width: 22px;
+    height: 22px;
+}
+
+.pay-thumb {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+}
+
+.pay-drop-t {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.pay-drop-t b {
+    font-size: 14.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pay-drop-t small {
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--color-text-secondary);
 }
 
 .pay-err {
-    margin: 0;
-    min-height: 0;
-    color: var(--color-danger-text, #8a1f17);
+    margin: -4px 0 0;
+    color: var(--color-danger-text);
     font-size: 13.5px;
     font-weight: 600;
 }
@@ -224,54 +375,169 @@
     display: none;
 }
 
-.pay-prev {
-    width: 100%;
-    max-height: 320px;
-    object-fit: contain;
-    border-radius: 12px;
-    border: 1px solid var(--color-border);
-    background: var(--color-bg);
-}
-
+/* ----- Bukti terkirim ----- */
 .pay-sent {
-    display: grid;
-    gap: 8px;
-    justify-items: center;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
 }
 
 .pay-sent img {
-    width: min(220px, 70vw);
-    height: auto;
-    max-height: 260px;
+    display: block;
+    width: 88px;
+    height: 88px;
+    flex: none;
     object-fit: cover;
     border-radius: 12px;
     border: 1px solid var(--color-border);
 }
 
-.pay-sent .help {
-    margin: 0;
+.pay-sent b {
+    display: block;
+    font-size: 14.5px;
 }
 
-.pay-rows {
-    width: 100%;
-    max-width: 520px;
-    text-align: left;
+.pay-sent p {
+    margin: 2px 0 0;
+    font-size: 13.5px;
+    color: var(--color-text-secondary);
+}
+
+/* ----- Rincian pesanan ----- */
+.pay-detail {
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    background: var(--color-surface);
+}
+
+.pay-detail summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+}
+
+.pay-detail summary::-webkit-details-marker {
+    display: none;
+}
+
+.pay-detail summary::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--color-text-secondary);
+    border-bottom: 2px solid var(--color-text-secondary);
+    transform: rotate(45deg);
+    margin-top: -4px;
+    transition: transform 0.15s;
+}
+
+.pay-detail[open] summary::after {
+    transform: rotate(-135deg);
+    margin-top: 4px;
+}
+
+.pay-detail dl {
+    margin: 0;
+    padding: 0 16px 8px;
+}
+
+.pay-detail dl > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+    border-top: 1px dashed var(--color-divider);
+    font-size: 14px;
+}
+
+.pay-detail dt {
+    color: var(--color-text-secondary);
+}
+
+.pay-detail dd {
+    margin: 0;
+    font-weight: 700;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.pay-detail .tot {
+    border-top: 1px solid var(--color-border);
+}
+
+.pay-detail .tot dd {
+    font-family: var(--display);
+    font-size: 17px;
+}
+
+/* ----- Tombol penutup ----- */
+.pay-acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 4px;
+}
+
+/* ----- Tablet dan ponsel ----- */
+@media (max-width: 900px) {
+    .pay-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pay-qr {
+        max-width: 360px;
+        margin: 0 auto;
+        width: 100%;
+    }
 }
 
 @media (max-width: 640px) {
-    .pay-qris {
-        grid-template-columns: minmax(0, 1fr);
-        justify-items: center;
-        text-align: center;
-        padding: 14px;
+    .pay {
+        padding: 16px;
+        gap: 16px;
+        border-radius: 16px;
     }
 
-    .pay-qacts {
-        justify-content: center;
+    .pay-head {
+        flex-wrap: wrap;
+        gap: 12px;
     }
 
-    .pay-steps li {
-        font-size: 11px;
+    .pay-head-t {
+        flex-basis: calc(100% - 64px);
+    }
+
+    .pay-st {
+        order: 3;
+    }
+
+    .pay-steps {
+        padding: 12px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        row-gap: 10px;
+    }
+
+    .pay-steps li:nth-child(2)::after {
+        display: none;
+    }
+
+    .pay-total {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 16px;
+    }
+
+    .pay-acts .btn {
+        flex: 1 1 100%;
     }
 }
 
@@ -311,7 +577,7 @@
     margin: 0;
     padding-left: 20px;
     display: grid;
-    gap: 6px;
+    gap: 8px;
     font-size: 14px;
     color: var(--color-text-secondary);
 }
