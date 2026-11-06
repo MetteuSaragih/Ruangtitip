@@ -149,8 +149,8 @@ class ManualPayment
 
     /* ───────────── QRIS ───────────── */
 
-    /** URL gambar QRIS (png/jpg/webp lebih diutamakan daripada svg contoh). */
-    public static function qrisUrl(): string
+    /** URL gambar QRIS asli (qris.png/jpg/jpeg/webp), atau null bila filenya tidak ada. */
+    public static function qrisUrl(): ?string
     {
         $cfg = config('payment.qris');
         foreach ($cfg['extensions'] as $ext) {
@@ -160,7 +160,7 @@ class ManualPayment
             }
         }
 
-        return asset($cfg['directory'] . '/' . $cfg['basename'] . '.svg');
+        return null;
     }
 
     public static function merchant(): string
