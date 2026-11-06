@@ -1,8 +1,9 @@
 {{--
-    Panel status pembayaran QRIS manual, dipakai di halaman hasil pembayaran Ruang Titip, Preloved, dan Packing.
+    Panel status pembayaran QRIS manual, dipakai di halaman pembayaran Ruang Titip, Preloved, dan Packing.
+    Tata letak: kepala status + langkah, lalu dua kolom (QRIS di kiri; nominal, unggah bukti, rincian di kanan).
     Parameter:
       $order     model pesanan (TitipanOrder, Order, atau PackingOrder)
-      $rows      baris ringkasan [[label, nilai], ...]
+      $rows      baris rincian [[label, nilai], ...]
       $paidText  kalimat saat pembayaran berhasil
       $actions   tombol penutup [[label, url, kelas], ...]
 --}}
@@ -15,102 +16,142 @@
     $rpf = fn ($n) => 'Rp' . number_format((int) $n, 0, ',', '.');
     $rows = $rows ?? [];
     $actions = $actions ?? [];
-    $wa = 'https://wa.me/6285121091134';
     $uploadUrl = route('payment.proof.store', [$payType, $order->getKey()]);
     $proofUrl = ManualPayment::proofExists($order) ? route('payment.proof.show', [$payType, $order->getKey()]) : null;
 
     [$tone, $icon, $title, $text] = match ($state) {
         'paid' => ['ok', 'i-check', 'Pembayaran berhasil', $paidText ?? 'Pembayaranmu sudah kami terima.'],
-        'review' => ['info', 'i-clock', 'Pembayaran sedang diperiksa', 'Bukti pembayaran sudah kami terima. Admin sedang memeriksanya, biasanya tidak lama. Halaman ini akan menunjukkan hasilnya.'],
-        'rejected' => ['err', 'i-x', 'Pembayaran gagal', 'Admin belum bisa memastikan pembayaranmu. Baca alasannya di bawah, lalu foto ulang bukti pembayaranmu dan kirim lagi.'],
+        'review' => ['info', 'i-clock', 'Pembayaran sedang diperiksa', 'Bukti pembayaranmu sudah kami terima. Admin sedang memeriksanya, biasanya tidak lama. Halaman ini menunjukkan hasilnya.'],
+        'rejected' => ['err', 'i-x', 'Pembayaran gagal', 'Admin belum bisa memastikan pembayaranmu. Baca alasannya, lalu foto ulang bukti pembayaranmu dan kirim lagi.'],
         'failed' => ['err', 'i-x', 'Pembayaran gagal', 'Pesanan ini tidak bisa dibayar lagi. Hubungi admin bila kamu sudah membayar.'],
-        default => ['warn', 'i-clock', 'Selesaikan pembayaran', 'Scan QRIS di bawah, bayar sesuai nominal, lalu unggah foto bukti pembayarannya.'],
+        default => ['warn', 'i-clock', 'Selesaikan pembayaran', 'Scan QRIS, bayar sesuai nominal, lalu unggah foto bukti pembayarannya.'],
     };
     $canUpload = ManualPayment::canUpload($order);
     $qrisUrl = ManualPayment::qrisUrl();
+    $stepNow = match ($state) { 'review' => 3, 'paid' => 4, default => $order->payment_proof ? 2 : 1 };
+    $maxMb = (int) (config('payment.proof.max_kb') / 1024);
+    $sentAt = $order->payment_proof_at?->timezone('Asia/Jakarta')->locale('id')->translatedFormat('j F Y, H.i');
 @endphp
 
-<section class="card state pay-panel" aria-live="polite">
-    <div class="r-ic r-{{ $tone }}"><svg class="ic" aria-hidden="true"><use href="#{{ $icon }}"/></svg></div>
-    <h3>{{ $title }}</h3>
-    <p>{{ $text }}</p>
+<section class="pay" aria-live="polite">
+    {{-- Kepala: status dan penjelasan --}}
+    <header class="pay-head">
+        <span class="pay-ic pay-ic-{{ $tone }}" aria-hidden="true"><svg class="ic"><use href="#{{ $icon }}"/></svg></span>
+        <div class="pay-head-t">
+            <h3>{{ $title }}</h3>
+            <p>{{ $text }}</p>
+        </div>
+        <span class="pay-st pay-st-{{ $tone }}">{{ ManualPayment::label($order->payment_status) }}</span>
+    </header>
 
-    {{-- Langkah: bayar, unggah, diperiksa, selesai --}}
+    {{-- Langkah --}}
     @if (in_array($state, ['unpaid', 'rejected', 'review', 'paid'], true))
-        @php $stepNow = match ($state) { 'review' => 3, 'paid' => 4, default => $order->payment_proof ? 2 : 1 }; @endphp
         <ol class="pay-steps" aria-label="Tahap pembayaran">
             @foreach (['Bayar QRIS', 'Unggah bukti', 'Diperiksa admin', 'Berhasil'] as $i => $label)
                 @php $n = $i + 1; @endphp
                 <li class="{{ $n < $stepNow ? 'done' : ($n === $stepNow ? 'now' : '') }}" @if ($n === $stepNow) aria-current="step" @endif>
-                    <span class="n">{{ $n < $stepNow ? '✓' : $n }}</span><span class="t">{{ $label }}</span>
+                    <span class="n">@if ($n < $stepNow)<svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>@else{{ $n }}@endif</span><span class="t">{{ $label }}</span>
                 </li>
             @endforeach
         </ol>
     @endif
 
     @if ($state === 'rejected' && $order->payment_reject_reason)
-        <div class="pay-note err" role="alert">
-            <b>Alasan dari admin</b>
-            <p>{{ $order->payment_reject_reason }}</p>
+        <div class="pay-note" role="alert">
+            <svg class="ic" aria-hidden="true"><use href="#i-warn"/></svg>
+            <div><b>Alasan dari admin</b><p>{{ $order->payment_reject_reason }}</p></div>
         </div>
     @endif
 
-    @if ($canUpload)
-        <div class="pay-qris">
-            <figure>
+    <div class="pay-grid {{ $canUpload ? '' : 'pay-grid-one' }}">
+        {{-- Kiri: QRIS --}}
+        @if ($canUpload)
+            <aside class="pay-qr" aria-label="Kode QRIS">
                 @if ($qrisUrl)
-                    <img src="{{ $qrisUrl }}" alt="Kode QRIS {{ ManualPayment::merchant() }}" width="300" height="425" loading="lazy">
-                    <figcaption>{{ ManualPayment::merchant() }}</figcaption>
+                    <img src="{{ $qrisUrl }}" alt="Kode QRIS {{ ManualPayment::merchant() }}" width="300" height="425">
+                    <div class="pay-qr-foot">
+                        <b>{{ ManualPayment::merchant() }}</b>
+                        <a class="pay-link" href="{{ $qrisUrl }}" download="qris-ruangtitip">Simpan QRIS</a>
+                    </div>
                 @else
-                    <p class="pay-note err" role="alert"><b>Kode QRIS belum tersedia</b>Hubungi admin lewat WhatsApp untuk mendapatkan kode pembayaran.</p>
+                    <div class="pay-note" role="alert">
+                        <svg class="ic" aria-hidden="true"><use href="#i-warn"/></svg>
+                        <div><b>Kode QRIS belum tersedia</b><p>Hubungi admin lewat WhatsApp untuk mendapatkan kode pembayaran.</p></div>
+                    </div>
                 @endif
-            </figure>
-            <div class="pay-amt">
-                <small>Nominal yang harus dibayar</small>
-                <b id="payAmount" data-amount="{{ $amount }}">{{ $rpf($amount) }}</b>
-                <p>Bayar tepat sesuai nominal supaya mudah dicocokkan admin.</p>
-                <div class="pay-qacts">
-                    <button type="button" class="btn btn-ghost sm" id="payCopy">Salin nominal</button>
-                    @if ($qrisUrl)<a class="btn btn-ghost sm" href="{{ $qrisUrl }}" download="qris-ruangtitip">Simpan QRIS</a>@endif
-                </div>
-            </div>
-        </div>
-
-        <form class="pay-form" method="POST" action="{{ $uploadUrl }}" enctype="multipart/form-data" id="payForm" novalidate>
-            @csrf
-            <label for="payProof">{{ $state === 'rejected' ? 'Unggah ulang bukti pembayaran' : 'Unggah bukti pembayaran' }}</label>
-            <input type="file" id="payProof" name="proof" accept="image/jpeg,image/png,image/webp" required aria-describedby="payProofHelp payProofErr">
-            <p class="help" id="payProofHelp">Foto atau tangkapan layar bukti bayar. Pastikan nominal, tanggal, dan jam terbaca jelas. JPG, PNG, atau WEBP, maksimal {{ (int) (config('payment.proof.max_kb') / 1024) }} MB.</p>
-            <p class="pay-err" id="payProofErr" role="alert">{{ $errors->first('proof') }}</p>
-            <img class="pay-prev" id="payPrev" alt="Pratinjau bukti pembayaran" hidden>
-            <button type="submit" class="btn btn-sun wide" id="payBtn" disabled>{{ $state === 'rejected' ? 'Kirim ulang bukti' : 'Kirim bukti pembayaran' }}</button>
-        </form>
-    @endif
-
-    @if ($state === 'review' && $proofUrl)
-        <div class="pay-sent">
-            <a href="{{ $proofUrl }}" target="_blank" rel="noopener"><img src="{{ $proofUrl }}" alt="Bukti pembayaran yang kamu kirim" loading="lazy"></a>
-            <p class="help">Dikirim {{ $order->payment_proof_at?->timezone('Asia/Jakarta')->locale('id')->translatedFormat('j F Y, H.i') }} WIB. Salah foto? Hubungi admin lewat WhatsApp.</p>
-        </div>
-    @endif
-
-    <div class="rows pay-rows">
-        <div><span>No. pesanan</span><b>{{ ManualPayment::codeOf($order) }}</b></div>
-        @foreach ($rows as [$label, $value])
-            <div><span>{{ $label }}</span><b>{{ $value }}</b></div>
-        @endforeach
-        <div class="tot"><span>{{ $state === 'paid' ? 'Total dibayar' : 'Total tagihan' }}</span><b>{{ $rpf($amount) }}</b></div>
-        <div><span>Status</span><b>{{ ManualPayment::label($order->payment_status) }}</b></div>
-    </div>
-
-    <div class="acts">
-        @if ($state === 'failed')
-            <a class="btn btn-sun" href="{{ $wa }}" target="_blank" rel="noopener">Hubungi admin</a>
+            </aside>
         @endif
-        @foreach ($actions as [$label, $url, $class])
-            <a class="btn {{ $class }}" href="{{ $url }}">{{ $label }}</a>
-        @endforeach
+
+        {{-- Kanan: nominal, unggah bukti, rincian --}}
+        <div class="pay-main">
+            <div class="pay-total">
+                <div>
+                    <small>{{ $state === 'paid' ? 'Total dibayar' : 'Total yang harus dibayar' }}</small>
+                    <b id="payAmount" data-amount="{{ $amount }}">{{ $rpf($amount) }}</b>
+                    <span class="pay-code">No. pesanan {{ ManualPayment::codeOf($order) }}</span>
+                </div>
+                @if ($canUpload)
+                    <button type="button" class="btn btn-ghost sm" id="payCopy">Salin nominal</button>
+                @endif
+            </div>
+            @if ($canUpload)
+                <p class="pay-hint">Bayar tepat sesuai nominal supaya mudah dicocokkan admin.</p>
+            @endif
+
+            @if ($canUpload)
+                <form class="pay-form" method="POST" action="{{ $uploadUrl }}" enctype="multipart/form-data" id="payForm" novalidate>
+                    @csrf
+                    <span class="pay-lab" id="payLab">{{ $state === 'rejected' ? 'Unggah ulang bukti pembayaran' : 'Unggah bukti pembayaran' }}</span>
+
+                    <input class="pay-file" type="file" id="payProof" name="proof" accept="image/jpeg,image/png,image/webp" required aria-labelledby="payLab" aria-describedby="payProofHelp payProofErr">
+                    <label class="pay-drop" for="payProof" id="payDrop">
+                        <img class="pay-thumb" id="payPrev" alt="Pratinjau bukti pembayaran" hidden>
+                        <span class="pay-drop-ic" id="payDropIc" aria-hidden="true"><svg class="ic"><use href="#i-cam"/></svg></span>
+                        <span class="pay-drop-t">
+                            <b id="payName">Pilih foto bukti pembayaran</b>
+                            <small id="payProofHelp">JPG, PNG, atau WEBP, maksimal {{ $maxMb }} MB. Pastikan nominal, tanggal, dan jam terbaca jelas.</small>
+                        </span>
+                    </label>
+                    <p class="pay-err" id="payProofErr" role="alert">{{ $errors->first('proof') }}</p>
+
+                    <button type="submit" class="btn btn-sun wide" id="payBtn" disabled>{{ $state === 'rejected' ? 'Kirim ulang bukti' : 'Kirim bukti pembayaran' }}</button>
+                </form>
+            @endif
+
+            @if ($state === 'review' && $proofUrl)
+                <div class="pay-sent">
+                    <a href="{{ $proofUrl }}" target="_blank" rel="noopener" title="Buka ukuran penuh"><img src="{{ $proofUrl }}" alt="Bukti pembayaran yang kamu kirim" loading="lazy"></a>
+                    <div>
+                        <b>Bukti terkirim</b>
+                        <p>{{ $sentAt }} WIB. Salah foto? Hubungi admin lewat WhatsApp.</p>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Rincian pesanan --}}
+            <details class="pay-detail" @if (! $canUpload) open @endif>
+                <summary>Rincian pesanan</summary>
+                <dl>
+                    @foreach ($rows as [$label, $value])
+                        <div><dt>{{ $label }}</dt><dd>{{ $value }}</dd></div>
+                    @endforeach
+                    <div class="tot"><dt>{{ $state === 'paid' ? 'Total dibayar' : 'Total tagihan' }}</dt><dd>{{ $rpf($amount) }}</dd></div>
+                </dl>
+            </details>
+        </div>
     </div>
+
+    {{-- Tombol penutup --}}
+    @if ($state === 'failed' || $actions)
+        <div class="pay-acts">
+            @if ($state === 'failed')
+                <a class="btn btn-sun" href="https://wa.me/6285121091134" target="_blank" rel="noopener">Hubungi admin</a>
+            @endif
+            @foreach ($actions as [$label, $url, $class])
+                <a class="btn {{ $class }}" href="{{ $url }}">{{ $label }}</a>
+            @endforeach
+        </div>
+    @endif
 </section>
 
 @if ($canUpload)
@@ -121,21 +162,35 @@
         var btn = document.getElementById('payBtn');
         var err = document.getElementById('payProofErr');
         var prev = document.getElementById('payPrev');
+        var icon = document.getElementById('payDropIc');
+        var name = document.getElementById('payName');
+        var drop = document.getElementById('payDrop');
         var form = document.getElementById('payForm');
         var maxBytes = {{ (int) config('payment.proof.max_kb') }} * 1024;
         var okTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        var idleText = 'Pilih foto bukti pembayaran';
         if (!input || !btn) { return; }
+
+        function reset() {
+            btn.disabled = true;
+            prev.hidden = true;
+            icon.hidden = false;
+            name.textContent = idleText;
+            drop.classList.remove('has-file');
+        }
 
         input.addEventListener('change', function () {
             var f = input.files && input.files[0];
             err.textContent = '';
-            prev.hidden = true;
-            btn.disabled = true;
+            reset();
             if (!f) { return; }
             if (okTypes.indexOf(f.type) === -1) { err.textContent = 'Bukti harus berupa foto JPG, PNG, atau WEBP.'; input.value = ''; return; }
-            if (f.size > maxBytes) { err.textContent = 'Ukuran foto terlalu besar. Maksimal {{ (int) (config('payment.proof.max_kb') / 1024) }} MB.'; input.value = ''; return; }
+            if (f.size > maxBytes) { err.textContent = 'Ukuran foto terlalu besar. Maksimal {{ $maxMb }} MB.'; input.value = ''; return; }
             prev.src = URL.createObjectURL(f);
             prev.hidden = false;
+            icon.hidden = true;
+            name.textContent = f.name;
+            drop.classList.add('has-file');
             btn.disabled = false;
         });
 
