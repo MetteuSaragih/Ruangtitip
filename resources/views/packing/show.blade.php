@@ -25,7 +25,7 @@
 .p-toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 150%); z-index: 60; display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 18px; background: var(--tip-bg); color: var(--tip-ink); border-radius: 14px; font-weight: 600; font-size: 14px; transition: transform .25s; }
 .p-toast.show { transform: translate(-50%, 0); }
 .p-toast a { color: var(--tip-ink); font-weight: 800; }
-@media (max-width: 960px) { .p-toast { bottom: 96px; } }
+@media (max-width: 960px) { .p-toast { bottom: calc(20px + env(safe-area-inset-bottom)); } }
 </style>
 @endpush
 

@@ -218,7 +218,7 @@
 .ttp .aside{position:static}
 }
 @media (max-width: 960px){
-.ttp .mcta{display:flex;align-items:center;justify-content:space-between;gap:12px;position:fixed;left:12px;right:12px;bottom:86px;z-index:25;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:10px 10px 10px 16px}
+.ttp .mcta{display:flex;align-items:center;justify-content:space-between;gap:12px;position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:25;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:10px 10px 10px 16px}
 }
 @media (max-width: 640px){
 .ttp .grid2{grid-template-columns:1fr}

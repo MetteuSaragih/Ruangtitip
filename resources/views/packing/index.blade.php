@@ -21,7 +21,7 @@
 .cartbar .info small { display: block; color: var(--muted); font-size: 13px; }
 .cartbar .info strong { font-family: var(--display); font-size: 20px; }
 .cartbar .btn { background: var(--sun); color: var(--deep); }
-@media (max-width: 960px) { .cartbar { bottom: calc(84px + env(safe-area-inset-bottom)); } }
+@media (max-width: 960px) { .cartbar { bottom: calc(16px + env(safe-area-inset-bottom)); } }
 @media (max-width: 560px) { .cartbar { flex-wrap: wrap; gap: 10px; } .cartbar .info { flex: 1 1 100%; } .cartbar .btn { flex: 1 1 auto; } }
 </style>
 @endpush

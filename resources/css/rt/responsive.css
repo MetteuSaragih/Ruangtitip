@@ -292,9 +292,6 @@ img {
         padding: 0 12px;
     }
 
-    .rt-tabbar a {
-        font-size: 10px;
-    }
 
     .mp .grid,
     .grid,
@@ -360,4 +357,12 @@ img {
 .rt-card img,
 .card img {
     max-width: 100%;
+}
+
+/* Tanpa tab bar bawah: beri ruang bila ada bilah aksi melayang. */
+@media (max-width: 960px) {
+    .ttp:has(.mcta),
+    .pc:has(.cartbar) {
+        padding-bottom: calc(84px + env(safe-area-inset-bottom));
+    }
 }
