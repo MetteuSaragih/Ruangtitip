@@ -16,6 +16,8 @@
     $payUrl = \App\Services\ManualPayment::pageUrl($order);
     $wa = 'https://wa.me/6285121091134';
     $waText = fn ($t) => $wa . '?text=' . urlencode($t . ' ' . $order->code());
+    // Permintaan kirim barang lewat WhatsApp: nama pelanggan dan nomor pesanan terisi otomatis.
+    $waKirim = $wa . '?text=' . rawurlencode('Halo kak, saya ' . (auth()->user()->name ?? 'pelanggan RuangTitip') . '. Pesanan saya dengan nomor ' . $order->code() . ' ingin meminta barang saya dikirimkan. Mohon dibantu ya, terima kasih.');
     $storageName = $order->storage->name ?? 'Penitipan Barang';
     $days = $order->date_start && $order->date_end ? $order->date_start->diffInDays($order->date_end) + 1 : null;
     $payMethod = 'QRIS';
@@ -42,7 +44,7 @@
             <span class="badge b-{{ $tone }}"><i></i>{{ $statusLabel }}</span>
             @if ($inStorage)
                 <button type="button" class="btn btn-sun" data-open="dlgPerpanjang" @disabled($hasOpen('perpanjang'))>Tambah periode</button>
-                <button type="button" class="btn btn-ink" data-open="dlgKirim" @disabled($hasOpen('kirim'))>Kirim barang</button>
+                <a class="btn btn-ink" href="{{ $waKirim }}" target="_blank" rel="noopener">Kirim barang</a>
                 <button type="button" class="btn btn-ghost" data-open="dlgAmbil" @disabled($hasOpen('ambil'))>Ambil di gudang</button>
             @elseif ($awaitingPay && in_array($payState, ['unpaid', 'rejected'], true))
                 <a class="btn btn-sun" href="{{ $payUrl }}">{{ $payState === 'rejected' ? 'Unggah ulang bukti' : 'Bayar ' . rp($order->total) }}</a>
@@ -108,7 +110,7 @@
                 <p>Periode sampai {{ $order->date_end->translatedFormat('l, j F Y') }}. Perpanjang atau ajukan pengambilan.</p>
                 <div class="acts">
                     <button type="button" class="btn btn-primary sm" data-open="dlgPerpanjang" @disabled($hasOpen('perpanjang'))>Tambah periode</button>
-                    <button type="button" class="btn btn-ghost sm" data-open="dlgKirim" @disabled($hasOpen('kirim'))>Kirim barang</button>
+                    <a class="btn btn-ghost sm" href="{{ $waKirim }}" target="_blank" rel="noopener">Kirim barang</a>
                     <button type="button" class="btn btn-ghost sm" data-open="dlgAmbil" @disabled($hasOpen('ambil'))>Ambil di gudang</button>
                 </div>
             </div>
@@ -255,34 +257,6 @@
                 <div class="rt-dlg-acts">
                     <button class="btn btn-ghost" type="button" data-close>Batal</button>
                     <button class="btn btn-primary" type="submit">Kirim permintaan</button>
-                </div>
-            </form>
-        </dialog>
-
-        <dialog class="rt-dlg req-dlg" id="dlgKirim" aria-labelledby="dlgKirimT">
-            <form method="POST" action="{{ route('pesanan.request.kirim', $order) }}" class="stack tight">
-                @csrf
-                <h3 id="dlgKirimT">Kirim barang ke alamatku</h3>
-                <p>Admin akan menghitung ongkir dan menerbitkan tagihan sebelum barang dikirim.</p>
-                @if ($addresses->isNotEmpty())
-                    <div class="field">
-                        <label for="rqAddr">Alamat tujuan</label>
-                        <select class="input" id="rqAddr" name="address_id" required>
-                            @foreach ($addresses as $ad)
-                                <option value="{{ $ad->id }}" @selected($ad->is_primary)>{{ ($ad->label ?: 'Alamat') . ': ' . \Illuminate\Support\Str::limit($ad->address, 60) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @else
-                    <p class="help">Kamu belum punya alamat tersimpan. <a href="{{ route('akun.alamat', ['baru' => 1]) }}">Tambah alamat dulu</a>.</p>
-                @endif
-                <div class="field">
-                    <label for="rqNote2">Catatan (opsional)</label>
-                    <textarea class="input" id="rqNote2" name="catatan" rows="2" maxlength="500" style="height:auto;padding:12px"></textarea>
-                </div>
-                <div class="rt-dlg-acts">
-                    <button class="btn btn-ghost" type="button" data-close>Batal</button>
-                    <button class="btn btn-primary" type="submit" @disabled($addresses->isEmpty())>Kirim permintaan</button>
                 </div>
             </form>
         </dialog>
