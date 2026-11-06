@@ -12,11 +12,13 @@
     $inStorage = $order->status === 'dalam_gudang';
     $left = $order->date_end ? (int) ceil(now()->startOfDay()->diffInDays($order->date_end->copy()->startOfDay(), false)) : null;
     $isPaid = ! $awaitingPay;
+    $payState = \App\Services\ManualPayment::state($order->payment_status);
+    $payUrl = \App\Services\ManualPayment::pageUrl($order);
     $wa = 'https://wa.me/6285121091134';
     $waText = fn ($t) => $wa . '?text=' . urlencode($t . ' ' . $order->code());
     $storageName = $order->storage->name ?? 'Penitipan Barang';
     $days = $order->date_start && $order->date_end ? $order->date_start->diffInDays($order->date_end) + 1 : null;
-    $payMethod = $order->tripay_payment_method ?: $order->payment_method;
+    $payMethod = 'QRIS';
     $itemLabel = fn ($k) => \App\Support\StorageSizes::label((string) $k);
     $itemSpec = fn ($k) => \App\Support\StorageSizes::get((string) $k);
     $requests = $requests ?? collect();
@@ -42,8 +44,8 @@
                 <button type="button" class="btn btn-sun" data-open="dlgPerpanjang" @disabled($hasOpen('perpanjang'))>Tambah periode</button>
                 <button type="button" class="btn btn-ink" data-open="dlgKirim" @disabled($hasOpen('kirim'))>Kirim barang</button>
                 <button type="button" class="btn btn-ghost" data-open="dlgAmbil" @disabled($hasOpen('ambil'))>Ambil di gudang</button>
-            @elseif ($awaitingPay && $order->tripay_checkout_url)
-                <a class="btn btn-sun" href="{{ $order->tripay_checkout_url }}">Bayar {{ rp($order->total) }}</a>
+            @elseif ($awaitingPay && in_array($payState, ['unpaid', 'rejected'], true))
+                <a class="btn btn-sun" href="{{ $payUrl }}">{{ $payState === 'rejected' ? 'Unggah ulang bukti' : 'Bayar ' . rp($order->total) }}</a>
             @endif
         </div>
     </div>
@@ -56,16 +58,34 @@
     @endif
 
     @if ($awaitingPay)
-        <div class="alert a-warn">
-            <svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>
-            <div>
-                <b>Bayar tagihan pertama {{ rp($order->total) }}</b>
-                <p>Kalau lewat batas bayar, pesanan batal dan kapasitas dilepas.</p>
-                @if ($order->tripay_checkout_url)
-                    <div class="acts"><a class="btn btn-primary sm" href="{{ $order->tripay_checkout_url }}">Bayar sekarang</a></div>
-                @endif
+        @if ($payState === 'review')
+            <div class="alert a-info">
+                <svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>
+                <div>
+                    <b>Pembayaran sedang diperiksa</b>
+                    <p>Bukti pembayaran {{ rp($order->total) }} sudah kami terima. Admin sedang memeriksanya. Status pesanan berubah setelah pembayaran dikonfirmasi.</p>
+                    <div class="acts"><a class="btn btn-ghost sm" href="{{ $payUrl }}">Lihat status pembayaran</a></div>
+                </div>
             </div>
-        </div>
+        @elseif ($payState === 'rejected')
+            <div class="alert a-err">
+                <svg class="ic" aria-hidden="true"><use href="#i-x"/></svg>
+                <div>
+                    <b>Pembayaran gagal</b>
+                    <p>{{ $order->payment_reject_reason ?: 'Admin belum bisa memastikan pembayaranmu.' }} Foto ulang bukti pembayaranmu dan unggah lagi.</p>
+                    <div class="acts"><a class="btn btn-primary sm" href="{{ $payUrl }}">Unggah ulang bukti</a></div>
+                </div>
+            </div>
+        @else
+            <div class="alert a-warn">
+                <svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>
+                <div>
+                    <b>Bayar tagihan pertama {{ rp($order->total) }}</b>
+                    <p>Bayar lewat QRIS, lalu unggah foto bukti pembayaran. Admin akan memeriksanya.</p>
+                    <div class="acts"><a class="btn btn-primary sm" href="{{ $payUrl }}">Bayar sekarang</a></div>
+                </div>
+            </div>
+        @endif
     @elseif ($order->status === 'penjadwalan_penjemputan')
         <div class="alert a-ok">
             <svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>
@@ -145,7 +165,13 @@
                 <h3>Riwayat aktivitas</h3>
                 <ol class="act">
                     @if ($isPaid)
-                        <li><span class="dt Sistem"></span><div><b>Pembayaran pertama {{ rp($order->total) }} terverifikasi lewat Tripay{{ $payMethod ? ' (' . $payMethod . ')' : '' }}. Pesanan dan jadwal antar terkonfirmasi.</b><small>{{ $order->updated_at->translatedFormat('j M Y') }}, {{ $order->updated_at->format('H.i') }}, Sistem</small></div></li>
+                        @php $paidAt = ($order->paid_at ?: $order->updated_at)->copy()->timezone('Asia/Jakarta'); @endphp
+                        <li><span class="dt Sistem"></span><div><b>Pembayaran pertama {{ rp($order->total) }} dikonfirmasi admin lewat {{ $payMethod }}. Pesanan dan jadwal antar terkonfirmasi.</b><small>{{ $paidAt->translatedFormat('j M Y') }}, {{ $paidAt->format('H.i') }}, Admin</small></div></li>
+                    @elseif ($payState === 'rejected')
+                        <li><span class="dt Sistem"></span><div><b>Pembayaran gagal. {{ $order->payment_reject_reason }}</b><small>{{ ($order->payment_reviewed_at ?: $order->updated_at)->copy()->timezone('Asia/Jakarta')->translatedFormat('j M Y, H.i') }}, Admin</small></div></li>
+                    @endif
+                    @if ($order->payment_proof_at)
+                        <li><span class="dt Pelanggan"></span><div><b>Bukti pembayaran dikirim{{ ($order->payment_attempts ?? 0) > 1 ? ' ulang' : '' }}.</b><small>{{ $order->payment_proof_at->copy()->timezone('Asia/Jakarta')->translatedFormat('j M Y, H.i') }}, Pelanggan</small></div></li>
                     @endif
                     <li><span class="dt Pelanggan"></span><div><b>Pesanan dibuat dan Syarat &amp; Ketentuan disetujui.</b><small>{{ $order->created_at->translatedFormat('j M Y') }}, {{ $order->created_at->format('H.i') }}, Pelanggan</small></div></li>
                 </ol>
@@ -201,9 +227,9 @@
             <section class="card">
                 <h3>Pembayaran tercatat</h3>
                 @if ($isPaid)
-                    <div class="rows"><div><span>Tagihan pertama<small>{{ $order->updated_at->translatedFormat('j M Y') }}, {{ $order->updated_at->format('H.i') }}</small></span><b>{{ rp($order->total) }}@if ($payMethod)<small>{{ $payMethod }}</small>@endif</b></div></div>
+                    <div class="rows"><div><span>Tagihan pertama<small>{{ ($order->paid_at ?: $order->updated_at)->translatedFormat('j M Y') }}, {{ ($order->paid_at ?: $order->updated_at)->format('H.i') }}</small></span><b>{{ rp($order->total) }}@if ($payMethod)<small>{{ $payMethod }}</small>@endif</b></div></div>
                 @else
-                    <p class="help">Belum ada pembayaran.</p>
+                    <p class="help">{{ $payState === 'review' ? 'Bukti pembayaran sedang diperiksa admin.' : 'Belum ada pembayaran yang dikonfirmasi.' }}</p>
                 @endif
             </section>
 

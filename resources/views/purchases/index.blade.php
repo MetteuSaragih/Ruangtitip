@@ -37,7 +37,7 @@
                         <p class="meta">{{ $o['method'] }}, total {{ rp($o['total']) }}</p>
                     </div>
                     <div class="oc-acts">
-                        @if ($o['key'] === 'bayar' && $o['pay_url'])<a class="btn btn-primary sm" href="{{ $o['pay_url'] }}">Bayar</a>@endif
+                        @if ($o['key'] === 'bayar' && $o['pay_url'] && $o['pay_state'] !== 'review')<a class="btn btn-primary sm" href="{{ $o['pay_url'] }}">{{ $o['pay_state'] === 'rejected' ? 'Unggah ulang bukti' : 'Bayar' }}</a>@endif
                         <a class="btn btn-ghost sm" href="{{ route('purchases.show', $o['id']) }}">Lihat detail</a>
                     </div>
                 </article>

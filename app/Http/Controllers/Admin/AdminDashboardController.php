@@ -43,7 +43,7 @@ class AdminDashboardController extends Controller
         $pendapatanPreloved = (int) $safe(fn () => $this->prelovedRevenue(Order::where('payment_status', 'PAID')->whereBetween('created_at', [$monthStart, now()])->get()));
         $pendapatan = $pendapatanTitip + $pendapatanPreloved;
 
-        $unpaid = ['UNPAID', 'pending'];
+        $unpaid = ['UNPAID', 'pending', 'REVIEW', 'REJECTED']; // belum lunas: belum bayar, diperiksa, atau ditolak
         $tagihanJumlah = (int) $safe(fn () => TitipanOrder::where('status', 'menunggu_pembayaran')->count()
             + Order::whereIn('payment_status', $unpaid)->count()
             + PackingOrder::whereIn('payment_status', $unpaid)->count());
@@ -63,7 +63,8 @@ class AdminDashboardController extends Controller
                 ];
             }
         };
-        $addTask((int) $safe(fn () => TitipanOrder::where('status', 'menunggu_pembayaran')->count()), 'Pesanan menunggu pembayaran', 'Pantau pembayaran pelanggan', 'admin.titip.index', ['tab' => 'menunggu_pembayaran']);
+        $addTask((int) $safe(fn () => TitipanOrder::where('payment_status', 'REVIEW')->count() + Order::where('payment_status', 'REVIEW')->count() + PackingOrder::where('payment_status', 'REVIEW')->count()), 'Bukti pembayaran perlu diperiksa', 'Cocokkan dengan mutasi QRIS, lalu konfirmasi atau tolak', 'admin.tagihan.index', ['tab' => 'periksa']);
+        $addTask((int) $safe(fn () => TitipanOrder::where('status', 'menunggu_pembayaran')->whereNotIn('payment_status', ['REVIEW'])->count()), 'Pesanan menunggu pembayaran', 'Pelanggan belum mengunggah bukti pembayaran', 'admin.titip.index', ['tab' => 'menunggu_pembayaran']);
         $addTask((int) $safe(fn () => TitipanOrder::where('status', 'penjadwalan_penjemputan')->count()), 'Penjemputan perlu dijadwalkan', 'Barang menunggu dijemput atau diantar', 'admin.titip.index', ['tab' => 'penjadwalan_penjemputan']);
         $addTask((int) $safe(fn () => TitipanOrder::where('needs_admin_attention', true)->count()), 'Pesanan perlu tindakan admin', 'Pemesanan kurir gagal atau butuh pengecekan', 'admin.titip.index');
         $addTask((int) $safe(fn () => Schema::hasTable('titipan_requests') ? TitipanRequest::whereIn('status', ['menunggu', 'diproses'])->count() : 0), 'Permintaan titipan terbuka', 'Perpanjang, kirim, atau ambil barang', 'admin.permintaan.index');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Services\ManualPayment;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -71,6 +72,13 @@ class PurchaseController extends Controller
     private function present(Order $order): array
     {
         $key = $this->statusKey($order);
+        $payState = ManualPayment::state($order->payment_status);
+        [$statusLabel, $statusTone] = self::STATUS[$key];
+        if ($key === 'bayar' && $payState === 'review') {
+            [$statusLabel, $statusTone] = ['Pembayaran Diperiksa', 'info'];
+        } elseif ($key === 'bayar' && $payState === 'rejected') {
+            [$statusLabel, $statusTone] = ['Pembayaran Gagal', 'err'];
+        }
         $items = collect($order->items ?? [])->filter(fn ($i) => ($i['type'] ?? 'preloved') === 'preloved')->values();
         $kirim = ($order->shipping_method ?? 'pickup') !== 'pickup';
 
@@ -78,15 +86,17 @@ class PurchaseController extends Controller
             'id' => $order->id,
             'number' => $order->order_number,
             'key' => $key,
-            'status_label' => self::STATUS[$key][0],
-            'status_tone' => self::STATUS[$key][1],
+            'status_label' => $statusLabel,
+            'status_tone' => $statusTone,
+            'pay_state' => $payState,
+            'pay_reason' => $order->payment_reject_reason,
             'kirim' => $kirim,
             'method' => $kirim ? 'Dikirim Ruang Titip' : 'Ambil sendiri',
             'items' => $items->all(),
             'first' => $items->first(),
             'total' => (int) $order->total,
             'created' => $order->created_at,
-            'pay_url' => $key === 'bayar' ? $order->tripay_checkout_url : null,
+            'pay_url' => $key === 'bayar' ? route('checkout.success', $order->order_number) : null,
             'tracking' => $order->biteship_tracking_id,
             'courier' => $order->courier_name,
             'address' => $order->shipping_address['full'] ?? null,

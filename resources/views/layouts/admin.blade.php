@@ -22,6 +22,7 @@
     $cReq = fn (string $type) => $safe(fn () => Schema::hasTable('titipan_requests') ? TitipanRequest::where('type', $type)->whereIn('status', ['menunggu', 'diproses'])->count() : 0);
     $cJual = $safe(fn () => Schema::hasTable('preloved_submissions') ? PrelovedSubmission::whereIn('status', ['seleksi', 'periksa', 'sepakat'])->count() : 0);
     $cPre = $safe(fn () => Order::where('needs_admin_attention', true)->count());
+    $cBill = $safe(fn () => TitipanOrder::where('payment_status', 'REVIEW')->count() + Order::where('payment_status', 'REVIEW')->count() + PackingOrder::where('payment_status', 'REVIEW')->count());
     $cPack = $safe(fn () => PackingProduct::whereColumn('stock', '<=', 'low_threshold')->count() + PackingOrder::where('needs_admin_attention', true)->count());
 
     // [label, nama route, ikon, parameter route, badge, penanda aktif (pola routeIs / query)]
@@ -43,7 +44,7 @@
             ['Toko Packing', 'admin.packing.index', 'n-tape', [], $cPack, ['admin.packing.*']],
         ],
         'Keuangan' => [
-            ['Tagihan & pembayaran', 'admin.tagihan.index', 'n-card', [], 0, ['admin.tagihan.*']],
+            ['Tagihan & pembayaran', 'admin.tagihan.index', 'n-card', [], $cBill, ['admin.tagihan.*']],
             ['Laporan', 'admin.laporan', 'n-chart', [], 0, ['admin.laporan']],
         ],
         'Pengguna' => [

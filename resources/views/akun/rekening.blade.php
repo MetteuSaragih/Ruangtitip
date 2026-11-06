@@ -7,7 +7,7 @@
 @section('body')
 <div class="alert a-info">
     <svg class="ic" aria-hidden="true"><use href="#i-info"/></svg>
-    <div><b>Hanya untuk menerima pembayaran</b><p>Rekening ini tidak dipakai untuk menarik dana. Pembayaran tagihanmu tetap lewat Tripay.</p></div>
+    <div><b>Hanya untuk menerima pembayaran</b><p>Rekening ini tidak dipakai untuk menarik dana. Pembayaran tagihanmu tetap lewat QRIS.</p></div>
 </div>
 
 @if ($adding)

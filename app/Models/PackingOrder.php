@@ -29,6 +29,9 @@ class PackingOrder extends Model
         'total'         => 'integer',
         'biteship_attempts' => 'integer',
         'needs_admin_attention' => 'boolean',
+        'payment_proof_at' => 'datetime',
+        'payment_reviewed_at' => 'datetime',
+        'paid_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

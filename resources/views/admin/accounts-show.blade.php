@@ -85,7 +85,7 @@
                     <td><b>{{ $o->order_number ?? ('#'.$o->id) }}</b></td>
                     <td class="num">{{ $o->created_at?->translatedFormat('d M Y') }}</td>
                     <td class="r">{{ $rupiah($o->total) }}</td>
-                    <td>{{ $o->payment_status ?: '-' }}</td>
+                    <td>{{ \App\Services\ManualPayment::label($o->payment_status) }}</td>
                     <td>{{ $o->status ?: '-' }}</td>
                   </tr>
                 @endforeach

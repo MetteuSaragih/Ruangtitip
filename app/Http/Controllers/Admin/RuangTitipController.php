@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\StorageRoom;
 use App\Models\TitipanOrder;
+use App\Services\ManualPayment;
 use App\Support\StorageSizes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -155,6 +156,15 @@ class RuangTitipController extends Controller
         $data = $request->validate([
             'status' => 'required|in:' . implode(',', array_keys(TitipanOrder::FLOW)),
         ]);
+
+        // Status pesanan tidak boleh melewati pembayaran: maju hanya setelah admin mengonfirmasi bayar.
+        $paid = ManualPayment::state($order->payment_status) === 'paid';
+        if ($data['status'] !== 'menunggu_pembayaran' && ! $paid) {
+            return back()->with('error', 'Pembayaran belum dikonfirmasi. Periksa bukti pembayaran di Tagihan dulu, baru status pesanan bisa dilanjutkan.');
+        }
+        if ($data['status'] === 'menunggu_pembayaran' && $paid) {
+            return back()->with('error', 'Pesanan ini sudah dibayar, jadi tidak bisa dikembalikan ke menunggu pembayaran.');
+        }
 
         $order->update(['status' => $data['status']]);
 

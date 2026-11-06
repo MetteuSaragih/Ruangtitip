@@ -7,7 +7,6 @@ use App\Models\TitipanOrder;
 use App\Models\UserAddress;
 use App\Services\BiteshipService;
 use App\Services\DistanceService;
-use App\Services\TripayService;
 use App\Support\StorageSizes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -481,8 +480,8 @@ class RuangTitipController extends Controller
         return view('dashboard.ruang-titip.checkout', compact('s', 'calc', 'storage', 'courier'));
     }
 
-    /* SCREEN 7 (POST) — simpan pesanan & buat transaksi Tripay */
-    public function place(Request $r, TripayService $tripay)
+    /* SCREEN 7 (POST) — simpan pesanan; pembayaran lewat QRIS dengan bukti yang diperiksa admin */
+    public function place(Request $r)
     {
         $s = $this->state($r);
         if ($redirect = $this->resumeStep($s)) {
@@ -512,7 +511,6 @@ class RuangTitipController extends Controller
         $slotMap = collect(config('pickup_slots.slots'))->keyBy('start');
 
         $validator = \Illuminate\Support\Facades\Validator::make($r->all(), [
-            'payment_method' => 'required|string',
             'agree'          => 'accepted',
             'pickup_date'    => [
                 $requiresSchedule ? 'required' : 'nullable', 'date', 'after_or_equal:today',
@@ -569,7 +567,7 @@ class RuangTitipController extends Controller
             'address_area_id' => $s['logistic'] === 'self' ? null : ($s['address_area_id'] ?? null),
             'address_postal_code' => $s['logistic'] === 'self' ? null : ($s['address_postal_code'] ?? null),
             'packing'        => $s['logistic'] === 'rutip' ? 'buy' : null,
-            'payment_method' => $r->payment_method,
+            'payment_method' => 'qris',
             'item_subtotal'  => $calc['itemSubtotal'],
             'courier_cost'   => $calc['courierCost'],
             'packing_cost'   => $calc['packingCost'],
@@ -578,36 +576,6 @@ class RuangTitipController extends Controller
             'status'         => 'menunggu_pembayaran',
             'payment_status' => 'UNPAID',
         ]);
-
-        try {
-            $result = $tripay->createTransaction([
-                'method' => $r->payment_method,
-                'merchant_ref' => $order->code(),
-                'amount' => $calc['total'],
-                'customer_name' => Auth::user()->name ?? 'Penitip RuTip',
-                'customer_email' => Auth::user()->email ?? 'noreply@rutip.test',
-                'customer_phone' => Auth::user()->phone ?? '0800000000',
-                'order_items' => [
-                    ['name' => 'Biaya Penitipan (' . $calc['totalItems'] . ' item, ' . $calc['days'] . ' hari)', 'price' => (int) $calc['itemSubtotal'], 'quantity' => 1],
-                    ['name' => 'Biaya Layanan Platform', 'price' => (int) $calc['platform_fee'], 'quantity' => 1],
-                    ...($calc['courierCost'] > 0 ? [['name' => 'Biaya Kurir/Anjem', 'price' => (int) $calc['courierCost'], 'quantity' => 1]] : []),
-                ],
-                'callback_url' => route('tripay.callback'),
-                'return_url' => route('ruang-titip.success', $order),
-            ]);
-
-            $order->update([
-                'tripay_reference' => $result['reference'] ?? null,
-                'tripay_checkout_url' => $result['checkout_url'] ?? null,
-                'tripay_pay_code' => $result['pay_code'] ?? null,
-                'tripay_payment_method' => $r->payment_method,
-            ]);
-        } catch (\Throwable $e) {
-            report($e);
-            $order->update(['payment_status' => 'FAILED']);
-
-            return back()->withErrors(['payment_method' => 'Gagal memulai pembayaran: ' . $e->getMessage()]);
-        }
 
         $r->session()->forget('titip');
         return redirect()->route('ruang-titip.success', $order);

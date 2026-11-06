@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Order;
 use App\Models\PackingOrder;
 use App\Models\TitipanOrder;
+use App\Services\ManualPayment;
 use Illuminate\Support\Collection;
 
 /**
@@ -27,7 +28,11 @@ class UserNotifications
         }
 
         $titipanMsg = [
-            'menunggu_pembayaran' => fn ($o) => "Pesanan #{$o->code()} menunggu pembayaran",
+            'menunggu_pembayaran' => fn ($o) => match (ManualPayment::state($o->payment_status)) {
+                'review' => "Bukti pembayaran pesanan #{$o->code()} sedang diperiksa admin",
+                'rejected' => "Pembayaran pesanan #{$o->code()} gagal, unggah ulang bukti pembayaranmu",
+                default => "Pesanan #{$o->code()} menunggu pembayaran, unggah bukti setelah membayar",
+            },
             'penjadwalan_penjemputan' => fn ($o) => "Pesanan #{$o->code()} dalam proses penjemputan",
             'dalam_gudang' => fn ($o) => 'Barangmu aman tersimpan di gudang RuangTitip',
             'proses_pengembalian' => fn ($o) => "Pesanan #{$o->code()} sedang diproses pengembalian",
@@ -42,8 +47,10 @@ class UserNotifications
 
         foreach (PackingOrder::where('user_id', $user->id)->latest('updated_at')->take($limit)->get() as $o) {
             $text = match (true) {
-                $o->payment_status === 'PAID' => "Pembayaran pesanan #{$o->order_code} berhasil dikonfirmasi",
-                in_array($o->payment_status, ['FAILED', 'EXPIRED']) => "Pembayaran pesanan #{$o->order_code} gagal/kedaluwarsa",
+                ManualPayment::state($o->payment_status) === 'paid' => "Pembayaran pesanan #{$o->order_code} berhasil dikonfirmasi",
+                ManualPayment::state($o->payment_status) === 'review' => "Bukti pembayaran pesanan #{$o->order_code} sedang diperiksa admin",
+                ManualPayment::state($o->payment_status) === 'rejected' => "Pembayaran pesanan #{$o->order_code} gagal, unggah ulang bukti",
+                ManualPayment::state($o->payment_status) === 'failed' => "Pembayaran pesanan #{$o->order_code} gagal/kedaluwarsa",
                 default => "Pesanan #{$o->order_code} menunggu pembayaran",
             };
             $items->push(['text' => $text, 'at' => $o->updated_at, 'link' => route('packing.success', $o->order_code)]);
@@ -54,8 +61,10 @@ class UserNotifications
                 $o->status === 'delivered' => "Pesanan #{$o->order_number} telah selesai",
                 $o->status === 'shipped' => "Pesanan #{$o->order_number} sedang dikirim",
                 $o->status === 'processing' => "Pesanan #{$o->order_number} sedang diproses",
-                $o->payment_status === 'PAID' => "Pembayaran pesanan #{$o->order_number} berhasil dikonfirmasi",
-                in_array($o->payment_status, ['FAILED', 'EXPIRED']) => "Pembayaran pesanan #{$o->order_number} gagal/kedaluwarsa",
+                ManualPayment::state($o->payment_status) === 'paid' => "Pembayaran pesanan #{$o->order_number} berhasil dikonfirmasi",
+                ManualPayment::state($o->payment_status) === 'review' => "Bukti pembayaran pesanan #{$o->order_number} sedang diperiksa admin",
+                ManualPayment::state($o->payment_status) === 'rejected' => "Pembayaran pesanan #{$o->order_number} gagal, unggah ulang bukti",
+                ManualPayment::state($o->payment_status) === 'failed' => "Pembayaran pesanan #{$o->order_number} gagal/kedaluwarsa",
                 default => "Pesanan #{$o->order_number} menunggu pembayaran",
             };
             $items->push(['text' => $text, 'at' => $o->updated_at, 'link' => route('checkout.success', $o->order_number)]);
@@ -118,14 +127,19 @@ class UserNotifications
             ->get();
 
         foreach ($titipan as $o) {
-            $pay = $o->status === 'menunggu_pembayaran';
+            $awaiting = $o->status === 'menunggu_pembayaran';
+            $payState = ManualPayment::state($o->payment_status);
+            if ($awaiting && $payState === 'review') {
+                continue; // bukti sedang diperiksa admin: tidak ada yang perlu dilakukan pelanggan
+            }
+            $pay = $awaiting && in_array($payState, ['unpaid', 'rejected'], true);
             $rows->push([
                 'sort' => $pay ? 0 : 2,
                 'code' => $o->code(),
-                'label' => $o->statusMeta()['label'],
-                'tone' => $pay ? 'warn' : 'info',
+                'label' => $payState === 'rejected' && $awaiting ? 'Pembayaran Gagal' : $o->statusMeta()['label'],
+                'tone' => $pay ? ($payState === 'rejected' ? 'err' : 'warn') : 'info',
                 'href' => route('pesanan.detail', $o),
-                'cta' => $pay ? 'Bayar ' . self::rp($o->total) : 'Lihat detail',
+                'cta' => $pay ? ($payState === 'rejected' ? 'Unggah ulang bukti' : 'Bayar ' . self::rp($o->total)) : 'Lihat detail',
                 'pay' => $pay,
                 'what' => trim(($o->storage?->name ?? 'Penitipan') . ', ' . $o->totalItems() . ' barang'),
             ]);
@@ -133,37 +147,39 @@ class UserNotifications
 
         $packing = PackingOrder::where('user_id', $user->id)
             ->where('status', '!=', 'selesai')
-            ->where(fn ($q) => $q->whereNull('payment_status')->orWhereIn('payment_status', ['UNPAID', 'pending']))
+            ->where(fn ($q) => $q->whereNull('payment_status')->orWhereIn('payment_status', ['UNPAID', 'pending', 'REJECTED']))
             ->latest('updated_at')
             ->get();
 
         foreach ($packing as $o) {
+            $rejected = ManualPayment::state($o->payment_status) === 'rejected';
             $rows->push([
                 'sort' => 0,
                 'code' => $o->order_code,
-                'label' => 'Menunggu Pembayaran',
-                'tone' => 'warn',
+                'label' => $rejected ? 'Pembayaran Gagal' : 'Menunggu Pembayaran',
+                'tone' => $rejected ? 'err' : 'warn',
                 'href' => route('packing.success', $o->order_code),
-                'cta' => 'Bayar ' . self::rp($o->total),
+                'cta' => $rejected ? 'Unggah ulang bukti' : 'Bayar ' . self::rp($o->total),
                 'pay' => true,
                 'what' => 'Toko Packing, ' . collect($o->items ?? [])->sum('qty') . ' barang',
             ]);
         }
 
         $orders = Order::where('customer_email', $user->email)
-            ->where('payment_status', 'UNPAID')
+            ->whereIn('payment_status', ['UNPAID', 'REJECTED'])
             ->where('status', Order::STATUS_PENDING)
             ->latest('updated_at')
             ->get();
 
         foreach ($orders as $o) {
+            $rejected = ManualPayment::state($o->payment_status) === 'rejected';
             $rows->push([
                 'sort' => 0,
                 'code' => $o->order_number,
-                'label' => 'Menunggu Pembayaran',
-                'tone' => 'warn',
+                'label' => $rejected ? 'Pembayaran Gagal' : 'Menunggu Pembayaran',
+                'tone' => $rejected ? 'err' : 'warn',
                 'href' => route('checkout.success', $o->order_number),
-                'cta' => 'Bayar ' . self::rp($o->total),
+                'cta' => $rejected ? 'Unggah ulang bukti' : 'Bayar ' . self::rp($o->total),
                 'pay' => true,
                 'what' => 'Toko, ' . collect($o->items ?? [])->pluck('name')->take(2)->implode(', '),
             ]);

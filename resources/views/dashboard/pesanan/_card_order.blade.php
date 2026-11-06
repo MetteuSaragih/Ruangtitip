@@ -4,11 +4,16 @@
     $typeLabel = $itemTypes->count() > 1 ? 'Belanja' : ($itemTypes->first() === 'packing' ? 'Toko Packing' : 'Toko Preloved');
     $itemNames = $items->pluck('name')->implode(', ');
     $itemCount = $items->sum('qty');
-    $isPaid = $order->payment_status === 'PAID';
+    $payState = \App\Services\ManualPayment::state($order->payment_status);
+    $isPaid = $payState === 'paid';
     $pending = $order->status === \App\Models\Order::STATUS_PENDING;
 
     $statusMap = [
-        \App\Models\Order::STATUS_PENDING => ['Menunggu Pembayaran', 'warn'],
+        \App\Models\Order::STATUS_PENDING => match ($payState) {
+            'review' => ['Pembayaran Diperiksa', 'info'],
+            'rejected' => ['Pembayaran Gagal', 'err'],
+            default => ['Menunggu Pembayaran', 'warn'],
+        },
         \App\Models\Order::STATUS_PAID => ['Dikemas', 'info'],
         \App\Models\Order::STATUS_PROCESSING => ['Dikemas', 'info'],
         \App\Models\Order::STATUS_SHIPPED => ['Dalam Pengiriman', 'info'],
@@ -16,9 +21,8 @@
         \App\Models\Order::STATUS_CANCELLED => ['Dibatalkan', 'mute'],
     ];
     [$label, $tone] = $statusMap[$order->status] ?? [ucfirst($order->status), 'info'];
-    $payText = ! $isPaid && $pending
-        ? 'Tagihan ' . rp($order->total) . ' belum dibayar.'
-        : 'Lunas, total ' . rp($order->total) . '.';
+    $payText = \App\Services\ManualPayment::userText($order);
+    $payCta = $pending ? \App\Services\ManualPayment::userCta($order) : null;
 @endphp
 <article class="card oc">
     <div>
@@ -34,8 +38,8 @@
         <p class="pay">{{ $payText }}</p>
     </div>
     <div class="oc-acts">
-        @if (! $isPaid && $pending && $order->tripay_checkout_url)
-            <a href="{{ $order->tripay_checkout_url }}" class="btn btn-primary sm">Bayar</a>
+        @if ($payCta)
+            <a href="{{ route('checkout.success', $order->order_number) }}" class="btn btn-primary sm">{{ $payCta }}</a>
         @endif
         <a href="{{ route('checkout.success', $order->order_number) }}" class="btn btn-ghost sm">Lihat detail</a>
     </div>

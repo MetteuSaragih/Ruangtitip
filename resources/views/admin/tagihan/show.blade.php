@@ -13,7 +13,7 @@
     } elseif ($bill['type'] === 'packing' && Route::has('admin.packing.index')) {
         $orderUrl = route('admin.packing.index');
     }
-    $fmt = fn ($d) => $d ? $d->format('d/m/Y H:i') : '-';
+    $fmt = fn ($d) => $d ? $d->copy()->timezone('Asia/Jakarta')->format('d/m/Y H:i') : '-';
 @endphp
 
 @section('content')
@@ -32,28 +32,7 @@
 
 <div class="cols">
   <div class="stack">
-    @if ($bill['group'] === 'wait')
-      <div class="al warn">
-        <svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>
-        <div>
-          <b>Menunggu pembayaran</b>
-          <p>Status berubah otomatis saat Tripay mengirim callback. Tidak ada verifikasi manual.</p>
-        </div>
-        @if ($bill['checkout_url'])
-          <div class="acts"><a class="btn btn-ghost sm" href="{{ $bill['checkout_url'] }}" target="_blank" rel="noopener">Buka halaman bayar Tripay</a></div>
-        @endif
-      </div>
-    @elseif ($bill['group'] === 'fail')
-      <div class="al err">
-        <svg class="ic" aria-hidden="true"><use href="#i-warn"/></svg>
-        <div><b>Pembayaran {{ strtolower($bill['label']) }}</b><p>Pelanggan perlu membuat pembayaran baru bila masih ingin melanjutkan.</p></div>
-      </div>
-    @else
-      <div class="al ok">
-        <svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>
-        <div><b>Pembayaran berhasil</b><p>Dikonfirmasi Tripay pada {{ $fmt($bill['paid']) }}.</p></div>
-      </div>
-    @endif
+    @include('admin.partials.payment-review', ['type' => $bill['type'], 'id' => $bill['id'], 'bill' => $bill, 'reviewer' => $reviewer])
 
     <div class="card">
       <div class="card-h"><h3>Rincian biaya</h3></div>
@@ -78,9 +57,9 @@
       <div class="card-h"><h3>Pembayaran</h3></div>
       <div class="kv">
         <div><span>Metode</span><b>{{ $bill['method'] }}</b></div>
-        <div><span>Status Tripay</span><b>{{ $bill['raw'] !== '' ? $bill['raw'] : '-' }}</b></div>
-        <div><span>Referensi</span><b class="mono">{{ $bill['reference'] ?: '-' }}</b></div>
-        <div><span>Kode bayar</span><b class="mono">{{ $bill['pay_code'] ?: '-' }}</b></div>
+        <div><span>Status</span><b>{{ $bill['label'] }}</b></div>
+        <div><span>Status pesanan</span><b>{{ $bill['order_status'] !== '' ? str_replace('_', ' ', $bill['order_status']) : '-' }}</b></div>
+        @if ($bill['reference'])<div><span>Referensi lama</span><b class="mono">{{ $bill['reference'] }}</b></div>@endif
         <div><span>Dibuat</span><b>{{ $fmt($bill['created']) }}</b></div>
         <div><span>Dibayar</span><b>{{ $fmt($bill['paid']) }}</b></div>
       </div>

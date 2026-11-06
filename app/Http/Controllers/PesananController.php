@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\PackingOrder;
 use App\Models\TitipanOrder;
+use App\Services\ManualPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -32,7 +33,6 @@ class PesananController extends Controller
         $packingBase = PackingOrder::where('user_id', $uid)->latest();
         $orderBase = Order::where('user_id', $uid)->latest();
 
-        $unpaid = ['UNPAID', 'pending'];
         if ($tab === 'selesai') {
             $orders        = (clone $titipanBase)->where('status', 'selesai')->get();
             $packingOrders = (clone $packingBase)->where('status', 'selesai')->get();
@@ -43,9 +43,9 @@ class PesananController extends Controller
             $packingOrders = (clone $packingBase)->whereRaw('1 = 0')->get();
             $genericOrders = (clone $orderBase)->whereRaw('1 = 0')->get();
         } elseif ($tab === 'tindakan') {
-            $orders        = (clone $titipanBase)->where('status', 'menunggu_pembayaran')->get();
-            $packingOrders = (clone $packingBase)->where('status', '!=', 'selesai')->whereIn('payment_status', $unpaid)->get();
-            $genericOrders = (clone $orderBase)->where('status', Order::STATUS_PENDING)->get();
+            $orders        = ManualPayment::needsAction((clone $titipanBase)->where('status', 'menunggu_pembayaran'))->get();
+            $packingOrders = ManualPayment::needsAction((clone $packingBase)->where('status', '!=', 'selesai'))->get();
+            $genericOrders = ManualPayment::needsAction((clone $orderBase)->where('status', Order::STATUS_PENDING))->get();
         } elseif ($tab === 'aktif') {
             $orders        = (clone $titipanBase)->where('status', '!=', 'selesai')->get();
             $packingOrders = (clone $packingBase)->where('status', '!=', 'selesai')->get();
@@ -80,16 +80,16 @@ class PesananController extends Controller
         $countSemua = TitipanOrder::where('user_id', $uid)->count()
                     + PackingOrder::where('user_id', $uid)->count()
                     + Order::where('user_id', $uid)->count();
-        $countTindakan = TitipanOrder::where('user_id', $uid)->where('status', 'menunggu_pembayaran')->count()
-                       + PackingOrder::where('user_id', $uid)->where('status', '!=', 'selesai')->whereIn('payment_status', $unpaid)->count()
-                       + Order::where('user_id', $uid)->where('status', Order::STATUS_PENDING)->count();
+        $countTindakan = ManualPayment::needsAction(TitipanOrder::where('user_id', $uid)->where('status', 'menunggu_pembayaran'))->count()
+                       + ManualPayment::needsAction(PackingOrder::where('user_id', $uid)->where('status', '!=', 'selesai'))->count()
+                       + ManualPayment::needsAction(Order::where('user_id', $uid)->where('status', Order::STATUS_PENDING))->count();
         $countExp = 0;
 
         $activeTitipan = TitipanOrder::where('user_id', $uid)->where('status', 'dalam_gudang')->get();
         $soonestEnd = $activeTitipan->pluck('date_end')->filter()->sort()->first();
-        $pendingPayment = TitipanOrder::where('user_id', $uid)->where('status', '!=', 'selesai')->whereIn('payment_status', ['UNPAID', 'pending', null])->count()
-            + PackingOrder::where('user_id', $uid)->where('status', '!=', 'selesai')->whereIn('payment_status', ['UNPAID', 'pending', null])->count()
-            + Order::where('user_id', $uid)->where('payment_status', 'UNPAID')->count();
+        $pendingPayment = ManualPayment::needsAction(TitipanOrder::where('user_id', $uid)->where('status', '!=', 'selesai'))->count()
+            + ManualPayment::needsAction(PackingOrder::where('user_id', $uid)->where('status', '!=', 'selesai'))->count()
+            + ManualPayment::needsAction(Order::where('user_id', $uid)->whereNotIn('status', [Order::STATUS_DELIVERED, Order::STATUS_CANCELLED]))->count();
 
         $overview = [
             'active' => $activeTitipan->count(),

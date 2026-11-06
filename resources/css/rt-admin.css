@@ -629,3 +629,7 @@ dialog.dlg::backdrop { background: color-mix(in srgb, var(--color-ink) 45%, tran
 /* ----- Logo gambar (RuTip) ----- */
 .brand { padding-bottom: 14px; }
 .brand-img { height: 44px; width: auto; display: block; }
+
+/* ----- Bukti pembayaran QRIS ----- */
+.pay-proof { display: block; border: 1px solid var(--color-border); border-radius: 12px; overflow: hidden; background: var(--color-bg); }
+.pay-proof img { display: block; width: 100%; max-height: 420px; object-fit: contain; }

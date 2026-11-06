@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Menyatukan tagihan dari tiga sumber (TitipanOrder, Order Preloved, PackingOrder)
- * menjadi satu bentuk seragam. Hanya baca; status uang datang dari callback Tripay.
+ * menjadi satu bentuk seragam. Hanya baca; keputusan pembayaran (konfirmasi/tolak)
+ * dilakukan lewat ManualPayment dari halaman Tagihan admin.
  */
 class BillingFeed
 {
@@ -21,36 +22,27 @@ class BillingFeed
         'packing' => 'Packing',
     ];
 
-    /** Kelompok status: wait (menunggu), ok (berhasil), fail (gagal/kedaluwarsa). */
+    /** Kelompok status: review (perlu diperiksa), wait (menunggu bukti), ok (berhasil), fail (gagal/ditolak/kedaluwarsa). */
     public static function group(?string $raw): string
     {
-        $s = strtoupper(trim((string) $raw));
-        if (in_array($s, ['PAID', 'SUCCESS', 'SETTLEMENT', 'SETTLED', 'CAPTURE'], true)) {
-            return 'ok';
-        }
-        if (in_array($s, ['FAILED', 'EXPIRED', 'CANCEL', 'CANCELLED', 'DENY', 'REFUND'], true)) {
-            return 'fail';
-        }
-
-        return 'wait';
+        return match (ManualPayment::state($raw)) {
+            'paid' => 'ok',
+            'review' => 'review',
+            'rejected', 'failed' => 'fail',
+            default => 'wait',
+        };
     }
 
     public static function label(?string $raw): string
     {
-        return match (strtoupper(trim((string) $raw))) {
-            'PAID', 'SUCCESS', 'SETTLEMENT', 'SETTLED', 'CAPTURE' => 'Berhasil',
-            'FAILED', 'DENY' => 'Gagal',
-            'EXPIRED' => 'Kedaluwarsa',
-            'CANCEL', 'CANCELLED' => 'Dibatalkan',
-            'REFUND' => 'Dikembalikan',
-            default => 'Menunggu',
-        };
+        return ManualPayment::label($raw);
     }
 
     public static function tone(string $group): string
     {
         return match ($group) {
             'ok' => 'ok',
+            'review' => 'info',
             'fail' => 'err',
             default => 'warn',
         };
@@ -166,15 +158,22 @@ class BillingFeed
             'code' => $code,
             'customer' => $customer,
             'email' => $email,
-            'method' => $m->tripay_payment_method ?: ($m->payment_method ?: '-'),
+            'method' => strtolower((string) $m->payment_method) === 'qris' ? 'QRIS' : ($m->tripay_payment_method ?: ($m->payment_method ?: '-')),
             'amount' => (int) $m->total,
             'raw' => $raw,
             'group' => $group,
             'label' => self::label($raw),
             'tone' => self::tone($group),
             'created' => $m->created_at,
-            // Tidak ada kolom tanggal bayar; untuk status berhasil dipakai updated_at (waktu callback).
-            'paid' => $group === 'ok' ? $m->updated_at : null,
+            'paid' => $group === 'ok' ? ($m->paid_at ?: $m->updated_at) : null,
+            'state' => ManualPayment::state($raw),
+            'proof_url' => ManualPayment::proofExists($m) ? route('payment.proof.show', [$type, $m->id]) : null,
+            'proof_at' => $m->payment_proof_at,
+            'reason' => $m->payment_reject_reason,
+            'attempts' => (int) ($m->payment_attempts ?? 0),
+            'reviewed_at' => $m->payment_reviewed_at,
+            'reviewer_id' => $m->payment_reviewed_by,
+            'order_status' => (string) $m->status,
             'reference' => $m->tripay_reference,
             'pay_code' => $m->tripay_pay_code,
             'checkout_url' => $m->tripay_checkout_url,

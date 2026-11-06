@@ -108,7 +108,7 @@ class LaporanController extends Controller
                 'label' => $label,
                 'count' => $c->count(),
                 'ok' => $c->where('group', 'ok')->count(),
-                'wait' => $c->where('group', 'wait')->count(),
+                'wait' => $c->whereIn('group', ['wait', 'review'])->count(), // menunggu bukti + sedang diperiksa
                 'fail' => $c->where('group', 'fail')->count(),
                 'revenue' => $sum($type),
             ];

@@ -22,6 +22,9 @@ class TitipanOrder extends Model
         'date_start' => 'date',
         'date_end' => 'date',
         'pickup_date' => 'date',
+        'payment_proof_at' => 'datetime',
+        'payment_reviewed_at' => 'datetime',
+        'paid_at' => 'datetime',
         'biteship_attempts' => 'integer',
         'needs_admin_attention' => 'boolean',
     ];
@@ -55,7 +58,11 @@ class TitipanOrder extends Model
     public function displayStatus(): array
     {
         return match ($this->status) {
-            'menunggu_pembayaran'     => ['Menunggu Pembayaran', 'warn', 1],
+            'menunggu_pembayaran'     => match (\App\Services\ManualPayment::state($this->payment_status)) {
+                'review'   => ['Pembayaran Diperiksa', 'info', 1],
+                'rejected' => ['Pembayaran Gagal', 'err', 1],
+                default    => ['Menunggu Pembayaran', 'warn', 1],
+            },
             'penjadwalan_penjemputan' => ['Menunggu Pengantaran', 'info', 2],
             'dalam_gudang'            => ['Dalam Penyimpanan', 'ok', 4],
             'proses_pengembalian'     => ['Menunggu Pengambilan', 'info', 4],
