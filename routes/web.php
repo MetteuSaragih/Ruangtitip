@@ -60,7 +60,7 @@ Route::middleware('guest')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'throttle:240,1'])->group(function () {
     Route::post('/logout', [OtpController::class, 'logout'])->name('logout');
     Route::get('/login/berhasil', [OtpController::class, 'done'])->name('login.done');
 

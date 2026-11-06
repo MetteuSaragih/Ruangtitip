@@ -20,8 +20,6 @@ class User extends Authenticatable
         'google_id',
         'avatar',
         'phone',
-        'role',
-        'is_active',
         'campus',
         'major',
         'cohort_year',

@@ -1,59 +1,285 @@
-/* Halaman legal. Disalin dari prototipe (body.p-legal, .lg-*). */
-body.p-legal{background:#0A2423;color:#E6F5F3;font-family:"Plus Jakarta Sans",ui-sans-serif,system-ui,sans-serif;font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased;margin:0}
-body.p-legal *{box-sizing:border-box}
-body.p-legal a{color:#2DD4BF}
-body.p-legal mark{background:rgba(255,201,60,.18);color:#FFD86B;border-radius:4px;padding:0 4px;font-weight:600}
-body.p-legal :focus-visible{outline:3px solid #FFC93C;outline-offset:3px;border-radius:6px}
-.lg-in{max-width:1140px;margin:0 auto;padding:0 clamp(18px,4vw,36px)}
-.lg-top{position:sticky;top:0;z-index:10;background:color-mix(in srgb,#0A2423 92%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid #24504B}
-.lg-top .lg-in{display:flex;align-items:center;justify-content:space-between;height:68px}
-.lg-logo{display:inline-flex;align-items:center;gap:10px;text-decoration:none;font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:21px;letter-spacing:-0.04em;color:#fff!important}
-.lg-logo svg{width:32px;height:32px}
-.lg-logo em{font-style:normal;color:#FFC93C}
-.lg-back{display:inline-flex;align-items:center;gap:8px;border:1px solid #24504B;background:#11332F;color:#E6F5F3;border-radius:999px;padding:0 16px;min-height:42px;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
-.lg-back:hover{border-color:#A5C6C2}
-.lg-back svg{width:18px;height:18px}
-.lg-body{display:grid;grid-template-columns:260px minmax(0,1fr);gap:clamp(24px,5vw,64px);padding-top:32px;padding-bottom:80px}
-.lg-side{position:sticky;top:96px;align-self:start;max-height:calc(100vh - 120px);overflow-y:auto;scrollbar-width:thin}
-.lg-tabs{display:grid;gap:4px;margin-bottom:22px}
-.lg-tabs a{display:block;text-decoration:none;color:#A5C6C2;font-weight:700;font-size:14.5px;padding:10px 14px;border-radius:12px;border:1px solid #24504B}
-.lg-tabs a:hover{color:#fff}
-.lg-tabs a[aria-current]{background:#FFC93C;border-color:#FFC93C;color:#0C2B2A}
-.lg-toc-t{font-size:12px;font-weight:700;color:#7FA8A2;margin:0 0 6px 4px}
-.lg-toc{list-style:none;margin:0;padding:0;display:grid;gap:1px}
-.lg-toc button{display:grid;grid-template-columns:24px 1fr;gap:6px;width:100%;text-align:left;background:none;border:0;color:#A5C6C2;font:inherit;font-size:13.5px;line-height:1.4;padding:6px 6px;border-radius:8px;cursor:pointer}
-.lg-toc button:hover{background:#11332F;color:#fff}
-.lg-toc span{color:#5F8D87;font-variant-numeric:tabular-nums}
-.lg-doc{max-width:760px}
-.lg-kicker{font-size:13px;color:#A5C6C2;margin:0}
-.lg-doc h1{font-family:"Bricolage Grotesque",sans-serif;font-size:clamp(32px,4vw,44px);line-height:1.08;letter-spacing:-0.03em;margin:8px 0 12px}
-.lg-lead{font-size:17.5px;color:#C6DEDA;margin:0 0 20px}
-.lg-sec{padding:24px 0;border-top:1px solid #24504B;scroll-margin-top:90px}
-.lg-sec h2{font-family:"Bricolage Grotesque",sans-serif;font-size:22px;letter-spacing:-0.02em;line-height:1.25;margin:0 0 12px;display:flex;gap:12px;align-items:baseline}
-.lg-sec h2 span{font-size:15px;color:#FFC93C;font-variant-numeric:tabular-nums;min-width:20px}
-.lg-sec h4{font-size:16px;margin:16px 0 6px;color:#fff}
-.lg-sec p{margin:0 0 10px;color:#D3E7E3}
-.lg-sec ul,.lg-sec ol{margin:6px 0 12px;padding-left:22px;color:#D3E7E3}
-.lg-sec li{margin:6px 0}
-.lg-sec li::marker{color:#2DD4BF}
-.lg-sec b{color:#fff}
-.lg-end{margin-top:12px;padding:20px;border:1px solid #24504B;border-radius:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:#11332F}
-.lg-end p{margin:0;color:#A5C6C2;font-size:14px}
-.lg-end a{font-weight:700;text-decoration:none}
-@media (max-width:860px){.lg-body{grid-template-columns:1fr}.lg-side{position:static;max-height:none}.lg-toc{display:none}.lg-toc-t{display:none}.lg-tabs{grid-template-columns:1fr 1fr}}
+/* ==========================================================================
+   Halaman legal (Syarat & Ketentuan, Kebijakan Privasi): tema terang "Teal Cerah".
 
-/* logo-img */
-.lg-logo .logo-img{height:40px;width:auto;display:block}
+   Ritme jarak (kelipatan 4), dipakai seragam:
+     antar paragraf / daftar dalam satu bagian ........ 12
+     antar butir daftar ................................ 8
+     judul bagian ke isi ............................... 16
+     antar bagian (garis pemisah) ...................... 32 atas dan bawah
+     judul kecil (h4) .................................. 24 atas, 8 bawah
+   ========================================================================== */
+body.p-legal {
+    --lg-bg: #F3FAF9;
+    --lg-surface: #FFFFFF;
+    --lg-aqua: #D7F2EE;
+    --lg-ink: #0C2B2A;
+    --lg-text: #28403E;
+    --lg-muted: #41605D;
+    --lg-teal: #0F766E;
+    --lg-teal-dark: #0B5D57;
+    --lg-line: #CFE5E1;
+    --lg-accent: #FFC93C;
 
-/* responsif ponsel */
-@media (max-width:560px){
-.lg-top .lg-in{height:60px}
-.lg-logo .logo-img{height:34px}
-.lg-back{padding:0 12px;min-height:40px;font-size:14px}
-.lg-body{padding-top:20px;padding-bottom:56px}
-.lg-tabs{grid-template-columns:1fr}
-.lg-lead{font-size:16px}
-.lg-sec h2{font-size:19px;gap:8px}
-.lg-sec{padding:20px 0}
-.lg-end{padding:16px}
+    margin: 0;
+    background: var(--lg-bg);
+    color: var(--lg-text);
+    font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+}
+
+body.p-legal *,
+body.p-legal *::before,
+body.p-legal *::after { box-sizing: border-box; }
+
+body.p-legal a { color: var(--lg-teal); text-underline-offset: 3px; }
+body.p-legal a:hover { color: var(--lg-teal-dark); }
+body.p-legal :focus-visible { outline: 3px solid var(--lg-teal); outline-offset: 3px; border-radius: 8px; }
+body.p-legal mark { background: #FFF4D6; color: #7A5400; border-radius: 4px; padding: 0 4px; font-weight: 600; }
+
+.lg-in { max-width: 1140px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 36px); }
+
+/* ----- Header ----- */
+.lg-top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, #FFFFFF 92%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--lg-line);
+}
+
+.lg-top .lg-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 68px; }
+.lg-logo { display: inline-flex; align-items: center; text-decoration: none; }
+.lg-logo .logo-img { display: block; height: 40px; width: auto; }
+
+.lg-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 18px;
+    border: 1px solid var(--lg-line);
+    border-radius: 999px;
+    background: var(--lg-surface);
+    color: var(--lg-ink);
+    font: inherit;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.lg-back:hover { border-color: var(--lg-teal); color: var(--lg-teal-dark); }
+.lg-back svg { width: 18px; height: 18px; }
+
+/* ----- Tata letak ----- */
+.lg-body {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: clamp(24px, 4vw, 48px);
+    align-items: start;
+    padding-top: 32px;
+    padding-bottom: 80px;
+}
+
+/* ----- Menu samping ----- */
+.lg-side {
+    position: sticky;
+    top: 96px;
+    align-self: start;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    display: grid;
+    gap: 20px;
+}
+
+.lg-tabs { display: grid; gap: 8px; margin: 0; }
+
+.lg-tabs a {
+    display: block;
+    padding: 12px 16px;
+    border: 1px solid var(--lg-line);
+    border-radius: 14px;
+    background: var(--lg-surface);
+    color: var(--lg-muted);
+    font-size: 14.5px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.lg-tabs a:hover { border-color: var(--lg-teal); color: var(--lg-teal-dark); }
+
+.lg-tabs a[aria-current] {
+    background: var(--lg-teal);
+    border-color: var(--lg-teal);
+    color: #FFFFFF;
+}
+
+.lg-toc-t { margin: 0 0 8px 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lg-muted); }
+
+.lg-toc { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+
+.lg-toc button {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: var(--lg-muted);
+    font: inherit;
+    font-size: 13.5px;
+    line-height: 1.45;
+    text-align: left;
+    cursor: pointer;
+}
+
+.lg-toc button:hover { background: var(--lg-aqua); color: var(--lg-teal-dark); }
+.lg-toc span { color: var(--lg-teal); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ----- Dokumen ----- */
+.lg-doc {
+    max-width: 780px;
+    padding: clamp(24px, 4vw, 44px);
+    background: var(--lg-surface);
+    border: 1px solid var(--lg-line);
+    border-radius: 24px;
+}
+
+.lg-kicker {
+    display: inline-block;
+    margin: 0 0 12px;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background: var(--lg-aqua);
+    color: var(--lg-teal-dark);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.lg-doc h1 {
+    margin: 0 0 12px;
+    color: var(--lg-ink);
+    font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: clamp(30px, 4vw, 40px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+}
+
+.lg-lead {
+    margin: 0 0 32px;
+    color: var(--lg-muted);
+    font-size: 17px;
+    line-height: 1.65;
+}
+
+/* ----- Bagian ----- */
+.lg-sec {
+    padding: 32px 0;
+    border-top: 1px solid var(--lg-line);
+    scroll-margin-top: 92px;
+}
+
+.lg-sec h2 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 16px;
+    color: var(--lg-ink);
+    font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 21px;
+    font-weight: 800;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+}
+
+.lg-sec h2 span {
+    flex: none;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: var(--lg-aqua);
+    color: var(--lg-teal-dark);
+    font-size: 14px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.lg-sec h2[tabindex]:focus { outline: none; }
+
+.lg-sec h4 {
+    margin: 24px 0 8px;
+    color: var(--lg-ink);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.lg-sec p { margin: 0 0 12px; color: var(--lg-text); }
+.lg-sec p:last-child { margin-bottom: 0; }
+
+.lg-sec ul,
+.lg-sec ol { margin: 0 0 12px; padding-left: 22px; color: var(--lg-text); }
+.lg-sec ul:last-child,
+.lg-sec ol:last-child { margin-bottom: 0; }
+
+.lg-sec li { margin: 0 0 8px; padding-left: 4px; }
+.lg-sec li:last-child { margin-bottom: 0; }
+.lg-sec li::marker { color: var(--lg-teal); }
+.lg-sec b, .lg-sec strong { color: var(--lg-ink); font-weight: 700; }
+.lg-sec > :first-child + :is(p, ul, ol, h4) { margin-top: 0; }
+
+/* ----- Penutup ----- */
+.lg-end {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+    padding: 20px 24px;
+    border-radius: 16px;
+    background: var(--lg-aqua);
+}
+
+.lg-end p { margin: 0; color: var(--lg-muted); font-size: 14.5px; }
+.lg-end a { font-weight: 700; text-decoration: none; }
+.lg-end a:hover { text-decoration: underline; }
+
+/* ----- Tablet dan ponsel ----- */
+@media (max-width: 860px) {
+    .lg-body { grid-template-columns: minmax(0, 1fr); padding-top: 20px; padding-bottom: 56px; }
+    .lg-side { position: static; max-height: none; }
+    .lg-tabs { grid-template-columns: 1fr 1fr; }
+    .lg-toc, .lg-toc-t { display: none; }
+}
+
+@media (max-width: 560px) {
+    .lg-top .lg-in { height: 60px; }
+    .lg-logo .logo-img { height: 34px; }
+    .lg-back { min-height: 40px; padding: 0 14px; font-size: 14px; }
+    .lg-tabs { grid-template-columns: minmax(0, 1fr); }
+    .lg-doc { padding: 20px; border-radius: 20px; }
+    .lg-lead { margin-bottom: 24px; font-size: 16px; }
+    .lg-sec { padding: 24px 0; }
+    .lg-sec h2 { font-size: 19px; gap: 10px; }
+    .lg-sec h2 span { min-width: 28px; height: 28px; font-size: 13px; }
+    .lg-end { padding: 16px 18px; }
+}
+
+@media print {
+    .lg-top, .lg-side { display: none; }
+    body.p-legal { background: #fff; }
+    .lg-body { display: block; padding: 0; }
+    .lg-doc { border: 0; padding: 0; }
 }

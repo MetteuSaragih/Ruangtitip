@@ -124,14 +124,12 @@ class OtpController extends Controller
             [
                 'name'              => null,            // diisi nanti di halaman profil
                 'email_verified_at' => now(),
-                'role'              => 'penitip',
-                'is_active'         => true,
             ]
         );
 
         // Tandai email terverifikasi jika user lama belum
         if (is_null($user->email_verified_at)) {
-            $user->update(['email_verified_at' => now()]);
+            $user->forceFill(['email_verified_at' => now()])->save();
         }
 
         Auth::login($user, remember: true);

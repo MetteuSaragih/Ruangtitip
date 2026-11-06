@@ -147,7 +147,7 @@ class TokoPackingController extends Controller
             'emoji' => ['nullable', 'string', 'max:16'],
             'description' => ['nullable', 'string'],
             'images' => ['nullable', 'array', 'max:10'],
-            'images.*' => ['image', 'max:5120'],
+            'images.*' => ['image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
             'weight' => ['required', 'integer', 'min:1'],
             'length' => ['required', 'integer', 'min:1'],
             'width' => ['required', 'integer', 'min:1'],
