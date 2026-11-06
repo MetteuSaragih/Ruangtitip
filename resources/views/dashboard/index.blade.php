@@ -6,8 +6,9 @@
     }
 
     $firstName = $user && $user->name ? explode(' ', trim($user->name))[0] : 'Penitip';
-    $hour = (int) now()->format('G');
-    $greeting = ($hour < 11 ? 'Selamat pagi' : ($hour < 15 ? 'Selamat siang' : ($hour < 19 ? 'Selamat sore' : 'Selamat malam'))) . ', ' . $firstName . '!';
+    // Sapaan mengikuti jam WIB: pagi 04.00-10.59, siang 11.00-14.59, sore 15.00-17.59, selain itu malam.
+    $hour = (int) now('Asia/Jakarta')->format('G');
+    $greeting = ($hour >= 4 && $hour < 11 ? 'Selamat pagi' : ($hour >= 11 && $hour < 15 ? 'Selamat siang' : ($hour >= 15 && $hour < 18 ? 'Selamat sore' : 'Selamat malam'))) . ', ' . $firstName . '!';
 
     // Ringkasan titipan aktif
     $daysLeft = 0;

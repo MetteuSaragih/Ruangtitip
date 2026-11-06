@@ -140,7 +140,7 @@
                 </button>
                 <a class="rt-logo" href="{{ route('dashboard') }}" aria-label="RuTip, ke beranda"><img class="rt-logo-full" src="{{ asset('assets/logo/logo-horizontal.png') }}" alt="RuTip" width="104" height="40"></a>
                 <div class="rt-crumb">
-                    <small>{{ now()->locale('id')->translatedFormat('l, j F Y') }}</small>
+                    <small>{{ now('Asia/Jakarta')->locale('id')->translatedFormat('l, j F Y') }}</small>
                     <h1>@yield('title', 'RuangTitip')</h1>
                 </div>
                 <div class="rt-top-acts">
