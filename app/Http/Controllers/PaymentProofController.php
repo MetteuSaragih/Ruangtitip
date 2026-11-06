@@ -44,6 +44,12 @@ class PaymentProofController extends Controller
             ManualPayment::submitProof($order, $request->file('proof'));
         } catch (RuntimeException $e) {
             return redirect(ManualPayment::pageUrl($order))->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            // Detail teknis (mis. error database) hanya masuk log, tidak ditampilkan ke pelanggan.
+            report($e);
+
+            return redirect(ManualPayment::pageUrl($order))
+                ->with('error', 'Bukti pembayaran belum bisa dikirim. Coba lagi sebentar lagi, atau hubungi admin lewat WhatsApp.');
         }
 
         return redirect(ManualPayment::pageUrl($order))
