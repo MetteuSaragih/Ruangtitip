@@ -19,23 +19,53 @@ class GoogleController extends Controller
         try {
             $googleUser = Socialite::driver('google')->user();
         } catch (\Exception $e) {
-            return redirect()->route('login')
-                ->withErrors(['email' => 'Gagal login dengan Google. Silakan coba lagi.']);
+            return $this->fail('Gagal login dengan Google. Silakan coba lagi.');
         }
 
-        // Menggunakan updateOrCreate untuk menyederhanakan logika pencarian & update
-        $user = User::updateOrCreate(
-            ['email' => $googleUser->getEmail()],
-            [
+        $email = strtolower(trim((string) $googleUser->getEmail()));
+        $googleId = (string) $googleUser->getId();
+
+        // Hanya email yang sudah diverifikasi Google yang boleh dipakai masuk atau mendaftar.
+        $raw = (array) ($googleUser->user ?? []);
+        $verified = filter_var($raw['email_verified'] ?? $raw['verified_email'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        if ($email === '' || $googleId === '' || ! $verified) {
+            return $this->fail('Email Google kamu belum terverifikasi, jadi belum bisa dipakai untuk masuk.');
+        }
+
+        $user = User::where('email', $email)->first();
+
+        if ($user) {
+            if ($user->is_active === false) {
+                return $this->fail('Akun kamu sedang dinonaktifkan. Hubungi tim RuangTitip lewat WhatsApp.');
+            }
+            // Email yang sama tetapi akun Google berbeda: tolak, supaya akun tidak bisa diambil alih.
+            if ($user->google_id && (string) $user->google_id !== $googleId) {
+                return $this->fail('Email ini sudah terhubung dengan akun Google yang lain. Masuk dengan kode OTP ke email kamu.');
+            }
+
+            // Lengkapi data yang masih kosong; nama dan foto yang sudah kamu atur sendiri tidak ditimpa.
+            $user->google_id = $user->google_id ?: $googleId;
+            $user->name = $user->name ?: $googleUser->getName();
+            $user->avatar = $user->avatar ?: $googleUser->getAvatar();
+            if (is_null($user->email_verified_at)) {
+                $user->email_verified_at = now();
+            }
+            $user->save();
+        } else {
+            $user = User::create([
                 'name'      => $googleUser->getName(),
-                'google_id' => $googleUser->getId(),
+                'email'     => $email,
+                'google_id' => $googleId,
                 'avatar'    => $googleUser->getAvatar(),
-               ] // Password tidak diubah jika user sudah ada (menggunakan null)
-            );
+            ]);
+            $user->forceFill(['email_verified_at' => now()])->save();
+        }
 
         Auth::login($user, remember: true);
+        // Sesi baru setelah login: mencegah session fixation.
+        request()->session()->regenerate();
 
-        $firstName = $user->name ? explode(' ', trim($user->name))[0] : explode('@', $googleUser->getEmail())[0];
+        $firstName = $user->name ? explode(' ', trim($user->name))[0] : explode('@', $email)[0];
         session()->flash('welcome_name', $firstName);
         session()->flash('welcome_type', $user->wasRecentlyCreated ? 'new' : 'returning');
 
@@ -45,5 +75,9 @@ class GoogleController extends Controller
 
         return redirect()->route('dashboard');
     }
+
+    private function fail(string $message)
+    {
+        return redirect()->route('login')->withErrors(['email' => $message]);
+    }
 }
-      
