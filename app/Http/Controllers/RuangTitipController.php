@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AdminNotifier;
 use App\Models\StorageRoom;
 use App\Models\TitipanOrder;
 use App\Support\StorageSizes;
@@ -306,6 +307,8 @@ class RuangTitipController extends Controller
             'status'         => 'menunggu_pembayaran',
             'payment_status' => 'UNPAID',
         ]);
+
+        AdminNotifier::newTitip($order);
 
         $r->session()->forget('titip');
 

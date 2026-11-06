@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AdminNotifier;
 use App\Models\PackingOrder;
 use App\Models\PackingProduct;
 use App\Models\UserAddress;
@@ -290,6 +291,8 @@ class PackingController extends Controller
             'status' => 'menunggu_pembayaran',
             'payment_status' => 'UNPAID',
         ]);
+
+        AdminNotifier::newPacking($order);
 
         session()->forget('packing.checkout');
 

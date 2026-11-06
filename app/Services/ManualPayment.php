@@ -213,6 +213,8 @@ class ManualPayment
             $disk->delete($oldPath);
         }
 
+        AdminNotifier::proofUploaded($order);
+
         return $order;
     }
 
@@ -243,6 +245,8 @@ class ManualPayment
 
         if ($paid) {
             $order->setRawAttributes($paid->getAttributes(), true);
+            AdminNotifier::paymentConfirmed($order, $admin);
+
             try {
                 event(new OrderPaid($paid));
             } catch (\Throwable $e) {
@@ -279,6 +283,7 @@ class ManualPayment
         });
 
         Log::info('Pembayaran ditolak admin', ['order' => self::typeOf($order) . '#' . $order->getKey()]);
+        AdminNotifier::paymentRejected($order, $admin, $reason);
 
         return $order;
     }
