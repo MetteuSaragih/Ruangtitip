@@ -40,14 +40,12 @@
 
             <div class="panel">
                 <h2>Metode pembayaran</h2>
-                <p class="hint" style="margin-bottom:14px">Pembayaran diproses oleh Tripay.</p>
-                <input type="hidden" name="payment_method">
-                <x-tripay-channel-picker theme="light" button-id="payBtn" />
+                @include('partials.payment-method-qris')
             </div>
 
             <div class="actions">
                 <a href="{{ $logistic === 'biteship' ? route('packing.courier') : route('packing.logistics') }}" class="btn btn-outline">Kembali</a>
-                <button type="submit" id="payBtn" disabled class="btn btn-primary">Bayar {{ rupiah($total) }}</button>
+                <button type="submit" id="payBtn" class="btn btn-primary">Buat pesanan dan bayar {{ rupiah($total) }}</button>
             </div>
         </div>
 

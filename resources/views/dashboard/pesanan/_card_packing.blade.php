@@ -6,7 +6,7 @@
         'selesai' => ['Selesai', 'mute'],
     ];
     [$label, $tone] = $statusMap[$order->status ?? 'pending'] ?? $statusMap['pending'];
-    $isPaid = $order->payment_status === 'PAID';
+    $isPaid = \App\Services\ManualPayment::state($order->payment_status) === 'paid';
     $itemNames = collect($order->items ?? [])->pluck('name')->implode(', ');
     $itemCount = collect($order->items ?? [])->sum('qty');
 @endphp
@@ -22,6 +22,6 @@
             <span>{{ $order->created_at->translatedFormat('j M Y') }}</span>
             <span>{{ $itemNames ?: '-' }}, {{ $itemCount }} barang</span>
         </p>
-        <p class="pay">{{ $isPaid ? 'Lunas, total ' . rp($order->total) . '.' : 'Tagihan ' . rp($order->total) . ' belum dibayar.' }}</p>
+        <p class="pay">{{ \App\Services\ManualPayment::userText($order) }}</p>
     </div>
 </article>

@@ -86,21 +86,19 @@
             <section class="card">
                 <h3>Persetujuan</h3>
                 <label class="pick">
-                    <input type="checkbox" name="agree" value="1">
+                    <input type="checkbox" name="agree" value="1" required>
                     <span>Saya menyetujui <a href="{{ route('legal.terms') }}" target="_blank" rel="noopener">Syarat dan Ketentuan RuangTitip</a>, termasuk ketentuan blind box: isi kemasan tidak dibuka, petugas hanya memeriksa jumlah, kategori, ukuran, kemasan, dan kondisi luar, dan saya bertanggung jawab atas isi barang serta memastikan tidak ada barang yang dilarang. Saya juga menyetujui <a href="{{ route('legal.privacy') }}" target="_blank" rel="noopener">Kebijakan Privasi</a>.</span>
                 </label>
             </section>
 
             <section class="card">
                 <h3>Metode pembayaran</h3>
-                <p class="help" style="margin-bottom:12px">Pembayaran diproses aman lewat Tripay.</p>
-                <input type="hidden" name="payment_method">
-                <x-tripay-channel-picker theme="light" button-id="placeBtn" />
+                @include('partials.payment-method-qris')
             </section>
 
             <div class="nav-btns">
                 <a href="{{ $back }}" class="btn btn-ghost">Kembali</a>
-                <button type="submit" id="placeBtn" disabled class="btn btn-sun">Bayar {{ rp($calc['total']) }}</button>
+                <button type="submit" id="placeBtn" class="btn btn-sun">Buat pesanan dan bayar {{ rp($calc['total']) }}</button>
             </div>
         </form>
 
@@ -110,7 +108,7 @@
                 <div class="rows">
                     <div class="tot"><span>Total bayar</span><b>{{ rp($calc['total']) }}</b></div>
                 </div>
-                <p class="help mt">Setelah pesanan dibuat, tagihan wajib dibayar sebelum batas waktu. Pembayaran diverifikasi otomatis lewat Tripay.</p>
+                <p class="help mt">Setelah pesanan dibuat, kamu membayar lewat QRIS dan mengunggah bukti pembayaran. Admin memeriksa buktinya sebelum pesanan dilanjutkan.</p>
             </section>
         </aside>
     </div>

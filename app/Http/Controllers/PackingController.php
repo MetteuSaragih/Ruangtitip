@@ -7,7 +7,6 @@ use App\Models\PackingProduct;
 use App\Models\UserAddress;
 use App\Services\BiteshipService;
 use App\Services\DistanceService;
-use App\Services\TripayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -253,7 +252,6 @@ class PackingController extends Controller
     public function pay(Request $request)
     {
         $data = $request->validate([
-            'payment_method' => 'required|string',
             'pickup_date' => 'nullable|date|after_or_equal:today',
             'pickup_time' => 'nullable|string',
         ]);
@@ -288,49 +286,10 @@ class PackingController extends Controller
             'address_postal_code' => $checkout['address_postal_code'] ?? null,
             'pickup_date' => $data['pickup_date'] ?? null,
             'pickup_time' => $data['pickup_time'] ?? null,
-            'payment_method' => $data['payment_method'],
+            'payment_method' => 'qris',
             'status' => 'menunggu_pembayaran',
             'payment_status' => 'UNPAID',
         ]);
-
-        $orderItems = collect($checkout['items'])->map(fn ($item) => [
-            'name' => mb_substr($item['name'], 0, 50),
-            'price' => (int) $item['price'],
-            'quantity' => (int) $item['qty'],
-        ])->values()->all();
-
-        if ($shipping > 0) {
-            $orderItems[] = ['name' => 'Biaya Pengiriman', 'price' => (int) $shipping, 'quantity' => 1];
-        }
-        $orderItems[] = ['name' => 'Biaya Layanan Platform', 'price' => (int) $platformFee, 'quantity' => 1];
-
-        try {
-            $tripay = app(TripayService::class);
-            $result = $tripay->createTransaction([
-                'method' => $data['payment_method'],
-                'merchant_ref' => $order->order_code,
-                'amount' => $total,
-                'customer_name' => Auth::user()->name ?? 'Pelanggan',
-                'customer_email' => Auth::user()->email ?? 'noreply@rutip.test',
-                'customer_phone' => Auth::user()->phone ?? '0800000000',
-                'order_items' => $orderItems,
-                'callback_url' => route('tripay.callback'),
-                'return_url' => route('packing.success', $order->order_code),
-            ]);
-
-            $order->update([
-                'tripay_reference' => $result['reference'] ?? null,
-                'tripay_checkout_url' => $result['checkout_url'] ?? null,
-                'tripay_pay_code' => $result['pay_code'] ?? null,
-                'tripay_payment_method' => $data['payment_method'],
-            ]);
-        } catch (\Throwable $e) {
-            report($e);
-            $order->update(['payment_status' => 'FAILED']);
-
-            return redirect()->route('packing.payment')
-                ->with('error', 'Gagal memulai pembayaran. Coba lagi atau pilih metode lain.');
-        }
 
         session()->forget('packing.checkout');
 

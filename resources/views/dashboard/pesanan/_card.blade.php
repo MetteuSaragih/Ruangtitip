@@ -2,8 +2,9 @@
     [$statusLabel, $badgeTone] = $order->displayStatus();
     $awaitingPay = $order->status === 'menunggu_pembayaran';
     $payText = $awaitingPay
-        ? 'Tagihan ' . rp($order->total) . ' belum dibayar. Selesaikan sebelum batas waktu pembayaran.'
+        ? \App\Services\ManualPayment::userText($order)
         : 'Lunas, total ' . rp($order->total) . '.';
+    $payCta = $awaitingPay ? \App\Services\ManualPayment::userCta($order) : null;
 @endphp
 <article class="card oc">
     <div>
@@ -21,8 +22,8 @@
         <p class="pay">{{ $payText }}</p>
     </div>
     <div class="oc-acts">
-        @if ($awaitingPay && $order->tripay_checkout_url)
-            <a href="{{ $order->tripay_checkout_url }}" class="btn btn-primary sm">Bayar</a>
+        @if ($payCta)
+            <a href="{{ \App\Services\ManualPayment::pageUrl($order) }}" class="btn btn-primary sm">{{ $payCta }}</a>
         @endif
         <a href="{{ route('pesanan.detail', $order) }}" class="btn btn-ghost sm">Lihat detail</a>
     </div>

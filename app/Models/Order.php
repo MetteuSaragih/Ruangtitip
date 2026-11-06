@@ -47,6 +47,9 @@ class Order extends Model
         'shipping_address' => 'array',
         'biteship_attempts' => 'integer',
         'needs_admin_attention' => 'boolean',
+        'payment_proof_at' => 'datetime',
+        'payment_reviewed_at' => 'datetime',
+        'paid_at' => 'datetime',
     ];
 
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -60,8 +63,12 @@ class Order extends Model
      */
     public static function reservedPrelovedIds(?int $exceptUserId = null): array
     {
-        return static::where('payment_status', 'UNPAID')
-            ->where('created_at', '>=', now()->subDay())
+        // Menahan barang: belum bayar atau ditolak (selama jam tahan sejak terakhir berubah), atau bukti sedang diperiksa.
+        $hold = now()->subHours((int) config('payment.hold_hours', 24));
+
+        return static::where(fn ($q) => $q
+                ->where('payment_status', 'REVIEW')
+                ->orWhere(fn ($w) => $w->whereIn('payment_status', ['UNPAID', 'REJECTED'])->where('updated_at', '>=', $hold)))
             ->when($exceptUserId, fn ($q) => $q->where(fn ($w) => $w->whereNull('user_id')->orWhere('user_id', '!=', $exceptUserId)))
             ->get(['items'])
             ->flatMap(fn (self $o) => collect($o->items ?? []))

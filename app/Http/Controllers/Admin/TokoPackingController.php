@@ -127,6 +127,9 @@ class TokoPackingController extends Controller
     {
         $request->validate(['status' => 'required|in:pending,diproses,dikirim,selesai']);
         $order = PackingOrder::findOrFail($id);
+        if ($request->status !== 'pending' && \App\Services\ManualPayment::state($order->payment_status) !== 'paid') {
+            return back()->with('error', 'Pembayaran belum dikonfirmasi. Periksa bukti pembayaran di Tagihan dulu, baru status pesanan bisa dilanjutkan.');
+        }
         $order->update(['status' => $request->status]);
         return back()->with('success', "Status pesanan #{$order->order_code} berhasil diperbarui.");
     }

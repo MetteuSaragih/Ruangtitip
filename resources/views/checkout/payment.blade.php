@@ -49,14 +49,13 @@
                 @endif
 
                 <section class="card stack" style="gap:12px">
-                    <div><h3>Metode pembayaran</h3><p class="help">Pembayaran diproses aman lewat Tripay.</p></div>
-                    <input type="hidden" name="payment_method">
-                    <x-tripay-channel-picker theme="light" button-id="payBtn" />
+                    <h3>Metode pembayaran</h3>
+                    @include('partials.payment-method-qris')
                 </section>
 
                 <div class="nav-btns">
                     <a href="{{ $back }}" class="btn btn-ghost">Kembali</a>
-                    <button type="button" id="payBtn" disabled class="btn btn-sun" onclick="processPayment()">Bayar {{ rp($total) }}</button>
+                    <button type="button" id="payBtn" class="btn btn-sun" onclick="processPayment()">Buat pesanan dan bayar {{ rp($total) }}</button>
                 </div>
                 <p class="msg" id="payErr"></p>
             </form>
@@ -73,7 +72,7 @@
                     <div><span>Ongkir</span><b>{{ $shippingCost === 0 ? 'Rp0' : rp($shippingCost) }}</b></div>
                     <div class="tot"><span>Total</span><b>{{ rp($total) }}</b></div>
                 </div>
-                <p class="help mt">Dibayar penuh lewat Tripay. Status pesanan bisa dicek di Pesanan Saya setelah bayar.</p>
+                <p class="help mt">Dibayar lewat QRIS. Setelah pesanan dibuat, unggah bukti pembayaran supaya admin bisa memeriksanya.</p>
             </section>
         </aside>
     </div>
@@ -84,9 +83,6 @@
 @push('scripts')
 <script>
 function processPayment() {
-    const selectedPayment = document.querySelector('input[name="payment_method"]').value;
-    if (!selectedPayment) return;
-
     const btn = document.getElementById('payBtn');
     const originalLabel = btn.innerHTML;
     btn.innerHTML = '<span class="spin"></span>Memproses...';
@@ -99,7 +95,6 @@ function processPayment() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
         body: JSON.stringify({
-            payment_method: selectedPayment,
             pickup_date: pickupDate ? pickupDate.value : null,
             pickup_time: pickupTime ? pickupTime.value : null,
         })

@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Events\OrderPaid;
 use App\Models\Order;
 use App\Models\PackingOrder;
-use App\Models\PrelovedItem;
 use App\Models\TitipanOrder;
+use App\Services\ManualPayment;
 use App\Services\TripayService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -131,50 +131,12 @@ class TripayCallbackController extends Controller
             $order->payment_status = $status;
 
             if ($status === 'PAID') {
-                $this->markPaid($order);
+                $order->paid_at = $order->paid_at ?: now();
+                ManualPayment::settle($order);
             }
             $order->save();
 
             return $status === 'PAID' ? $order : null;
         });
-    }
-
-    private function markPaid(Model $order): void
-    {
-        if ($order instanceof PackingOrder) {
-            if (in_array($order->status, ['menunggu_pembayaran', null, ''], true)) {
-                $order->status = 'diproses';
-            }
-        } elseif ($order instanceof Order) {
-            if (in_array($order->status, [Order::STATUS_PENDING, null, ''], true)) {
-                $order->status = Order::STATUS_PAID;
-            }
-            $this->markPrelovedItemsSold($order);
-        } elseif ($order instanceof TitipanOrder) {
-            if (in_array($order->status, ['menunggu_pembayaran', null, ''], true)) {
-                $order->status = 'penjadwalan_penjemputan';
-            }
-        }
-    }
-
-    private function markPrelovedItemsSold(Order $order): void
-    {
-        $prelovedIds = collect($order->items ?? [])
-            ->filter(fn ($i) => ($i['type'] ?? 'preloved') === 'preloved')
-            ->pluck('id')
-            ->filter()
-            ->all();
-
-        if (empty($prelovedIds)) {
-            return;
-        }
-
-        // Barang yang sudah Terjual lewat pesanan lain: tandai supaya admin menindaklanjuti (refund/batalkan).
-        if (PrelovedItem::whereIn('id', $prelovedIds)->where('status', 'Terjual')->exists()) {
-            $order->needs_admin_attention = true;
-            $order->biteship_last_error = 'Barang preloved di pesanan ini sudah terjual lewat pesanan lain.';
-        }
-
-        PrelovedItem::whereIn('id', $prelovedIds)->update(['status' => 'Terjual']);
     }
 }

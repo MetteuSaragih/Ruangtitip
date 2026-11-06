@@ -51,8 +51,8 @@ $deliveryLabel = ['pickup' => 'Ambil sendiri', 'biteship' => 'Ekspedisi'];
         <tbody>
           @foreach ($orders as $order)
             @php
-              $payTone = $order->is_paid ? 'ok' : (in_array(strtoupper((string) $order->payment_status), ['FAILED', 'EXPIRED'], true) ? 'err' : 'warn');
-              $payLabel = $order->is_paid ? 'Lunas' : ($payTone === 'err' ? 'Gagal' : 'Menunggu');
+              $payTone = \App\Services\ManualPayment::tone($order->payment_status);
+              $payLabel = $order->is_paid ? 'Lunas' : \App\Services\ManualPayment::label($order->payment_status);
               $stTone = ['paid' => 'warn', 'processing' => 'info', 'shipped' => 'info', 'delivered' => 'ok', 'cancelled' => 'err'][$order->status] ?? 'mute';
               $stLabel = $order->is_paid ? ($orderStatusLabels[$order->status] ?? $order->status) : ($order->status === 'cancelled' ? 'Dibatalkan' : 'Menunggu pembayaran');
               $next = $order->is_paid ? match ($order->status) {
@@ -75,7 +75,7 @@ $deliveryLabel = ['pickup' => 'Ambil sendiri', 'biteship' => 'Ekspedisi'];
               <td>{{ $order->customer_name }}<small>{{ $order->customer_phone }}</small></td>
               <td>{{ \Illuminate\Support\Str::limit($order->preloved_item_names ?: '-', 60) }}</td>
               <td class="r num">Rp {{ number_format($order->total ?: $order->preloved_subtotal, 0, ',', '.') }}</td>
-              <td><span class="st {{ $payTone }}">{{ $payLabel }}</span></td>
+              <td><span class="st {{ $payTone }}">{{ $payLabel }}</span>@if (\App\Services\ManualPayment::state($order->payment_status) === 'review')<small><a href="{{ route('admin.tagihan.show', ['preloved', $order->id]) }}">Periksa bukti</a></small>@endif</td>
               <td><span class="st {{ $stTone }}">{{ $stLabel }}</span></td>
               <td class="acts">
                 <button class="btn btn-ghost sm" type="button" data-open="{{ $dlgId }}">Detail</button>

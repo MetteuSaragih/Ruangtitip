@@ -79,7 +79,7 @@ class TokoPrelovedController extends Controller
                 $o->preloved_item_names = $pre->pluck('name')->implode(', ');
                 $o->preloved_subtotal   = $pre->sum(fn ($i) => ($i['price'] ?? 0) * ($i['qty'] ?? 1));
                 $o->preloved_count      = $pre->count();
-                $o->is_paid             = strtoupper((string) $o->payment_status) === 'PAID';
+                $o->is_paid             = \App\Services\ManualPayment::state($o->payment_status) === 'paid';
 
                 return $o;
             })

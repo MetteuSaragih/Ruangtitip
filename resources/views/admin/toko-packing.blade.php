@@ -97,8 +97,8 @@ $formAction = $editId ? route('admin.packing.update', $editId) : route('admin.pa
           <tbody>
             @foreach ($orders as $order)
               @php
-                $payTone = match ($order->payment_status) { 'PAID' => 'ok', 'FAILED', 'EXPIRED' => 'err', default => 'warn' };
-                $payLabel = match ($order->payment_status) { 'PAID' => 'Lunas', 'FAILED', 'EXPIRED' => 'Gagal', default => 'Menunggu' };
+                $payTone = \App\Services\ManualPayment::tone($order->payment_status);
+                $payLabel = \App\Services\ManualPayment::state($order->payment_status) === 'paid' ? 'Lunas' : \App\Services\ManualPayment::label($order->payment_status);
                 $orderStatus = $order->status ?? 'pending';
               @endphp
               <tr>
@@ -111,7 +111,7 @@ $formAction = $editId ? route('admin.packing.update', $editId) : route('admin.pa
                 <td>{{ $order->user->name ?? '-' }}</td>
                 <td>{{ \Illuminate\Support\Str::limit(collect($order->items)->pluck('name')->implode(', '), 60) }}</td>
                 <td class="r num">Rp {{ number_format($order->total, 0, ',', '.') }}</td>
-                <td><span class="st {{ $payTone }}">{{ $payLabel }}</span></td>
+                <td><span class="st {{ $payTone }}">{{ $payLabel }}</span>@if (\App\Services\ManualPayment::state($order->payment_status) === 'review')<small><a href="{{ route('admin.tagihan.show', ['packing', $order->id]) }}">Periksa bukti</a></small>@endif</td>
                 <td>
                   <form action="{{ route('admin.packing.order.status', $order->id) }}" method="POST" class="row-flex">
                     @csrf

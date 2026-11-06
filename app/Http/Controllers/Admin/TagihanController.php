@@ -3,15 +3,22 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Services\BillingFeed;
+use App\Services\ManualPayment;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 class TagihanController extends Controller
 {
-    private const TABS = ['semua', 'menunggu', 'berhasil', 'gagal'];
+    private const TABS = ['semua', 'periksa', 'menunggu', 'berhasil', 'gagal'];
+
+    /** Tab di URL -> kelompok status di BillingFeed. */
+    private const TAB_GROUP = ['periksa' => 'review', 'menunggu' => 'wait', 'berhasil' => 'ok', 'gagal' => 'fail'];
 
     public function index(Request $request)
     {
@@ -21,6 +28,7 @@ class TagihanController extends Controller
         $base = $this->filtered($source, $q, 'semua');
         $counts = [
             'semua' => $base->count(),
+            'periksa' => $base->where('group', 'review')->count(),
             'menunggu' => $base->where('group', 'wait')->count(),
             'berhasil' => $base->where('group', 'ok')->count(),
             'gagal' => $base->where('group', 'fail')->count(),
@@ -30,6 +38,8 @@ class TagihanController extends Controller
 
         $all = BillingFeed::records(200);
         $kpi = [
+            'periksa' => $all->where('group', 'review')->sum('amount'),
+            'periksa_n' => $all->where('group', 'review')->count(),
             'menunggu' => $all->where('group', 'wait')->sum('amount'),
             'menunggu_n' => $all->where('group', 'wait')->count(),
             'berhasil' => $all->where('group', 'ok')
@@ -63,7 +73,8 @@ class TagihanController extends Controller
     /** Cegah CSV/formula injection: sel yang diawali = + - @ diberi apostrof. */
     private static function csvSafe($v)
     {
-        return is_string($v) && $v !== '' && in_array($v[0], ['=', '+', '-', '@', "	", ""], true) ? "'".$v : $v;
+        return is_string($v) && $v !== '' && in_array($v[0], ['=', '+', '-', '@', "	", "
+"], true) ? "'".$v : $v;
     }
 
     public function csv(Request $request)
@@ -75,7 +86,7 @@ class TagihanController extends Controller
         return response()->streamDownload(function () use ($rows) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['Kode', 'Jenis', 'Pelanggan', 'Email', 'Metode', 'Jumlah', 'Status', 'Status Tripay', 'Referensi Tripay', 'Dibuat', 'Dibayar']);
+            fputcsv($out, ['Kode', 'Jenis', 'Pelanggan', 'Email', 'Metode', 'Jumlah', 'Status', 'Kode Status', 'Referensi', 'Dibuat', 'Dibayar']);
             foreach ($rows as $r) {
                 fputcsv($out, [
                     $r['code'],
@@ -101,7 +112,53 @@ class TagihanController extends Controller
         $bill = BillingFeed::find($type, $id);
         abort_unless($bill, 404);
 
-        return view('admin.tagihan.show', ['bill' => $bill]);
+        $reviewer = $bill['reviewer_id'] ? User::whereKey($bill['reviewer_id'])->value('name') : null;
+
+        return view('admin.tagihan.show', ['bill' => $bill, 'reviewer' => $reviewer]);
+    }
+
+    /** Admin menyatakan pembayaran sudah masuk. */
+    public function confirm(string $type, int $id)
+    {
+        $order = $this->order($type, $id);
+
+        try {
+            ManualPayment::confirm($order, Auth::user());
+        } catch (RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Pembayaran ' . ManualPayment::codeOf($order) . ' dikonfirmasi. Status pesanan sudah diperbarui.');
+    }
+
+    /** Admin menolak bukti (belum masuk atau tidak jelas); pelanggan diminta mengunggah ulang. */
+    public function reject(Request $request, string $type, int $id)
+    {
+        $order = $this->order($type, $id);
+
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:5', 'max:500'],
+        ], [
+            'reason.required' => 'Tulis alasan penolakan supaya pelanggan tahu apa yang perlu diperbaiki.',
+            'reason.min' => 'Alasan terlalu singkat. Jelaskan apa yang kurang dari bukti pembayarannya.',
+            'reason.max' => 'Alasan maksimal 500 karakter.',
+        ]);
+
+        try {
+            ManualPayment::reject($order, Auth::user(), $data['reason']);
+        } catch (RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Pembayaran ' . ManualPayment::codeOf($order) . ' ditandai gagal. Pelanggan diminta mengunggah ulang bukti.');
+    }
+
+    private function order(string $type, int $id)
+    {
+        abort_unless(array_key_exists($type, ManualPayment::TYPES), 404);
+        $class = ManualPayment::TYPES[$type];
+
+        return $class::query()->findOrFail($id);
     }
 
     private function params(Request $request): array
@@ -130,7 +187,7 @@ class TagihanController extends Controller
             });
         }
 
-        $group = ['menunggu' => 'wait', 'berhasil' => 'ok', 'gagal' => 'fail'][$tab] ?? null;
+        $group = self::TAB_GROUP[$tab] ?? null;
         if ($group) {
             $rows = $rows->where('group', $group);
         }

@@ -23,7 +23,13 @@
     ])
 
     @if ($o['key'] === 'bayar')
-        <div class="alert a-warn"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg><div><b>Bayar {{ rp($o['total']) }} untuk melanjutkan</b><p>Kalau lewat batas waktu, pesanan batal dan barang tersedia lagi untuk pembeli lain.</p>@if ($o['pay_url'])<div class="acts"><a class="btn btn-sun sm" href="{{ $o['pay_url'] }}">Bayar sekarang</a></div>@endif</div></div>
+        @if ($o['pay_state'] === 'review')
+            <div class="alert a-info"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg><div><b>Pembayaran sedang diperiksa</b><p>Bukti pembayaran {{ rp($o['total']) }} sudah kami terima. Admin sedang memeriksanya. Barang tetap ditahan untukmu.</p><div class="acts"><a class="btn btn-ghost sm" href="{{ $o['pay_url'] }}">Lihat status pembayaran</a></div></div></div>
+        @elseif ($o['pay_state'] === 'rejected')
+            <div class="alert a-err"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg><div><b>Pembayaran gagal</b><p>{{ $o['pay_reason'] ?: 'Admin belum bisa memastikan pembayaranmu.' }} Foto ulang bukti pembayaranmu dan unggah lagi.</p><div class="acts"><a class="btn btn-primary sm" href="{{ $o['pay_url'] }}">Unggah ulang bukti</a></div></div></div>
+        @else
+            <div class="alert a-warn"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg><div><b>Bayar {{ rp($o['total']) }} untuk melanjutkan</b><p>Bayar lewat QRIS lalu unggah bukti pembayaran. Kalau lewat batas waktu, pesanan batal dan barang tersedia lagi untuk pembeli lain.</p><div class="acts"><a class="btn btn-primary sm" href="{{ $o['pay_url'] }}">Bayar sekarang</a></div></div></div>
+        @endif
     @elseif ($o['key'] === 'serah')
         @if ($o['kirim'])
             <div class="alert a-info"><svg class="ic" aria-hidden="true"><use href="#i-truck"/></svg><div><b>Barang sedang disiapkan</b><p>Petugas mengemas barang, memotret kondisi barang dan paket, lalu menyerahkannya ke kurir.</p></div></div>

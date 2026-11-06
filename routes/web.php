@@ -119,7 +119,13 @@ Route::middleware('auth')->group(function () {
     // --- akhir blok jual dan pembelian ---
 
     Route::get('/api/biteship/areas', [BiteshipAreaController::class, 'search'])->middleware('throttle:60,1')->name('api.biteship.areas');
-    Route::get('/api/tripay/channels', [\App\Http\Controllers\Api\TripayChannelController::class, 'index'])->name('api.tripay.channels');
+    // Pembayaran QRIS manual: unggah bukti (pemilik) dan lihat bukti (pemilik atau admin).
+    Route::post('/pembayaran/{type}/{id}/bukti', [\App\Http\Controllers\PaymentProofController::class, 'store'])
+        ->whereIn('type', ['titip', 'preloved', 'packing'])->whereNumber('id')
+        ->middleware('throttle:20,1')->name('payment.proof.store');
+    Route::get('/pembayaran/{type}/{id}/bukti', [\App\Http\Controllers\PaymentProofController::class, 'show'])
+        ->whereIn('type', ['titip', 'preloved', 'packing'])->whereNumber('id')
+        ->name('payment.proof.show');
 
     Route::prefix('dashboard/packing')->name('packing.')->group(function () {
         Route::get('/', [PackingController::class, 'index'])->name('index');

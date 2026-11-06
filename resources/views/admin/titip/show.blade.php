@@ -24,8 +24,14 @@
     $user = $order->user;
 
     $events = collect([['at' => $order->created_at, 'who' => 'Sistem', 'text' => 'Pesanan dibuat']]);
+    if ($order->payment_proof_at) {
+        $events->push(['at' => $order->payment_proof_at, 'who' => 'Pelanggan', 'text' => 'Bukti pembayaran dikirim' . (($order->payment_attempts ?? 0) > 1 ? ' ulang' : '')]);
+    }
+    if (strtoupper((string) $order->payment_status) === 'REJECTED' && $order->payment_reviewed_at) {
+        $events->push(['at' => $order->payment_reviewed_at, 'who' => 'Admin', 'text' => 'Pembayaran ditandai gagal: ' . $order->payment_reject_reason]);
+    }
     if ($isPaid) {
-        $events->push(['at' => $order->created_at, 'who' => 'Sistem', 'text' => 'Pembayaran diterima' . ($order->tripay_payment_method ? ' via ' . $order->tripay_payment_method : '')]);
+        $events->push(['at' => $order->paid_at ?: $order->created_at, 'who' => 'Admin', 'text' => 'Pembayaran dikonfirmasi via QRIS']);
     }
     foreach ($requests as $r) {
         $events->push(['at' => $r->created_at, 'who' => 'Pelanggan', 'text' => 'Permintaan ' . mb_strtolower($r->typeLabel()) . ' (' . $r->statusLabel() . ')']);
@@ -60,10 +66,15 @@
         </div>
     @endif
     @if ($order->status === 'menunggu_pembayaran')
-        <div class="al warn">
-            <svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>
-            <div><b>Menunggu pembayaran</b><p>Pelanggan belum membayar sebesar {{ $rp($order->total) }}. Pesanan lanjut otomatis setelah pembayaran diterima.</p></div>
-        </div>
+        @php $bill = \App\Services\BillingFeed::normalize('titip', $order); @endphp
+        @if ($bill['state'] === 'unpaid')
+            <div class="al warn">
+                <svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>
+                <div><b>Menunggu pembayaran</b><p>Pelanggan belum mengunggah bukti pembayaran {{ $rp($order->total) }}. Setelah bukti masuk, periksa dan konfirmasi di sini atau di Tagihan.</p></div>
+            </div>
+        @else
+            @include('admin.partials.payment-review', ['type' => 'titip', 'id' => $order->id, 'bill' => $bill])
+        @endif
     @elseif ($order->status === 'penjadwalan_penjemputan')
         <div class="al info">
             <svg class="ic" aria-hidden="true"><use href="#i-truck"/></svg>
@@ -173,16 +184,20 @@
             </section>
 
             <section class="card">
-                <div class="card-h"><h3>Biaya</h3><span class="st {{ $isPaid ? 'ok' : 'warn' }}">{{ $isPaid ? 'Lunas' : 'Belum bayar' }}</span></div>
+                <div class="card-h"><h3>Biaya</h3><span class="st {{ \App\Services\ManualPayment::tone($order->payment_status) }}">{{ $isPaid ? 'Lunas' : \App\Services\ManualPayment::label($order->payment_status) }}</span></div>
                 <div class="kv">
                     <div><span>Subtotal barang</span><b>{{ $rp($order->item_subtotal) }}</b></div>
                     <div><span>Ongkos kurir</span><b>{{ $rp($order->courier_cost) }}</b></div>
                     <div><span>Packing</span><b>{{ $rp($order->packing_cost) }}</b></div>
                     <div><span>Biaya platform</span><b>{{ $rp($order->platform_fee) }}</b></div>
                     <div class="tot"><span>Total</span><b>{{ $rp($order->total) }}</b></div>
-                    <div><span>Status bayar</span><b>{{ $order->payment_status ?: '-' }}</b></div>
+                    <div><span>Status bayar</span><b>{{ \App\Services\ManualPayment::label($order->payment_status) }}</b></div>
+                    <div><span>Metode</span><b>QRIS</b></div>
                     @if ($order->tripay_reference)
-                        <div><span>Referensi Tripay</span><b class="mono" style="word-break:break-all">{{ $order->tripay_reference }}</b></div>
+                        <div><span>Referensi lama</span><b class="mono" style="word-break:break-all">{{ $order->tripay_reference }}</b></div>
+                    @endif
+                    @if (\App\Services\ManualPayment::proofExists($order) && $order->status !== 'menunggu_pembayaran')
+                        <div><span>Bukti bayar</span><b><a href="{{ route('payment.proof.show', ['titip', $order->id]) }}" target="_blank" rel="noopener">Lihat bukti</a></b></div>
                     @endif
                 </div>
             </section>
@@ -223,7 +238,7 @@
             @foreach (\App\Models\TitipanOrder::FLOW as $key => $meta)
                 <label class="radio-row"><input type="radio" name="status" value="{{ $key }}" @checked($order->status === $key) required> {{ $meta['label'] }}</label>
             @endforeach
-            <p class="help">Disarankan mengunggah bukti foto sebelum memindahkan barang ke Dalam gudang.</p>
+            <p class="help">Status baru bisa dilanjutkan setelah pembayaran dikonfirmasi di Tagihan. Disarankan mengunggah bukti foto sebelum memindahkan barang ke Dalam gudang.</p>
         </div>
         <div class="df">
             <button class="btn btn-ghost" type="button" data-close>Batal</button>

@@ -7,7 +7,6 @@ use App\Models\PrelovedItem;
 use App\Models\UserAddress;
 use App\Services\BiteshipService;
 use App\Services\DistanceService;
-use App\Services\TripayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -228,7 +227,6 @@ class CheckoutController extends Controller
     public function process(Request $request)
     {
         $data = $request->validate([
-            'payment_method' => 'required|string',
             'pickup_date' => 'nullable|date|after_or_equal:today',
             'pickup_time' => 'nullable|string',
         ]);
@@ -267,47 +265,10 @@ class CheckoutController extends Controller
             'courier_service_code' => $shipping['service'] ?? null,
             'pickup_date' => $data['pickup_date'] ?? null,
             'pickup_time' => $data['pickup_time'] ?? null,
-            'payment_method' => $data['payment_method'],
+            'payment_method' => 'qris',
             'payment_status' => 'UNPAID',
             'status' => Order::STATUS_PENDING,
         ]);
-
-        $orderItems = collect($cart)->map(fn ($item) => [
-            'name' => mb_substr($item['name'], 0, 50),
-            'price' => (int) $item['price'],
-            'quantity' => (int) $item['qty'],
-        ])->values()->all();
-        $orderItems[] = ['name' => 'Biaya Layanan dan Platform', 'price' => $serviceFee, 'quantity' => 1];
-        if ($shippingCost > 0) {
-            $orderItems[] = ['name' => 'Biaya Pengiriman', 'price' => (int) $shippingCost, 'quantity' => 1];
-        }
-
-        try {
-            $tripay = app(TripayService::class);
-            $result = $tripay->createTransaction([
-                'method' => $data['payment_method'],
-                'merchant_ref' => $order->order_number,
-                'amount' => $total,
-                'customer_name' => $order->customer_name,
-                'customer_email' => $order->customer_email,
-                'customer_phone' => $order->customer_phone ?? '0800000000',
-                'order_items' => $orderItems,
-                'callback_url' => route('tripay.callback'),
-                'return_url' => route('checkout.success', $order->order_number),
-            ]);
-
-            $order->update([
-                'tripay_reference' => $result['reference'] ?? null,
-                'tripay_checkout_url' => $result['checkout_url'] ?? null,
-                'tripay_pay_code' => $result['pay_code'] ?? null,
-                'tripay_payment_method' => $data['payment_method'],
-            ]);
-        } catch (\Throwable $e) {
-            report($e);
-            $order->update(['payment_status' => 'FAILED']);
-
-            return response()->json(['success' => false, 'message' => 'Gagal memulai pembayaran. Coba lagi atau pilih metode lain.'], 500);
-        }
 
         // Hanya hapus item yang benar-benar di-checkout; sisanya tetap di keranjang.
         $cartSession = session('cart', []);

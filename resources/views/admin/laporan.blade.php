@@ -31,7 +31,7 @@
 </div>
 <div class="g2" style="margin-bottom:16px">
   <div class="kpi"><small>Tagihan baru</small><b class="num">{{ $kpi['new'] }}</b><span>Dibuat dalam periode</span></div>
-  <div class="kpi"><small>Gagal / kedaluwarsa</small><b class="num">{{ $kpi['fail'] }}</b><span>Dari tagihan yang dibuat dalam periode</span></div>
+  <div class="kpi"><small>Gagal</small><b class="num">{{ $kpi['fail'] }}</b><span>Dari tagihan yang dibuat dalam periode</span></div>
 </div>
 
 <div class="stack">
@@ -55,7 +55,7 @@
         </div>
       @endforeach
     </div>
-    <p class="help" style="margin-top:10px">Hanya pembayaran berstatus berhasil. Tidak ada kolom tanggal bayar, jadi pendapatan dikelompokkan per tanggal terakhir pesanan diperbarui (saat callback Tripay mengubah status jadi lunas). Data dibatasi 5000 tagihan terbaru per sumber.</p>
+    <p class="help" style="margin-top:10px">Hanya pembayaran berstatus berhasil, dikelompokkan per tanggal admin mengonfirmasi pembayaran. Data dibatasi 5000 tagihan terbaru per sumber.</p>
   </div>
 
   <div class="g2">
